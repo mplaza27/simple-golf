@@ -1,6 +1,6 @@
 # Golf sim data
 
-Downloads every shot from a Uneekor Power U report and builds `index.html`, a retro dashboard (live at https://mplaza27.github.io/simple-golf/) with a date picker and five tabs: Session, Progress, Bag, Course and Drills.
+Downloads every shot from a Uneekor Power U report and builds `index.html`, a green-retro dashboard (live at https://mplaza27.github.io/simple-golf/) with a date picker and five tabs: Session, Course, Progress, Bag and Drills.
 
 ## New session
 1. Make a dated folder (`MM-DD-YY`) containing a `link.md` with the report link.
@@ -16,5 +16,5 @@ Shots that are already downloaded are skipped. To rebuild the dashboard on its o
 - `review.md`: the overall plan, shown on the Progress tab.
 - `bag.json`: main bag (each `key` matches a club folder name) and the par-3 bag, which borrows yardages from the main-bag club with the same loft (`equiv`).
 - `drills.json`: Drills tab content: practice-plan levels, drills, embedded YouTube video IDs and resource links. Swap a video by changing its ID.
-- `courses.json`: hole yardages per tee. The Course tab picks a par-3-bag club and an aim offset for each hole. Stoneham Oaks yardages come from online scorecards that disagree, so check them against the real card.
+- `courses.json`: par and yardage per hole for each tee (Stoneham Oaks, Killian Greens, Redland G&CC). The Course tab suggests a tee club per hole and draws its dispersion (68%/95% ellipses plus your real shots) on a hole map, with fairway/green odds and an aim offset. Add a course by copying an entry.
 - `scripts/download_shots.py`: `CLUB_NAMES` maps Uneekor club names to folder names. The wood, hybrid and 6-iron names are guesses, so check them after your first session with those clubs.

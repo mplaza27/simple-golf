@@ -3,313 +3,235 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Golf Sim Arcade</title>
+<title>Simple Golf</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9B%B3%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#1a1a2e; --panel:#16213e; --panel2:#1a2a50; --panel3:#213463; --line:#0f3460;
-    --ink:#e6e2da; --ink2:#d4d0c8; --muted:#a3a0ae; --faint:#6b6f8e; --shadow:rgba(0,0,0,.3);
-    --gold:#e8b84b; --accent:#e8b84b; --pink:#b03a3a; --yellow:#e8b84b; --orange:#d9893a; --blue:#5b8fd9;
-    --hcp:#d9893a; --lpga:#b08cf0; --pga:#5b8fd9;
-    --bad:#e0605e; --warn:#e8b84b; --good:#6fc27a; --info:#5b8fd9; --dark:#1a1a2e;
+    --bg:#101a14; --panel:#16231b; --panel2:#1c2c22; --panel3:#23362a; --line:#2a3f31; --line2:#36503f;
+    --ink:#e9e5d3; --ink2:#c9c6b4; --muted:#93a796; --faint:#617566;
+    --green:#9fd07c; --green2:#6fae5a; --sand:#e3c97a; --cream:#f1ead0;
+    --bad:#e58a76; --warn:#e3c97a; --good:#9fd07c; --info:#88bccd;
     --pixel:"Press Start 2P",ui-monospace,Menlo,monospace;
-    --crt:"Press Start 2P",ui-monospace,Menlo,monospace;
-    --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    --r:3px;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --r:10px;
     color-scheme: dark;
   }
   *{box-sizing:border-box}
   [hidden]{display:none !important}
   html{background:var(--bg)}
-  body{margin:0;color:var(--ink);font:15.5px/1.6 var(--sans);-webkit-font-smoothing:antialiased;background:var(--bg);image-rendering:pixelated}
-  body.crt::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;
-    background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px)}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
   button{font:inherit;color:inherit}
-  a{color:var(--accent)}
-  .page{max-width:1200px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
-
-  /* ---- arcade buttons (shared) ---- */
-  .btn,.chip,.toggle,.iconbtn,.nav button,.seg button,.datepick button,.yt-link,.res{
-    border:2px solid var(--line);border-radius:var(--r);background:var(--panel);color:var(--ink2);
-    box-shadow:3px 3px 0 var(--shadow);cursor:pointer;transition:transform .06s, box-shadow .06s, background .15s, color .15s;
-    font-weight:700;-webkit-tap-highlight-color:transparent}
-  .btn:hover,.chip:hover,.toggle:hover,.iconbtn:hover,.nav button:hover,.seg button:hover,.datepick button:hover:not(:disabled),.yt-link:hover,.res:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow);background:var(--panel2);border-color:var(--gold);color:var(--gold)}
-  .btn:active,.chip:active,.toggle:active,.iconbtn:active,.nav button:active,.seg button:active,.datepick button:active,.yt-link:active,.res:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
-  :focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+  a{color:var(--green)}
+  .page{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:0 72px}
+  :focus-visible{outline:2px solid var(--sand);outline-offset:2px}
 
   /* header */
-  .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(22,33,62,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:2px solid var(--line);margin:0 -20px 24px;padding:12px 20px;box-shadow:0 4px 0 var(--bg),0 6px 0 var(--line)}
-  .top-in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between}
-  .brand{display:flex;align-items:center;gap:10px;font-family:var(--pixel);font-size:14px;letter-spacing:.02em;line-height:1.3}
-  .brand .logo{font-size:22px;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.4))}
-  .brand b{color:var(--gold)}
-  .brand small{display:block;font-family:var(--sans);font-size:12.5px;color:var(--muted);letter-spacing:.02em;margin-top:4px;font-weight:500}
-  .nav{display:flex;gap:8px;flex-wrap:wrap}
-  .nav button{font-family:var(--pixel);font-size:10px;padding:10px 12px;letter-spacing:.04em;text-transform:uppercase}
-  .nav button[aria-selected="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
-  .datepick{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%}
-  .datepick select{min-width:0;flex:1 1 auto;max-width:calc(100vw - 140px)}
-  .datepick button{width:38px;height:38px;font-size:18px}
-  .datepick button:disabled{opacity:.3;cursor:default;box-shadow:1px 1px 0 var(--shadow)}
-  select{background:var(--panel);color:var(--gold);border:2px solid var(--line);border-radius:var(--r);padding:6px 10px;font:10px/1.4 var(--pixel);height:38px;box-shadow:3px 3px 0 var(--shadow);cursor:pointer}
-  .switches{display:flex;gap:6px}
-  .switches .toggle{font-family:var(--pixel);font-size:9px;padding:2px 10px;height:34px}
-  .switches .toggle[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+  .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(16,26,20,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin:0 -20px 28px;padding:14px 20px}
+  .top-in{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--pixel);font-size:12px;color:var(--cream);letter-spacing:.04em}
+  .brand span{color:var(--green)}
+  .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .date{display:flex;align-items:center;gap:6px}
 
-  /* type */
-  h2{font-family:var(--pixel);font-size:13px;line-height:1.5;margin:0;letter-spacing:.02em;text-transform:uppercase}
-  .sec{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 6px}
-  .lede{color:var(--muted);font-size:14.5px;margin:6px 0 16px;max-width:78ch}
-  .muted{color:var(--muted)} .small{font-size:13.5px}
+  /* buttons: one calm style everywhere */
+  .btn{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line2);border-radius:999px;color:var(--ink2);padding:7px 14px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s,color .15s,transform .08s;white-space:nowrap}
+  .btn:hover{background:var(--panel3);border-color:var(--green2);color:var(--ink)}
+  .btn:active{transform:translateY(1px)}
+  .btn[aria-pressed="true"],.btn[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#132016;font-weight:600}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.sm{padding:5px 11px;font-size:13px}
+  .btn.icon{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%}
+  .btn .sw{width:9px;height:9px;border-radius:50%}
+  .btn .n{font-family:var(--mono);font-size:12.5px;opacity:.75}
+  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px}
+  .tabs .btn{border:0;background:none;padding:6px 14px}
+  .tabs .btn[aria-selected="true"]{background:var(--green);color:#132016}
+  select{background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:999px;padding:6px 14px;font:500 14px var(--sans);height:34px;cursor:pointer}
+  .row-btns{display:flex;flex-wrap:wrap;gap:8px}
+
+  /* type + layout */
+  h2{font-family:var(--pixel);font-size:11px;line-height:1.6;margin:0;color:var(--cream);letter-spacing:.04em;text-transform:uppercase}
+  h3{font-size:16px;margin:0 0 4px}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin-bottom:14px}
+  .sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+  .muted{color:var(--muted)} .small{font-size:13px}
   .bad{color:var(--bad)} .warn{color:var(--warn)} .good{color:var(--good)} .info{color:var(--info)}
+  .stack{display:grid;gap:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+  .chart{position:relative;height:360px}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .note{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--sand);background:rgba(227,201,122,.08);border:1px solid rgba(227,201,122,.25);border-radius:999px;padding:4px 12px}
 
-  /* layout */
-  .stack{display:grid;gap:22px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-  .card{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);padding:20px;min-width:0;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--line)}
-  .chart{position:relative;height:320px}
-  .chart.tall{height:360px}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .stat .l{color:var(--muted);font-size:13px;font-weight:500}
+  .stat .v{font-family:var(--mono);font-size:30px;font-weight:500;line-height:1.15;margin:6px 0 2px;color:var(--cream)}
+  .stat .c{font-size:13px;color:var(--muted)}
+  .grade{font-family:var(--pixel);font-size:14px;width:40px;height:40px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--panel2);border:1px solid var(--line2)}
+  .gA{color:var(--good)} .gB{color:#c3d77c} .gC{color:var(--sand)} .gD{color:#e8a676} .gF{color:var(--bad)}
 
-  /* banner */
-  .banner{display:flex;gap:12px;align-items:flex-start;background:repeating-linear-gradient(-45deg, rgba(255,210,63,.10) 0 12px, rgba(255,210,63,.04) 12px 24px);border:2px dashed var(--yellow);border-radius:var(--r);padding:12px 16px;font-size:14.5px}
-  .banner b{color:var(--yellow);font-family:var(--pixel);font-size:10px;letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:4px}
-  .banner .ic{font-size:20px;line-height:1.2}
-
-  /* KPIs */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-  .kpi{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--line)}
-  .kpi.bad{border-color:var(--bad)} .kpi.warn{border-color:var(--warn)} .kpi.good{border-color:var(--good)}
-  .kpi .l{color:var(--muted);font-family:var(--pixel);font-size:9px;letter-spacing:.04em;text-transform:uppercase;padding-right:44px;line-height:1.6}
-  .kpi .v{font-family:var(--pixel);font-size:24px;line-height:1.2;margin:12px 0 6px}
-  .kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)} .kpi.good .v{color:var(--good)}
-  .kpi .c{font-size:14px;color:var(--ink2)}
-  .kpi .t{font-size:12.5px;color:var(--faint);margin-top:2px}
-  .grade{position:absolute;top:10px;right:10px;width:38px;height:38px;display:grid;place-items:center;font-family:var(--pixel);font-size:16px;border:2px solid currentColor;border-radius:3px;box-shadow:3px 3px 0 var(--shadow);background:var(--bg)}
-  .grade.gA{color:var(--good)} .grade.gB{color:#9fd36a} .grade.gC{color:var(--yellow)} .grade.gD{color:var(--orange)} .grade.gF{color:var(--bad)}
-
-  /* takeaways */
-  .takeaways{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .take{background:var(--panel2);border-radius:var(--r);padding:16px;border:2px solid var(--line);border-left:6px solid var(--faint)}
-  .take.bad{border-left-color:var(--bad)} .take.warn{border-left-color:var(--warn)} .take.info{border-left-color:var(--info)} .take.good{border-left-color:var(--good)}
-  .take .n{font-family:var(--pixel);font-size:10px;color:var(--muted)}
-  .take h3{font-size:17px;margin:8px 0 6px;line-height:1.3}
-  .take p{margin:0;color:var(--ink2);font-size:14.5px}
-  details{margin-top:16px}
-  summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;font-family:var(--pixel);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);padding:8px 12px;border:2px solid var(--accent);border-radius:var(--r);box-shadow:3px 3px 0 var(--shadow);transition:transform .06s,box-shadow .06s}
-  summary:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+  /* focus list */
+  .focus{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+  .focus li{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start}
+  .focus .i{font-family:var(--pixel);font-size:11px;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--panel2);color:var(--sand)}
+  .focus b{display:block;font-weight:600;color:var(--ink)}
+  .focus span{color:var(--ink2);font-size:14px}
+  details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  summary{cursor:pointer;color:var(--green);font-size:14px;font-weight:500;list-style:none}
   summary::-webkit-details-marker{display:none}
-  summary::before{content:"▶";font-size:9px;transition:transform .15s} details[open] > summary::before{transform:rotate(90deg)}
-  .findings{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
-  .findings li{display:grid;grid-template-columns:12px 1fr;gap:12px;background:var(--panel2);border-radius:var(--r);padding:10px 14px;font-size:14.5px;color:var(--ink2)}
-  .findings b{color:var(--ink)}
-  .dot{width:10px;height:10px;margin-top:7px;background:var(--faint)}
+  summary::before{content:"+ "} details[open] > summary::before{content:"− "}
+  .findings{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+  .findings li{display:grid;grid-template-columns:8px 1fr;gap:12px;font-size:14px;color:var(--ink2);padding:4px 0}
+  .findings b{color:var(--ink);font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;margin-top:8px;background:var(--faint)}
   .dot.bad{background:var(--bad)} .dot.warn{background:var(--warn)} .dot.good{background:var(--good)} .dot.info{background:var(--info)}
-  .notes{font-size:14.5px;color:var(--ink2);margin-top:10px}
-  .notes h3,.notes h4,.notes h5{color:var(--yellow);font-family:var(--pixel);font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px}
-  .notes ul{padding-left:20px;margin:4px 0} .notes li{margin:4px 0} .notes p{margin:6px 0} .notes strong{color:var(--ink)}
-  code{background:var(--panel3);padding:1px 6px;border-radius:4px;font-size:13px;color:var(--ink)}
-
-  /* chips */
-  .chips{display:flex;flex-wrap:wrap;gap:10px}
-  .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;font-size:15px}
-  .chip[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
-  .chip[aria-pressed="true"] .sub,.chip[aria-pressed="true"] .flag{color:var(--dark)}
-  .chip .sw{width:12px;height:12px;border:2px solid rgba(0,0,0,.5)}
-  .chip .flag{color:var(--warn);font-size:13px}
-  .chip .sub{color:var(--muted);font-weight:500;font-family:var(--pixel);font-size:9px;line-height:1}
-  .mchip{font-size:13.5px;padding:6px 11px}
-  
+  .notes{font-size:14px;color:var(--ink2)}
+  .notes h3,.notes h4,.notes h5{font-size:14px;color:var(--sand);margin:14px 0 4px}
+  .notes ul{padding-left:18px;margin:4px 0} .notes li{margin:3px 0} .notes p{margin:6px 0} .notes strong{color:var(--ink)}
+  code{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:4px;font-size:12.5px}
 
   /* club detail */
-  .detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:22px}
-  .detail-head{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end;margin-bottom:14px}
-  .big{font-family:var(--pixel);font-size:38px;line-height:1;color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.35)}
-  .big small{font-size:12px;color:var(--muted);margin-left:4px;text-shadow:none}
-  .stat .l{color:var(--muted);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-  .stat .v{font-family:var(--pixel);font-size:14px;line-height:1.4}
-  .caveat{background:rgba(255,210,63,.08);border:2px dashed var(--yellow);color:var(--ink2);border-radius:var(--r);padding:8px 12px;font-size:14px;margin-bottom:14px}
-  .caveat b{color:var(--yellow)}
-  .bars{display:grid;gap:10px;margin:6px 0 4px}
-  .bar{display:grid;grid-template-columns:70px 1fr 92px;gap:10px;align-items:center;font-size:14px;font-weight:600}
-  .bar .track{height:16px;background:var(--panel3);border:2px solid var(--line);overflow:hidden}
-  .bar .fill{height:100%;background-image:repeating-linear-gradient(90deg, transparent 0 10px, rgba(0,0,0,.25) 10px 12px)!important;background-blend-mode:multiply}
-  .bar .num{text-align:right;font-family:var(--pixel);font-size:10px;line-height:1.3;color:var(--ink)}
+  .detail{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:24px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+  .bigrow{display:flex;flex-wrap:wrap;gap:12px 26px;align-items:flex-end;margin-bottom:12px}
+  .big{font-family:var(--mono);font-size:44px;line-height:1;color:var(--cream)}
+  .big small{font-size:15px;color:var(--muted);margin-left:4px}
+  .kv .l{color:var(--muted);font-size:12.5px} .kv .v{font-family:var(--mono);font-size:17px}
+  .bars{display:grid;gap:8px;margin-top:8px}
+  .bar{display:grid;grid-template-columns:64px 1fr 86px;gap:10px;align-items:center;font-size:13px;color:var(--ink2)}
+  .bar .track{height:8px;background:var(--panel3);border-radius:4px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:4px}
+  .bar .val{text-align:right;font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .caveat{font-size:13.5px;color:var(--sand);margin:0 0 10px}
 
   /* tables */
-  .tablewrap{overflow-x:auto;margin:0 -4px;padding:0 4px}
-  table{border-collapse:collapse;width:100%;font-size:14.5px}
-  th,td{padding:9px 12px;text-align:right;border-bottom:2px solid var(--line);white-space:nowrap}
-  td{font-variant-numeric:tabular-nums;font-size:15px;font-weight:500}
-  td:first-child,td.tl,.notesrow td{font-family:var(--sans);font-size:14.5px}
-  th{color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;user-select:none}
-  th.sortable{cursor:pointer} th.sortable:hover{color:var(--yellow)}
-  th .arr{color:var(--yellow);margin-left:3px}
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{font-family:var(--mono);font-size:13.5px}
+  td:first-child,td.tl{font-family:var(--sans);font-size:14px}
+  th{color:var(--muted);font-weight:500;font-size:12.5px}
+  th.sortable{cursor:pointer} th.sortable:hover{color:var(--ink)}
   th:first-child,td:first-child,.tl{text-align:left}
-  tbody tr{transition:background .1s}
   tbody tr:hover{background:var(--panel2)}
-  tbody tr.clickable{cursor:pointer}
-  tbody tr.clickable:hover td:first-child{color:var(--accent)}
-  tbody tr.sel{background:var(--panel3);box-shadow:inset 4px 0 0 var(--accent)}
-  .tag{display:inline-block;font-family:var(--sans);font-size:11.5px;font-weight:700;padding:1px 7px;border:1px solid var(--faint);border-radius:3px;color:var(--muted);margin-left:6px;vertical-align:2px;text-transform:uppercase;letter-spacing:.03em}
-  .tag.warn{border-color:var(--yellow);color:var(--yellow)}
-  .toggle{padding:6px 12px;font-size:13.5px}
-  .toggle[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
-  .cn{display:inline-flex;align-items:center;gap:8px;font-weight:700}
-  .cn .sw,.sw{width:11px;height:11px;display:inline-block;border:2px solid rgba(0,0,0,.5)}
-
-  /* tooltips */
+  tr.clickable{cursor:pointer}
+  tr.sel{background:var(--panel3)}
+  .tag{display:inline-block;font-family:var(--sans);font-size:11px;padding:0 7px;border-radius:999px;background:var(--panel3);color:var(--muted);margin-left:6px;vertical-align:1px}
+  .tag.warn{color:var(--sand);background:rgba(227,201,122,.12)}
+  .cn{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+  .sw{width:9px;height:9px;border-radius:50%;display:inline-block}
+  img.thumb{width:30px;height:32px;object-fit:cover;border-radius:5px;display:block;background:#000}
   [data-tip]{text-decoration:underline dotted var(--faint);text-underline-offset:3px;cursor:help}
-  #tip{position:fixed;z-index:200;max-width:290px;background:#000;color:var(--ink);border:2px solid var(--gold);border-radius:3px;padding:8px 10px;font-size:13px;line-height:1.45;pointer-events:none;box-shadow:3px 3px 0 var(--shadow);text-transform:none;letter-spacing:0;font-family:var(--sans);font-weight:500}
+  #tip{position:fixed;z-index:200;max-width:280px;background:#0b130e;color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45;pointer-events:none}
 
-  /* segmented */
-  .seg{display:inline-flex;gap:8px;flex-wrap:wrap}
-  .seg button{font-size:13.5px;padding:6px 12px}
-  .seg button[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--dark)}
+  /* course planner */
+  .scorecard{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+  .hb{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;transition:background .15s,border-color .15s;min-width:0}
+  .hb:hover{border-color:var(--green2)}
+  .hb[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#132016}
+  .hb .h{font-family:var(--pixel);font-size:8px;opacity:.8}
+  .hb .y{font-family:var(--mono);font-size:14px;font-weight:600;margin-top:3px}
+  .hb .p{font-size:11px;opacity:.75}
+  .hb .k{font-size:11.5px;font-weight:600;margin-top:2px;color:var(--sand)}
+  .hb[aria-pressed="true"] .k{color:#132016}
+  .nine{font-size:12px;color:var(--muted);margin:10px 0 6px}
+  .planner{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:28px;margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
+  .map{background:#0d1610;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .map svg{display:block;width:100%;height:auto}
+  .hole-title{font-family:var(--mono);font-size:26px;color:var(--cream);line-height:1.2}
+  .hole-title small{font-size:14px;color:var(--muted);margin-left:8px;font-family:var(--sans)}
+  .facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+  .fact{background:var(--panel2);border-radius:8px;padding:10px 12px}
+  .fact .l{color:var(--muted);font-size:12.5px} .fact .v{font-family:var(--mono);font-size:18px;color:var(--ink)}
+  .meter{height:6px;background:var(--panel3);border-radius:3px;margin-top:6px;overflow:hidden} .meter i{display:block;height:100%;background:var(--green);border-radius:3px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 
-  /* holes */
-  .holes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .hole{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;box-shadow:3px 3px 0 var(--shadow);transition:transform .08s,box-shadow .08s,border-color .15s}
-  .hole:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow);border-color:var(--blue)}
-  .hole:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
-  .hole[aria-expanded="true"]{border-color:var(--yellow)}
-  .hole .hh{display:flex;justify-content:space-between;align-items:baseline}
-  .hole .no{font-family:var(--pixel);font-size:10px;color:var(--muted)}
-  .hole .yd{font-family:var(--pixel);font-size:20px;line-height:1.1;color:var(--gold)}
-  .hole .yd small{font-size:9px;color:var(--muted);margin-left:3px}
-  .hole .club{font-size:21px;font-weight:800}
-  .hole .eq{color:var(--muted);font-size:13.5px;font-weight:500;margin-left:6px}
-  .hole .meter{position:relative;height:12px;background:var(--panel3);border:2px solid var(--line)}
-  .hole .meter .f{position:absolute;inset:0 auto 0 0}
-  .hole .meter .pin{position:absolute;top:-7px;width:3px;height:22px;background:var(--ink)}
-  .hole .meter .pin::after{content:"";position:absolute;left:3px;top:0;border-left:9px solid #d04040;border-top:5px solid transparent;border-bottom:5px solid transparent}
-  .hole .meta{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--ink2);flex-wrap:wrap;align-items:center}
-  .pill{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;padding:3px 9px;border:2px solid currentColor;border-radius:4px;text-transform:uppercase;letter-spacing:.03em}
-  .pill.warn{color:var(--warn)} .pill.good{color:var(--good)} .pill.bad{color:var(--bad)}
-  .hole .more{font-size:14px;color:var(--ink2);border-top:2px dashed var(--line);padding-top:8px}
-  .ylist{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
-  .ycard{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:12px 14px}
-  .ycard b{display:block;font-size:15px}
-  .ycard .v{font-family:var(--pixel);font-size:18px;line-height:1.4;color:var(--gold)}
-  .proj{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  .proj > div{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px}
-  .proj b{display:block;font-size:15px;margin-bottom:6px}
-  .row{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:14.5px;padding:2px 0;align-items:baseline}
-  .row span:last-child{color:var(--ink);font-family:var(--pixel);font-size:10px;line-height:1.5}
-  .row span.bad{color:var(--bad)} .row span.warn{color:var(--warn)} .row span.good{color:var(--good)}
-  .empty{color:var(--muted);font-style:italic}
-  footer{color:var(--faint);margin-top:30px;font-family:var(--pixel);font-size:8px;line-height:1.8}
-  img.thumb{width:36px;height:38px;object-fit:cover;border:2px solid var(--line);display:block;background:#000}
-  table.shots td,table.shots th{padding:6px 9px}
-
-  /* shot viewer */
-  .viewer{position:fixed;inset:0;z-index:150;background:rgba(8,5,14,.82);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(16px,env(safe-area-inset-bottom,0px))}
-  .vbox{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);width:min(1100px,100%);max-height:100%;overflow:auto;padding:20px;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--gold)}
-  .vhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-  .vhead h2{font-size:12px}
-  .vbtns{display:flex;gap:8px}
-  .iconbtn{min-width:38px;height:38px;padding:0 12px;font-size:14px}
-  .iconbtn:disabled{opacity:.3;cursor:default}
-  #vplay{background:var(--gold);color:var(--dark);border-color:var(--gold);min-width:96px}
+  /* viewer */
+  .viewer{position:fixed;inset:0;z-index:150;background:rgba(6,10,8,.8);display:flex;align-items:center;justify-content:center;padding:16px}
+  .vbox{background:var(--panel);border:1px solid var(--line2);border-radius:14px;width:min(1040px,100%);max-height:100%;overflow:auto;padding:22px}
   .vgrid{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.45fr);gap:16px}
-  .frame{background:#000;border:3px solid var(--line);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+  .frame{background:#000;border-radius:8px;overflow:hidden;position:relative}
   .frame img{width:100%;height:auto;display:block}
-  .frame .cap{position:absolute;left:8px;top:8px;font-family:var(--pixel);font-size:9px;color:#fff;background:rgba(0,0,0,.7);padding:4px 7px;border:1px solid var(--accent)}
-  .player{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
-  .player input[type=range]{flex:1;min-width:140px;accent-color:var(--gold);height:24px}
-  .player .fc{font-family:var(--pixel);font-size:10px;color:var(--muted);min-width:64px;text-align:right}
-  .player select{font-size:10px}
-  .strip{display:flex;gap:6px;overflow-x:auto;margin-top:12px;padding-bottom:6px}
-  .strip img{height:44px;opacity:.45;cursor:pointer;border:2px solid transparent;flex:none}
-  .strip img:hover{opacity:.8}
-  .strip img.on{opacity:1;border-color:var(--gold)}
-  .vstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:10px;margin-top:16px}
-  .vstat{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:8px 12px}
-  .vstat .l{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
-  .vstat .v{font-family:var(--pixel);font-size:13px;line-height:1.6}
-  .vstat .b{font-size:12px;color:var(--faint)}
+  .frame .cap{position:absolute;left:8px;top:8px;font-size:11.5px;color:#fff;background:rgba(0,0,0,.6);padding:2px 8px;border-radius:999px}
+  .player{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .player input[type=range]{flex:1;min-width:140px;accent-color:var(--green)}
+  .strip{display:flex;gap:4px;overflow-x:auto;margin-top:10px;padding-bottom:4px}
+  .strip img{height:40px;border-radius:4px;opacity:.4;cursor:pointer;flex:none;border:2px solid transparent}
+  .strip img.on{opacity:1;border-color:var(--green)}
+  .vstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-top:16px}
+  .vstat{background:var(--panel2);border-radius:8px;padding:8px 12px}
+  .vstat .l{color:var(--muted);font-size:12px} .vstat .v{font-family:var(--mono);font-size:17px} .vstat .b{font-size:11.5px;color:var(--faint)}
 
   /* drills */
   .levels{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-  .lvl{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:14px}
-  .lvl.done{border-color:var(--gold)}
-  .lvl h3{margin:0 0 4px;font-family:var(--pixel);font-size:10px;color:var(--yellow);text-transform:uppercase;letter-spacing:.04em;line-height:1.6}
-  .lvl .nm{font-weight:800;font-size:15px;margin-bottom:8px}
-  .xp{height:12px;border:2px solid var(--line);background:var(--panel3);margin:6px 0 10px}
-  .xp > i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--gold) 0 8px,#b98d2e 8px 10px);transition:width .3s}
-  .task{display:flex;gap:10px;align-items:flex-start;padding:5px 0;font-size:14px;cursor:pointer;color:var(--ink2)}
-  .task input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;border:2px solid var(--line);background:var(--panel);margin:1px 0 0;cursor:pointer;box-shadow:2px 2px 0 var(--shadow);display:grid;place-items:center}
-  .task input:checked{background:var(--gold);border-color:var(--gold)}
-  .task input:checked::after{content:"✓";color:var(--dark);font-weight:900;font-size:13px}
-  .task input:checked + span{text-decoration:line-through;color:var(--muted)}
-  .drill{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;border-top:6px solid var(--dc,var(--accent))}
-  .drill .lv{font-family:var(--pixel);font-size:9px;color:var(--dc,var(--accent));letter-spacing:.04em;text-transform:uppercase}
-  .drill h3{font-size:22px;margin:6px 0 6px;line-height:1.2}
-  .drill .fx{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-  .drill ol{padding-left:22px;margin:8px 0;color:var(--ink2)} .drill ol li{margin:5px 0}
-  .drill .tgt{background:var(--panel2);border-left:4px solid var(--dc,var(--accent));padding:8px 12px;font-size:14px;margin:10px 0}
-  .drill .src{font-size:13.5px;color:var(--muted)}
-  .vids{display:grid;gap:12px}
-  .yt{position:relative;display:block;width:100%;aspect-ratio:16/9;max-width:100%;border:2px solid var(--line);border-radius:var(--r);background:#000 center/cover no-repeat;cursor:pointer;box-shadow:3px 3px 0 var(--shadow);overflow:hidden;padding:0;transition:transform .08s,box-shadow .08s}
-  .yt:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
-  .yt::before{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.85))}
-  .yt .play{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);width:72px;height:52px;background:var(--pink);border:2px solid var(--gold);border-radius:3px;display:grid;place-items:center;font-size:22px;color:#fff;box-shadow:0 5px 0 var(--dark)}
-  .yt:hover .play{background:#c84242}
-  .yt .ttl{position:absolute;left:12px;right:12px;bottom:10px;text-align:left;font-weight:700;font-size:14.5px;color:#fff;text-shadow:1px 1px 0 #000}
+  .lvl{background:var(--panel2);border-radius:8px;padding:14px}
+  .lvl .t{font-family:var(--pixel);font-size:9px;color:var(--sand)}
+  .lvl .nm{font-weight:600;margin:6px 0 8px}
+  .task{display:flex;gap:9px;align-items:flex-start;padding:3px 0;font-size:13.5px;color:var(--ink2);cursor:pointer}
+  .task input{accent-color:var(--green);width:16px;height:16px;margin-top:3px;flex:none}
+  .task input:checked + span{text-decoration:line-through;color:var(--faint)}
+  .drill{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+  .drill .lv{font-size:12.5px;color:var(--sand);font-weight:500}
+  .drill h3{font-size:19px;margin:4px 0 6px}
+  .drill ol{padding-left:20px;margin:8px 0;color:var(--ink2)} .drill li{margin:4px 0}
+  .drill .tgt{font-size:14px;margin:10px 0;color:var(--ink)}
+  .yt{position:relative;display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:8px;background:#000 center/cover no-repeat;cursor:pointer;overflow:hidden;padding:0}
+  .yt::after{content:"▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:40px;border-radius:10px;background:rgba(16,26,20,.85);color:var(--green);display:grid;place-items:center;font-size:18px;transition:background .15s}
+  .yt:hover::after{background:var(--green);color:#132016}
+  div.yt::after{display:none}
   .yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-  .vidrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap}
-  .yt-link{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;padding:5px 10px}
-  .yt-link.red{background:var(--bad);color:#fff;border-color:var(--dark)}
-  .resources{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-  .res{display:block;text-decoration:none;padding:14px 16px;color:var(--ink);font-weight:500}
-  .res b{display:block;font-size:16px;color:var(--accent);margin-bottom:4px}
-  .res span{font-size:14px;color:var(--ink2)}
-  .res::after{content:"↗";float:right;margin-top:-26px;color:var(--yellow)}
+  .yt-cap{font-size:13px;color:var(--muted);margin:6px 0 12px;display:flex;justify-content:space-between;gap:8px}
+  .resources{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .res{display:block;text-decoration:none;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--ink2);font-size:13.5px}
+  .res:hover{border-color:var(--green2)}
+  .res b{display:block;color:var(--green);font-size:15px}
+  .proj{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .proj > div{background:var(--panel2);border-radius:8px;padding:14px}
+  .r{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--muted);padding:2px 0}
+  .r span:last-child{font-family:var(--mono);color:var(--ink)}
+  .empty{color:var(--muted);font-style:italic}
+  footer{color:var(--faint);font-size:12.5px;margin-top:36px}
 
-  @media (max-width:900px){
-    .kpis,.levels{grid-template-columns:1fr 1fr}
-    .takeaways,.grid2,.proj,.drill,.detail-grid,.vgrid{grid-template-columns:1fr}
-    .holes{grid-template-columns:1fr 1fr}
-    .chart{height:280px}
+  @media (max-width:860px){
+    .stats{grid-template-columns:1fr}
+    .detail,.planner,.vgrid,.drill,.proj{grid-template-columns:1fr}
+    .levels{grid-template-columns:1fr 1fr}
+    .scorecard{grid-template-columns:repeat(9,minmax(34px,1fr));overflow-x:auto}
+    .chart{height:300px}
+    .planner .map{max-width:340px}
   }
-  @media (max-width:560px){
-    .holes,.levels{grid-template-columns:1fr}
-    .kpi .v{font-size:20px}
-    .bar{grid-template-columns:56px 1fr 82px}
-    .nav button{font-size:9px;padding:9px 9px}
-    .brand{font-size:12px}
-  }
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:520px){ .levels{grid-template-columns:1fr} .stat .v{font-size:26px} .hb .k{display:none} }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="top"><div class="top-in">
-    <div class="brand"><span class="logo">⛳</span><div>GOLF <b>SIM</b><small>Uneekor sessions · shot by shot</small></div></div>
-    <div class="datepick">
-      <button id="prev" aria-label="Previous session">‹</button>
-      <select id="date" aria-label="Session date"></select>
-      <button id="next" aria-label="Next session">›</button>
-    </div>
-    <nav class="nav" role="tablist">
-      <button role="tab" data-tab="session">Session</button>
-      <button role="tab" data-tab="trend">Progress</button>
-      <button role="tab" data-tab="bag">Bag</button>
-      <button role="tab" data-tab="course">Course</button>
-      <button role="tab" data-tab="drills">Drills</button>
-    </nav>
-    <div class="switches">
-      <button class="toggle" id="sfx" aria-pressed="false" title="Arcade sound effects">♪ SFX</button>
-      <button class="toggle" id="crt" aria-pressed="false" title="CRT scanlines">▤ CRT</button>
+    <div class="brand">⛳ SIMPLE <span>GOLF</span></div>
+    <div class="right">
+      <div class="date">
+        <button class="btn icon" id="prev" aria-label="Previous session">‹</button>
+        <select id="date" aria-label="Session date"></select>
+        <button class="btn icon" id="next" aria-label="Next session">›</button>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button class="btn" role="tab" data-tab="session">Session</button>
+        <button class="btn" role="tab" data-tab="course">Course</button>
+        <button class="btn" role="tab" data-tab="trend">Progress</button>
+        <button class="btn" role="tab" data-tab="bag">Bag</button>
+        <button class="btn" role="tab" data-tab="drills">Drills</button>
+      </nav>
     </div>
   </div></div>
 
   <main id="tab-session" class="stack"></main>
+  <main id="tab-course" class="stack" hidden></main>
   <main id="tab-trend" class="stack" hidden></main>
   <main id="tab-bag" class="stack" hidden></main>
-  <main id="tab-course" class="stack" hidden></main>
   <main id="tab-drills" class="stack" hidden></main>
   <footer id="foot"></footer>
 </div>
@@ -319,9 +241,8 @@
 <script>
 const DATA = __DATA__;
 
-/* ---------- reference data ---------- */
-// TrackMan tour averages (legacy published table; 2023 update: PGA 7i 176 yd / 92 mph / 123 mph ball / 1.34).
-// club/ball mph · launch & descent (land angle) ° · spin rpm · apex (max height) yd · carry yd.
+/* ================= reference data ================= */
+// TrackMan tour averages (legacy published table; 2023 update lists PGA 7i at 176 yd / 92 mph / 123 mph ball / 1.34).
 const T = (club,ball,smash,launch,spin,apex,descent,carry) => ({club,ball,smash,launch,spin,apex,descent,carry});
 const BENCH = {
   pga: {Dr:T(113,167,1.48,10.9,2686,32,38,275), "3W":T(107,158,1.48,9.2,3655,30,43,243), "3H":T(100,146,1.46,10.2,4437,29,47,225),
@@ -332,38 +253,22 @@ const BENCH = {
         "9i":T(72,93,1.29,23.9,7589,26,47,119), PW:T(70,86,1.23,25.6,8403,23,48,107)},
   hcp25:{"6i":{carry:137},"7i":{carry:132},"8i":{carry:122},"9i":{carry:108}},
 };
-// Metrics you can focus on. `k` = club-average field (from analyze), `shot` = per-shot field, zero = Tour target is ~0.
 const METRICS = [
-  {k:"carry",   label:"Carry",        unit:"yd",  shot:"carry",     dp:1},
-  {k:"total",   label:"Total",        unit:"yd",  shot:"total",     dp:1},
-  {k:"ball",    label:"Ball speed",   unit:"mph", shot:"ballSpeed", dp:1},
-  {k:"club",    label:"Club speed",   unit:"mph", shot:"clubSpeed", dp:1},
-  {k:"smash",   label:"Smash",        unit:"",    shot:"smash",     dp:2},
-  {k:"launch",  label:"Launch",       unit:"°",   shot:"launch",    dp:1},
-  {k:"spin",    label:"Back spin",    unit:"rpm", shot:"backSpin",  dp:0},
-  {k:"apex",    label:"Apex",         unit:"yd",  shot:"apex",      dp:1},
-  {k:"descent", label:"Land angle",   unit:"°",   shot:"descent",   dp:1},
-  {k:"path",    label:"Club path",    unit:"°",   shot:"path",      dp:1, zero:true},
-  {k:"f2p",     label:"Face-to-path", unit:"°",   shot:"f2p",       dp:1, zero:true},
-  {k:"side",    label:"Finish L/R",   unit:"yd",  shot:"side",      dp:1, zero:true},
+  {k:"carry",label:"Carry",unit:"yd",shot:"carry",dp:1},{k:"total",label:"Total",unit:"yd",shot:"total",dp:1},
+  {k:"ball",label:"Ball speed",unit:"mph",shot:"ballSpeed",dp:1},{k:"club",label:"Club speed",unit:"mph",shot:"clubSpeed",dp:1},
+  {k:"smash",label:"Smash",unit:"",shot:"smash",dp:2},{k:"launch",label:"Launch",unit:"°",shot:"launch",dp:1},
+  {k:"spin",label:"Back spin",unit:"rpm",shot:"backSpin",dp:0},{k:"apex",label:"Apex",unit:"yd",shot:"apex",dp:1},
+  {k:"descent",label:"Land angle",unit:"°",shot:"descent",dp:1},{k:"path",label:"Club path",unit:"°",shot:"path",dp:1,zero:true},
+  {k:"f2p",label:"Face-to-path",unit:"°",shot:"f2p",dp:1,zero:true},{k:"side",label:"Finish L/R",unit:"yd",shot:"side",dp:1,zero:true},
 ];
 const MET = Object.fromEntries(METRICS.map(m=>[m.k,m]));
-const fm = (m, v) => v==null ? "—" : (m.zero ? sg(v, m.dp) : m.k==="spin" ? Math.round(v).toLocaleString() : v.toFixed(m.dp)) + (m.unit && m.unit!=="°" ? " "+m.unit : m.unit);
 const GLOSS = {
-  carry:"Distance the ball flies in the air before it lands.",
-  total:"Carry plus roll after landing.",
-  roll:"How far the ball rolled after landing (total − carry).",
-  spread:"Carry consistency: about two-thirds of your shots land within ± this many yards of your average.",
-  smash:"Ball speed ÷ club speed, i.e. how centred the strike was. Irons: 1.30+ is good. Low numbers usually mean heel, toe or thin contact.",
-  path:"Direction the club head travels through impact. Negative = out-to-in (the slice path). Tour players sit around 0 ± 2°.",
-  face:"Where the clubface points at impact, relative to the target.",
-  f2p:"Face-to-path = face − path. Positive = the face is open to the path, so the ball curves right (fade/slice). Keep within ±3°.",
-  side:"How far left or right of the target line the ball finished.",
-  launch:"Vertical launch angle off the face. Too high for the loft means you're adding loft (flipping) at impact.",
-  apex:"Peak height of the ball flight.",
-  spin:"Backspin in rpm. Irons need spin to stop on greens.",
-  ball:"Ball speed off the face. It's the single biggest driver of distance.", club:"Club head speed at impact.",
-  descent:"Angle the ball lands at. Steeper (45°+) means it stops faster on the green.",
+  carry:"Distance the ball flies in the air.", total:"Carry plus roll.", spread:"About two-thirds of shots land within ± this of your average carry.",
+  smash:"Ball speed ÷ club speed: how centred the strike was. Irons: 1.30+ is good.",
+  path:"Club direction through impact. Negative = out-to-in (slice path). Tour ≈ 0 ± 2°.",
+  f2p:"Face minus path. Positive = ball curves right. Keep within ±3°.", side:"How far left/right of the target the ball finished.",
+  launch:"Vertical launch angle.", apex:"Peak height.", spin:"Backspin rpm.", ball:"Ball speed off the face.", club:"Club head speed.",
+  descent:"Landing angle. Steeper stops faster.", face:"Face direction at impact vs. target.",
 };
 const MAIN = DATA.bag.sets[0].clubs;
 const CLUB = Object.fromEntries(MAIN.map(c=>[c.key,c]));
@@ -372,750 +277,487 @@ const nameOf = k => SHORT[k] || k;
 const loftOf = k => CLUB[k]?.loft ?? 99;
 const IRON = k => { const l = loftOf(k); return l >= 24 && l <= 41; };
 const WEDGE = k => loftOf(k) > 41 && loftOf(k) < 99;
-const COLORS = {Dr:"#ff8a65","3W":"#ffb74d","3H":"#ffd54f","7W":"#dce775","6i":"#81c784","7i":"#45d0c0","8i":"#edd36a","9i":"#e78c73",PW:"#b08cf0",AW:"#6ea8fe","51":"#f39ad1","56":"#a1887f","60":"#90a4ae"};
-const colorOf = k => COLORS[k] || "#8a94a1";
+const COLORS = {Dr:"#e9a178","3W":"#e8c170","3H":"#d6d07a","7W":"#b4d07a","6i":"#8fcf8a","7i":"#6cc4a4","8i":"#e3c97a","9i":"#e09078",PW:"#b9a3e3",AW:"#84bcd9","51":"#e39bc0","56":"#b8a48c","60":"#9fb3ad"};
+const colorOf = k => COLORS[k] || "#93a796";
 const alpha = (hex,a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
 
-/* ---------- helpers ---------- */
+/* ================= helpers ================= */
 const vals = a => a.filter(x => x != null && !Number.isNaN(x));
 const mean = a => { a = vals(a); return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; };
 const median = a => { a = vals(a).sort((x,y)=>x-y); if(!a.length) return null; const m=a.length>>1; return a.length%2?a[m]:(a[m-1]+a[m])/2; };
-const sd = a => { a = vals(a); const m = mean(a); return a.length ? Math.sqrt(mean(a.map(x=>(x-m)**2))) : null; };
+const sd = a => { a = vals(a); const m = mean(a); return a.length>1 ? Math.sqrt(mean(a.map(x=>(x-m)**2))) : null; };
 const corr = (a,b) => { const p=a.map((x,i)=>[x,b[i]]).filter(([x,y])=>x!=null&&y!=null); if(p.length<5) return null;
   const ma=mean(p.map(q=>q[0])), mb=mean(p.map(q=>q[1])), sa=sd(p.map(q=>q[0])), sb=sd(p.map(q=>q[1]));
   return sa&&sb ? mean(p.map(([x,y])=>(x-ma)*(y-mb)))/(sa*sb) : null; };
-const f = (x,d=1) => x==null ? "—" : x.toFixed(d);
+const f = (x,d=1) => x==null||Number.isNaN(x) ? "—" : x.toFixed(d);
 const sg = (x,d=1) => x==null ? "—" : (x>0?"+":"")+x.toFixed(d);
 const lr = (x,d=0) => x==null ? "—" : Math.abs(x) < 0.5 ? "centre" : `${Math.abs(x).toFixed(d)} ${x>0?"R":"L"}`;
+const fm = (m,v) => v==null ? "—" : (m.zero ? sg(v,m.dp) : m.k==="spin" ? Math.round(v).toLocaleString() : v.toFixed(m.dp)) + (m.unit && m.unit!=="°" ? " "+m.unit : m.unit);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const tip = (key, label) => `<span data-tip="${esc(GLOSS[key]||"")}">${label}</span>`;
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tip = (k,label) => GLOSS[k] ? `<span data-tip="${esc(GLOSS[k])}">${label}</span>` : label;
 const $ = id => document.getElementById(id);
 const sw = k => `<span class="sw" style="background:${colorOf(k)}"></span>`;
+const erf = x => { const t=1/(1+0.3275911*Math.abs(x)); const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x); return x>=0?y:-y; };
+const Phi = z => 0.5*(1+erf(z/Math.SQRT2));
+const pBetween = (lo,hi,m,s) => s>0 ? Phi((hi-m)/s)-Phi((lo-m)/s) : (m>=lo&&m<=hi?1:0);
+const store = { get(k,d){ try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;} }, set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch{} } };
 
-Chart.defaults.color = css('--muted');
-Chart.defaults.borderColor = css('--line');
+Chart.defaults.color = "#93a796";
+Chart.defaults.borderColor = "rgba(233,229,211,.07)";
 Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
 Chart.defaults.font.size = 12.5;
-Chart.defaults.plugins.tooltip.backgroundColor = "#000";
-Chart.defaults.plugins.tooltip.padding = 10;
-Chart.defaults.plugins.tooltip.cornerRadius = 8;
-Chart.defaults.plugins.legend.labels.usePointStyle = true;
-Chart.defaults.plugins.legend.labels.boxWidth = 8;
+Object.assign(Chart.defaults.plugins.tooltip, {backgroundColor:"#0b130e", borderColor:"#36503f", borderWidth:1, padding:10, cornerRadius:8, titleColor:"#e9e5d3", bodyColor:"#c9c6b4"});
+Object.assign(Chart.defaults.plugins.legend.labels, {usePointStyle:true, boxWidth:7, boxHeight:7, padding:16});
 const charts = {};
-function draw(id, cfg){ charts[id]?.destroy(); const el=$(id); if(el) charts[id] = new Chart(el, cfg); }
-const gridc = {color:css('--line')};
+function draw(id,cfg){ charts[id]?.destroy(); const el=$(id); if(el) charts[id]=new Chart(el,cfg); }
+const grid = {color:"rgba(233,229,211,.06)"};
 
-/* ---------- analysis ---------- */
+/* ================= analysis ================= */
 function analyze(s){
   const keys = Object.keys(s.clubs).sort((a,b)=>loftOf(a)-loftOf(b));
   const ironSpeed = mean(keys.filter(IRON).flatMap(k=>s.clubs[k].map(r=>r.clubSpeed)));
-  const meta = s.meta || {};
-  const clubs = {};
+  const meta = s.meta || {}, clubs = {};
   for (const k of keys){
     const shots = s.clubs[k].map(r=>({...r, key:k, f2p:(r.face!=null&&r.path!=null)?+(r.face-r.path).toFixed(1):null,
       suspect:(loftOf(k)>=24 && r.smash>1.38) || (loftOf(k)>=27 && loftOf(k)<=41 && r.backSpin<2500)}));
     const g = p => shots.map(r=>r[p]);
     const cs = mean(g("clubSpeed"));
-    const partial = WEDGE(k) && ironSpeed!=null && cs < 0.9*ironSpeed;
-    clubs[k] = { key:k, shots, partial, n:shots.length, caveat:meta.caveats?.[k] || null,
-      carry:mean(g("carry")), total:mean(g("total")), roll:mean(shots.map(r=>r.total-r.carry)), carrySd:sd(g("carry")),
-      cmin:Math.min(...vals(g("carry"))), cmax:Math.max(...vals(g("carry"))),
+    clubs[k] = { key:k, shots, n:shots.length, partial: WEDGE(k) && ironSpeed!=null && cs < 0.9*ironSpeed, caveat: meta.caveats?.[k] || null,
+      carry:mean(g("carry")), total:mean(g("total")), roll:mean(shots.map(r=>r.total-r.carry)), carrySd:sd(g("carry")), totalSd:sd(g("total")),
+      cmin:Math.min(...vals(g("carry"))), cmax:Math.max(...vals(g("carry"))), sideSd:sd(g("side")),
       smash:median(g("smash")), ball:mean(g("ballSpeed")), club:cs, spin:mean(g("backSpin")), launch:mean(g("launch")),
       apex:mean(g("apex")), descent:mean(g("descent")), path:mean(g("path")), face:mean(g("face")), f2p:mean(g("f2p")), side:mean(g("side")) };
   }
   const full = keys.filter(k=>!clubs[k].partial).flatMap(k=>clubs[k].shots);
-  return { s, meta, keys, clubs, full, ironSpeed };
+  return { s, meta, keys, clubs, full };
 }
-
-// Each finding: {sev, title, body}. Sorted bad → warn → info → good for the takeaways.
-function sessionFindings(A){
-  const F = [], {clubs, keys, full, meta} = A;
+function findings(A){
+  const F = [], {clubs, keys, full} = A;
   const fp = mean(full.map(r=>r.path)), ff = mean(full.map(r=>r.f2p)), fface = mean(full.map(r=>r.face));
   if (fp!=null){
     const nOut = full.filter(r=>r.path<=-6).length;
-    if (fp < -4) F.push({sev:"bad", title:`Swinging out-to-in (${sg(fp)}°)`, body:`${nOut} of ${full.length} full swings had a path of −6° or worse. This is the root of the slice and the heel strikes, so fix it first.`});
-    else if (fp < -2) F.push({sev:"warn", title:`Path slightly out-to-in (${sg(fp)}°)`, body:"Close to the ±2° neutral window. Keep going."});
-    else if (fp > 4) F.push({sev:"warn", title:`Path in-to-out (${sg(fp)}°)`, body:"Watch for pushes and hooks."});
-    else F.push({sev:"good", title:`Neutral path (${sg(fp)}°)`, body:"Inside the ±2° target window."});
+    if (fp < -4) F.push({sev:"bad", t:`Swinging out-to-in (${sg(fp)}°)`, b:`${nOut} of ${full.length} full swings were −6° or worse. This is the root of the slice and the heel strikes.`});
+    else if (fp < -2) F.push({sev:"warn", t:`Path slightly out-to-in (${sg(fp)}°)`, b:"Close to the ±2° window."});
+    else if (fp > 4) F.push({sev:"warn", t:`Path in-to-out (${sg(fp)}°)`, b:"Watch for pushes and hooks."});
+    else F.push({sev:"good", t:`Neutral path (${sg(fp)}°)`, b:"Inside the target window."});
   }
   if (ff!=null){
-    const nOpen = full.filter(r=>r.f2p>3).length;
-    if (ff > 3) F.push({sev:"bad", title:`Ball curving right: face ${sg(ff)}° open to path`, body:
-      `${nOpen} of ${full.length} swings had the face more than 3° open to the path.` + (Math.abs(fface) < 3 ? ` Your face to the target is only ${sg(fface)}°, so fix the path, not the face. The curve shrinks as the path improves.` : "")});
-    else if (ff < -3) F.push({sev:"bad", title:`Ball curving left: face ${sg(ff)}° closed to path`, body:"Draw/hook curvature."});
-    else F.push({sev:"good", title:`Face-to-path under control (${sg(ff)}°)`, body:"Curvature is manageable."});
+    if (ff > 3) F.push({sev:"bad", t:`Ball curving right (face ${sg(ff)}° open to path)`, b: Math.abs(fface)<3 ? `Your face to the target is only ${sg(fface)}°, so fix the path, not the face.` : "The face is open to the path."});
+    else if (ff < -3) F.push({sev:"bad", t:`Ball curving left (face ${sg(ff)}° closed to path)`, b:"Draw/hook curvature."});
+    else F.push({sev:"good", t:`Curve under control (${sg(ff)}°)`, b:"Face-to-path inside ±3°."});
   }
-  const lowSmash = keys.filter(k=>!clubs[k].partial && BENCH.pga[k]?.smash && clubs[k].smash!=null && clubs[k].smash < BENCH.pga[k].smash-0.06);
-  if (lowSmash.length) F.push({sev:lowSmash.length>1?"bad":"warn", title:"Strike quality below Tour", body:
-    lowSmash.map(k=>`${nameOf(k)} ${f(clubs[k].smash,2)} (Tour ${BENCH.pga[k].smash})`).join(", ") + ". Low smash on irons usually means heel or thin contact."});
-  const clean = full.filter(r=>!r.suspect);
-  const r = corr(clean.map(x=>x.clubSpeed), clean.map(x=>x.smash));
-  if (r!=null && r < -0.3) F.push({sev:"bad", title:"Contact gets worse when you swing harder", body:`Speed vs. smash correlation r = ${f(r,2)}. The arms take over (over the top). Groove the path at 70–80% speed before adding speed.`});
-  const ir = keys.filter(k=>IRON(k) && !clubs[k].partial && clubs[k].launch!=null);
-  if (ir.length){
-    const ratio = mean(ir.map(k=>clubs[k].launch/loftOf(k)));
-    const ex = ir.includes("8i") ? "8i" : ir[0];
-    if (ratio > 0.7) F.push({sev:"warn", title:"Launching too high for the loft", body:`${f(clubs[ex].launch)}° launch with a ${loftOf(ex)}° ${nameOf(ex)}, ${Math.round(ratio*100)}% of loft (Tour players launch at about 50–55%). You're adding loft at impact, a flip or early extension, which ties back to S-posture.`});
-  }
+  const low = keys.filter(k=>!clubs[k].partial && BENCH.pga[k]?.smash && clubs[k].smash < BENCH.pga[k].smash-0.06);
+  if (low.length) F.push({sev:low.length>1?"bad":"warn", t:"Off-centre strikes", b:low.map(k=>`${nameOf(k)} ${f(clubs[k].smash,2)} vs Tour ${BENCH.pga[k].smash}`).join(", ")+"."});
+  const clean = full.filter(r=>!r.suspect), r = corr(clean.map(x=>x.clubSpeed), clean.map(x=>x.smash));
+  if (r!=null && r < -0.3) F.push({sev:"bad", t:"Contact breaks down when you swing harder", b:`Speed vs. smash r = ${f(r,2)}. Groove the path at 70–80% speed first.`});
+  const ir = keys.filter(k=>IRON(k) && !clubs[k].partial);
+  if (ir.length){ const ratio = mean(ir.map(k=>clubs[k].launch/loftOf(k))); const ex = ir.includes("8i")?"8i":ir[0];
+    if (ratio > 0.7) F.push({sev:"warn", t:"Launching high for the loft", b:`${f(clubs[ex].launch)}° launch with a ${loftOf(ex)}° ${nameOf(ex)}. You're adding loft at impact (early extension, linked to S-posture).`}); }
   const fk = keys.filter(k=>!clubs[k].partial && CLUB[k]);
-  for (let i=0;i<fk.length-1;i++){
-    const a=fk[i], b=fk[i+1], gap = clubs[a].carry-clubs[b].carry;
-    const cav = clubs[a].caveat || clubs[b].caveat;
-    if (gap < 6) F.push({sev:cav?"warn":"bad", title:`${nameOf(a)} and ${nameOf(b)} go the same distance`, body:`Only ${f(gap)} yd between them (target 10–12).` + (cav ? ` The ${clubs[a].caveat?nameOf(a):nameOf(b)} is flagged as a possible outlier, so retest before acting on this.` : "")});
-    else if (gap > 20) F.push({sev:"warn", title:`Big gap: ${nameOf(a)} → ${nameOf(b)}`, body:`${f(gap)} yd between them.`});
-  }
-  const wide = keys.filter(k=>IRON(k) && clubs[k].carrySd > 8);
-  if (wide.length) F.push({sev:"warn", title:"Wide carry spread", body:wide.map(k=>`${nameOf(k)} ±${f(clubs[k].carrySd)} yd`).join(", ") + (meta.curated ? ". And that's with mishits already removed." : ".")});
+  for (let i=0;i<fk.length-1;i++){ const a=fk[i], b=fk[i+1], gap=clubs[a].carry-clubs[b].carry, cav=clubs[a].caveat||clubs[b].caveat;
+    if (gap < 6) F.push({sev:cav?"warn":"bad", t:`${nameOf(a)} and ${nameOf(b)} overlap`, b:`Only ${f(gap)} yd apart.`+(cav?" Flagged as a possible outlier, so retest first.":"")}); }
   const c7 = clubs["7i"];
-  if (c7 && !c7.partial && c7.club>70 && c7.club<82 && c7.carry < 133)
-    F.push({sev:"info", title:"You have LPGA speed. The distance is lost at the strike.", body:`Your 7-iron speed is ${f(c7.club)} mph, about what LPGA players swing, and they carry it 141 yd. You carried ${f(c7.carry,0)}.`});
+  if (c7 && c7.club>70 && c7.club<82 && c7.carry<133) F.push({sev:"info", t:"LPGA speed, lost at the strike", b:`${f(c7.club)} mph 7-iron is LPGA speed; they carry it 141 yd, you carried ${f(c7.carry,0)}.`});
   const sus = full.filter(x=>x.suspect).map(x=>`${nameOf(x.key)} #${x.n}`);
-  if (sus.length) F.push({sev:"info", title:"Possible sensor misreads", body:`${sus.join(", ")} (smash above 1.38 or iron spin below 2,500 rpm). Medians are used to limit their effect.`});
-  const missing = MAIN.filter(c=>c.key!=="Putter" && !clubs[c.key]).map(c=>nameOf(c.key));
-  if (missing.length) F.push({sev:"info", title:"Not hit this session", body:missing.join(", ")});
-  const order = {bad:0,warn:1,info:2,good:3};
+  if (sus.length) F.push({sev:"info", t:"Possible sensor misreads", b:sus.join(", ")+". Medians limit their effect."});
+  const order={bad:0,warn:1,info:2,good:3};
   return F.sort((a,b)=>order[a.sev]-order[b.sev]);
 }
-
-/* ---------- state ---------- */
-const ALL = DATA.sessions.map(analyze);
-const state = { i: ALL.length-1, tab:"session", club:null, allCols:false, sort:["loft",1], tee:{}, hole:null, metric:"carry", tmetric:"carry" };
-const metricChips = (stateKey, id) => `<div class="chips" id="${id}">${METRICS.map(m=>`<button class="chip mchip" data-m="${m.k}" aria-pressed="${state[stateKey]===m.k}">${m.label}</button>`).join("")}</div>`;
-
-/* ---------- grades (arcade-style rank per metric) ---------- */
 const gPath  = v => v==null?"?":Math.abs(v)<=2?"A":Math.abs(v)<=4?"B":Math.abs(v)<=6?"C":Math.abs(v)<=8?"D":"F";
 const gF2P   = v => v==null?"?":Math.abs(v)<=1.5?"A":Math.abs(v)<=3?"B":Math.abs(v)<=5?"C":Math.abs(v)<=7?"D":"F";
 const gSmash = v => v==null?"?":v>=1.33?"A":v>=1.28?"B":v>=1.22?"C":v>=1.15?"D":"F";
-const gradeBox = g => `<div class="grade g${g}" title="Grade: A = Tour level, F = biggest fix">${g}</div>`;
 
-/* ---------- SESSION ---------- */
+/* ================= state ================= */
+const ALL = DATA.sessions.map(analyze);
+const state = { i:ALL.length-1, tab:"session", club:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1],
+  course:(DATA.courses||[])[0]?.id, tee:{}, hole:0, teeClub:null, aim:true };
+
+/* ================= SESSION ================= */
 function renderSession(){
   const A = ALL[state.i], {s, keys, clubs, full, meta} = A;
   if (state.club && !clubs[state.club]) state.club = null;
-  const fp = mean(full.map(r=>r.path)), ff = mean(full.map(r=>r.f2p));
-  const ironSm = median(full.filter(r=>IRON(r.key)).map(r=>r.smash));
-  const shots = keys.reduce((n,k)=>n+clubs[k].n,0);
-  const F = sessionFindings(A);
-  const top = F.filter(x=>x.sev==="bad"||x.sev==="warn").slice(0,3);
-  const cls = (v,warnAt,badAt) => Math.abs(v)>badAt?"bad":Math.abs(v)>warnAt?"warn":"good";
-  const longest = keys.filter(k=>!clubs[k].partial).sort((a,b)=>clubs[b].carry-clubs[a].carry)[0];
-
+  const fp = mean(full.map(r=>r.path)), ff = mean(full.map(r=>r.f2p)), sm = median(full.filter(r=>IRON(r.key)).map(r=>r.smash));
+  const shots = keys.reduce((n,k)=>n+clubs[k].n,0), F = findings(A), top = F.filter(x=>x.sev==="bad"||x.sev==="warn").slice(0,3);
+  const stat = (label,key,v,cap,g) => `<div class="stat"><div><div class="l">${tip(key,label)}</div><div class="v">${v}</div><div class="c">${cap}</div></div><div class="grade g${g}" title="A = Tour level · F = biggest fix">${g}</div></div>`;
+  const views = [["distance","Distance"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"],["gapping","Gapping"]];
   $("tab-session").innerHTML = `
-    ${meta.curated ? `<div class="banner"><span class="ic">⚑</span><div><b>Best shots only.</b> ${esc(meta.curatedNote || "Mishits were removed before export, so these numbers are a best case.")}</div></div>` : ""}
-    <section class="kpis">
-      <div class="kpi ${cls(fp,2,4)}">${gradeBox(gPath(fp))}<div class="l">${tip("path","Club path")}</div><div class="v">${sg(fp)}°</div><div class="c">${fp<-2?"Out-to-in (slice path)":fp>2?"In-to-out":"Neutral"}</div><div class="t">Goal: 0 ± 2°</div></div>
-      <div class="kpi ${cls(ff,1.5,3)}">${gradeBox(gF2P(ff))}<div class="l">${tip("f2p","Face-to-path")}</div><div class="v">${sg(ff)}°</div><div class="c">${ff>3?"Ball curves right":ff<-3?"Ball curves left":"Controlled curve"}</div><div class="t">Goal: within ±3°</div></div>
-      <div class="kpi ${ironSm<1.22?"bad":ironSm<1.3?"warn":"good"}">${gradeBox(gSmash(ironSm))}<div class="l">${tip("smash","Iron strike (smash)")}</div><div class="v">${f(ironSm,2)}</div><div class="c">${ironSm<1.22?"Off-centre contact":ironSm<1.3?"Fair contact":"Solid contact"}</div><div class="t">Tour irons 1.28–1.38</div></div>
-      <div class="kpi"><div class="l">Session</div><div class="v">${shots} <span style="font-size:16px;color:var(--muted);font-weight:600">shots</span></div><div class="c">${keys.length} clubs · longest ${nameOf(longest)} ${f(clubs[longest].carry,0)} yd</div><div class="t">${s.iso}</div></div>
+    <div class="head" style="margin:0">
+      <div><h2>Session · ${s.iso}</h2><p class="sub">${shots} shots · ${keys.length} clubs</p></div>
+      ${meta.curated?`<span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:""}
+    </div>
+    <section class="stats">
+      ${stat("Club path","path",sg(fp)+"°", fp<-2?"out-to-in · goal 0 ± 2°":"goal 0 ± 2°", gPath(fp))}
+      ${stat("Face-to-path","f2p",sg(ff)+"°", ff>3?"curves right · goal ±3°":"goal ±3°", gF2P(ff))}
+      ${stat("Iron strike","smash",f(sm,2), "smash · Tour 1.28–1.38", gSmash(sm))}
     </section>
-
     <section class="card">
-      <div class="sec"><h2>What to work on</h2><span class="muted small">auto-generated from ${shots} shots</span></div>
-      <p class="lede">The ${top.length} most important things from this session, most urgent first.</p>
-      <div class="takeaways">${top.map((t,i)=>`<div class="take ${t.sev}"><div class="n">#${i+1}</div><h3>${t.title}</h3><p>${t.body}</p></div>`).join("")}</div>
-      <details><summary>All findings (${F.length})</summary>
-        <ul class="findings">${F.map(x=>`<li><span class="dot ${x.sev}"></span><span><b>${x.title}.</b> ${x.body}</span></li>`).join("")}</ul></details>
-      ${s.review ? `<details><summary>Coach notes</summary><div class="notes">${s.review}</div></details>` : ""}
-      ${meta.nextSession ? `<p class="small" style="margin:14px 0 0"><b>Next session:</b> <span class="muted">${esc(meta.nextSession)}</span></p>` : ""}
+      <div class="head"><h2>Work on</h2></div>
+      <ol class="focus">${top.map((t,i)=>`<li><div class="i">${i+1}</div><div><b>${t.t}</b><span>${t.b}</span></div></li>`).join("")}</ol>
+      <details><summary>All findings${s.review?" and coach notes":""}</summary>
+        <ul class="findings">${F.map(x=>`<li><span class="dot ${x.sev}"></span><span><b>${x.t}.</b> ${x.b}</span></li>`).join("")}</ul>
+        ${s.review?`<div class="notes">${s.review}</div>`:""}
+      </details>
     </section>
-
     <section class="card">
-      <div class="sec"><h2>Clubs</h2><span class="muted small">Pick a club to focus every chart on it</span></div>
-      <div class="chips" style="margin-top:12px">
-        <button class="chip" data-club="" aria-pressed="${!state.club}">All clubs</button>
-        ${keys.map(k=>`<button class="chip" data-club="${k}" aria-pressed="${state.club===k}">${sw(k)}${nameOf(k)}<span class="sub">${f(clubs[k].carry,0)}</span>${clubs[k].caveat?'<span class="flag" title="Flagged">⚑</span>':""}${clubs[k].partial?'<span class="sub">· partial</span>':""}</button>`).join("")}
+      <div class="head"><h2>Clubs</h2><span class="muted small">Tap a club to focus</span></div>
+      <div class="row-btns">
+        <button class="btn sm" data-club="" aria-pressed="${!state.club}">All</button>
+        ${keys.map(k=>`<button class="btn sm" data-club="${k}" aria-pressed="${state.club===k}">${sw(k)}${nameOf(k)} <span class="n">${f(clubs[k].carry,0)}</span>${clubs[k].caveat?" ⚑":""}</button>`).join("")}
       </div>
+      ${state.club ? clubDetail(A, state.club) : ""}
     </section>
-
-    ${state.club ? clubDetail(A, state.club) : ""}
-
     <section class="card">
-      <div class="sec"><h2>Compare to the Tour</h2><span class="muted small">Pick a metric</span></div>
-      <div style="margin:12px 0 4px">${metricChips("metric","mchips")}</div>
-      <p class="lede" id="cmpInsight" style="margin-top:12px"></p>
-      <div class="chart tall"><canvas id="cCompare"></canvas></div>
-      <p class="muted small" style="margin:10px 0 0">Bars = your average · dots = each shot (click one to see its impact frames) · colored ticks = benchmarks: TrackMan Tour averages · 25 hcp = Shot Scope (carry only). Your Paradym X lofts are ~4–6° stronger than standard.</p>
+      <div class="head">
+        <div class="row-btns">${views.map(([k,l])=>`<button class="btn sm" data-view="${k}" aria-pressed="${state.view===k}">${l}</button>`).join("")}</div>
+        ${state.view==="distance"?`<select id="metric" aria-label="Metric">${METRICS.map(m=>`<option value="${m.k}" ${m.k===state.metric?"selected":""}>${m.label}</option>`).join("")}</select>`:""}
+      </div>
+      <p class="sub" id="viewNote" style="margin:0 0 14px"></p>
+      <div class="chart"><canvas id="cMain"></canvas></div>
     </section>
-
-    <section class="grid2">
-      <div class="card"><div class="sec"><h2>Where your shots land</h2></div>
-        <p class="lede">Each dot is one shot, seen from above. Left/right of the target line vs. carry distance. Click a dot to see that shot.</p>
-        <div class="chart tall"><canvas id="cDisp"></canvas></div></div>
-      <div class="card"><div class="sec"><h2>Gapping</h2></div>
-        <p class="lede">Carry by loft. Each step down in loft should add 10–12 yd. A flat stretch means two clubs go the same distance. Hollow points are partial swings.</p>
-        <div class="chart tall"><canvas id="cGap"></canvas></div></div>
-      <div class="card"><div class="sec"><h2>Why the ball curves</h2></div>
-        <p class="lede">Dots above the dashed line had the face open to the path, so they curve right. The green band is a neutral path.</p>
-        <div class="chart"><canvas id="cFace"></canvas></div></div>
-      <div class="card"><div class="sec"><h2>Strike vs. path</h2></div>
-        <p class="lede">Higher is a more centred strike. Watch how strike quality drops as the path gets more out-to-in.</p>
-        <div class="chart"><canvas id="cSmash"></canvas></div></div>
-    </section>
-
-    <section class="card">
-      <div class="sec"><h2>Club averages</h2><button class="toggle" id="cols" aria-pressed="${state.allCols}">${state.allCols?"Fewer columns":"All metrics"}</button></div>
-      <p class="lede">Click a column to sort, or a row to focus that club. Hover an underlined heading for what it means.</p>
-      <div class="tablewrap"><table id="tbl"></table></div>
-    </section>`;
-
-  document.querySelectorAll("#tab-session .chip[data-club]").forEach(b=>b.onclick=()=>{state.club=b.dataset.club||null;render();});
-  document.querySelectorAll("#mchips .mchip, #dchips .mchip").forEach(b=>b.onclick=()=>{state.metric=b.dataset.m;render();});
+    <details class="card" style="margin:0"><summary>All club numbers</summary><div class="tablewrap" style="margin-top:12px"><table id="tbl"></table></div></details>`;
+  document.querySelectorAll("#tab-session [data-club]").forEach(b=>{ if (b.tagName==="BUTTON") b.onclick=()=>{state.club=b.dataset.club||null;render();}; });
+  document.querySelectorAll("#tab-session [data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render();});
+  $("metric") && ($("metric").onchange = e => { state.metric = e.target.value; render(); });
   document.querySelectorAll("#tab-session tr[data-shot]").forEach(tr=>tr.onclick=()=>openShot(state.i, tr.dataset.club, +tr.dataset.shot));
-  $("cols").onclick=()=>{state.allCols=!state.allCols;render();};
-  renderClubTable(A);
-  sessionCharts(A);
+  renderTable(A); mainChart(A);
 }
-
-function clubDetail(A, k){
-  const c = A.clubs[k];
-  const m = MET[state.metric];
-  const bench = [["You",c[m.k],colorOf(k)],["25 hcp",BENCH.hcp25[k]?.[m.k],css('--hcp')],["LPGA",BENCH.lpga[k]?.[m.k],css('--lpga')],["PGA",BENCH.pga[k]?.[m.k],css('--pga')]].filter(b=>b[1]!=null);
-  const maxB = Math.max(...bench.map(b=>Math.abs(b[1])));
-  const cols = [["#","n",0],["Carry","carry",1],["Side","side",-1],["Ball","ballSpeed",1],["Club","clubSpeed",1],["Smash","smash",2],["Path","path",1],["F2P","f2p",1],["Spin","backSpin",0],["Launch","launch",1]];
-  return `<section class="card">
-    <div class="sec"><h2><span class="cn">${sw(k)}${esc(CLUB[k]?.label||nameOf(k))}</span> <span class="muted small">${CLUB[k]?esc(CLUB[k].model)+" · "+CLUB[k].loft+"°":""}</span></h2>
-      <button class="toggle" data-club="">Close ✕</button></div>
-    ${c.caveat ? `<div class="caveat" style="margin-top:12px"><b>⚑ Caveat:</b> ${esc(c.caveat)}</div>` : ""}
-    ${c.partial ? `<div class="caveat" style="margin-top:12px"><b>Partial swings.</b> Club speed was well below your irons, so these are not full-swing yardages.</div>` : ""}
-    <div class="detail-grid" style="margin-top:12px">
-      <div>
-        <div class="detail-head">
-          <div><div class="stat"><div class="l">${tip("carry","Avg carry")}</div></div><div class="big">${f(c.carry,0)}<small>yd</small></div></div>
-          <div class="stat"><div class="l">Range</div><div class="v">${f(c.cmin,0)}–${f(c.cmax,0)}</div></div>
-          <div class="stat"><div class="l">${tip("spread","Spread")}</div><div class="v">±${f(c.carrySd,0)}</div></div>
-          <div class="stat"><div class="l">${tip("total","Total")}</div><div class="v">${f(c.total,0)}</div></div>
-          <div class="stat"><div class="l">${tip("side","Avg finish")}</div><div class="v">${lr(c.side)}</div></div>
-        </div>
-        <div class="muted small" style="margin:4px 0 6px">Compare by:</div>
-        ${metricChips("metric","dchips")}
-        ${bench.length>1 && !m.zero ? `<div class="bars" style="margin-top:12px">${bench.map(([l,v,col])=>`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${(Math.abs(v)/maxB*100).toFixed(1)}%;background:${col}"></div></div><span class="num">${fm(m,v)}</span></div>`).join("")}</div>`
-          : `<p class="muted small" style="margin-top:12px">${m.zero ? `Your ${m.label.toLowerCase()}: <b style="color:var(--ink)">${fm(m,c[m.k])}</b>. Tour players average close to 0.` : `No published benchmark for ${m.label.toLowerCase()} with this club. Yours: <b style="color:var(--ink)">${fm(m,c[m.k])}</b>.`}</p>`}
-      </div>
-      <div>
-        <div class="tablewrap"><table class="shots"><thead><tr><th class="tl">Impact</th>${cols.map(([h])=>`<th>${h}</th>`).join("")}</tr></thead><tbody>
-          ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot ${r.n}"><td class="tl">${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td>${cols.map(([,p,d])=>`<td>${p==="side"?lr(r.side):["path","face","f2p"].includes(p)?sg(r[p],d):f(r[p],d)}${p==="n"&&r.suspect?' <span class="tag warn" title="Possible sensor misread">?</span>':""}</td>`).join("")}</tr>`).join("")}
-        </tbody></table></div>
-        <p class="muted small" style="margin:8px 0 0">Click a row to open the impact photo and swing frames.</p>
-      </div>
-    </div></section>`;
+function clubDetail(A,k){
+  const c = A.clubs[k], m = MET[state.metric];
+  const bench = [["You",c[m.k],colorOf(k)],["25 hcp",BENCH.hcp25[k]?.[m.k],"#e8a676"],["LPGA",BENCH.lpga[k]?.[m.k],"#b9a3e3"],["PGA",BENCH.pga[k]?.[m.k],"#84bcd9"]].filter(b=>b[1]!=null);
+  const mx = Math.max(...bench.map(b=>Math.abs(b[1])));
+  return `<div class="detail">
+    <div>
+      ${c.caveat?`<p class="caveat">⚑ ${esc(c.caveat)}</p>`:""}${c.partial?`<p class="caveat">Partial swings, not full-swing yardages.</p>`:""}
+      <div class="bigrow"><div class="big">${f(c.carry,0)}<small>yd carry</small></div>
+        <div class="kv"><div class="l">${tip("spread","Spread")}</div><div class="v">±${f(c.carrySd,0)}</div></div>
+        <div class="kv"><div class="l">Finish</div><div class="v">${lr(c.side)}</div></div></div>
+      ${bench.length>1&&!m.zero?`<div class="muted small">${m.label} vs. benchmarks</div><div class="bars">${bench.map(([l,v,col])=>`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${(Math.abs(v)/mx*100).toFixed(0)}%;background:${col}"></div></div><span class="val">${fm(m,v)}</span></div>`).join("")}</div>`:""}
+    </div>
+    <div class="tablewrap"><table><thead><tr><th></th><th>#</th><th>Carry</th><th>Finish</th><th>Ball</th><th>Smash</th><th>Path</th><th>F2P</th></tr></thead><tbody>
+      ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot"><td>${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td><td>${r.n}${r.suspect?' <span class="tag warn">?</span>':""}</td><td>${f(r.carry)}</td><td>${lr(r.side)}</td><td>${f(r.ballSpeed)}</td><td>${f(r.smash,2)}</td><td>${sg(r.path)}</td><td>${sg(r.f2p)}</td></tr>`).join("")}
+    </tbody></table><p class="muted small" style="margin:8px 0 0">Tap a shot to see its impact photo and swing frames.</p></div>
+  </div>`;
 }
-
 const TCOLS = [
-  {k:"loft",h:"Loft",fmt:c=>CLUB[c.key]?.loft!=null?CLUB[c.key].loft+"°":"—",v:c=>loftOf(c.key),core:1},
-  {k:"carry",h:"Carry",fmt:c=>f(c.carry),core:1},
-  {k:"total",h:"Total",fmt:c=>f(c.total)},
-  {k:"roll",h:"Roll",fmt:c=>f(c.roll)},
-  {k:"carrySd",h:"Spread",g:"spread",fmt:c=>"±"+f(c.carrySd),core:1},
-  {k:"smash",h:"Smash",fmt:c=>f(c.smash,2),core:1,cls:c=>c.smash==null?"":c.smash<1.15&&!c.partial&&!WEDGE(c.key)?"bad":""},
-  {k:"ball",h:"Ball mph",fmt:c=>f(c.ball)},
-  {k:"club",h:"Club mph",fmt:c=>f(c.club)},
-  {k:"spin",h:"Spin",fmt:c=>c.spin==null?"—":Math.round(c.spin).toLocaleString()},
-  {k:"launch",h:"Launch",fmt:c=>f(c.launch)+"°"},
-  {k:"apex",h:"Apex",fmt:c=>f(c.apex)},
-  {k:"path",h:"Path",fmt:c=>sg(c.path)+"°",core:1,cls:c=>Math.abs(c.path)>4?"bad":Math.abs(c.path)>2?"warn":"good"},
-  {k:"face",h:"Face",fmt:c=>sg(c.face)+"°"},
-  {k:"f2p",h:"F2P",fmt:c=>sg(c.f2p)+"°",core:1,cls:c=>Math.abs(c.f2p)>3?"bad":Math.abs(c.f2p)>1.5?"warn":"good"},
-  {k:"side",h:"Finish",fmt:c=>lr(c.side),v:c=>c.side,core:1},
+  {k:"loft",h:"Loft",fmt:c=>CLUB[c.key]?.loft!=null?CLUB[c.key].loft+"°":"—",v:c=>loftOf(c.key)},{k:"carry",h:"Carry",fmt:c=>f(c.carry)},{k:"total",h:"Total",fmt:c=>f(c.total)},
+  {k:"carrySd",h:"Spread",g:"spread",fmt:c=>"±"+f(c.carrySd)},{k:"ball",h:"Ball",fmt:c=>f(c.ball)},{k:"club",h:"Club",fmt:c=>f(c.club)},{k:"smash",h:"Smash",fmt:c=>f(c.smash,2)},
+  {k:"launch",h:"Launch",fmt:c=>f(c.launch)},{k:"spin",h:"Spin",fmt:c=>c.spin==null?"—":Math.round(c.spin)},{k:"path",h:"Path",fmt:c=>sg(c.path)},{k:"f2p",h:"F2P",fmt:c=>sg(c.f2p)},{k:"side",h:"Finish",fmt:c=>lr(c.side),v:c=>c.side},
 ];
-function renderClubTable(A){
-  const cols = TCOLS.filter(c=>state.allCols||c.core);
-  const [sk, sd_] = state.sort;
-  const col = TCOLS.find(c=>c.k===sk) || TCOLS[0];
-  const val = c => col.v ? col.v(c) : c[col.k];
-  const rows = A.keys.map(k=>A.clubs[k]).sort((a,b)=>((val(a)??-1e9)-(val(b)??-1e9))*sd_);
-  $("tbl").innerHTML = `<thead><tr><th>Club</th>${cols.map(c=>`<th class="sortable" data-k="${c.k}">${GLOSS[c.g||c.k]?tip(c.g||c.k,c.h):c.h}${sk===c.k?`<span class="arr">${sd_>0?"↑":"↓"}</span>`:""}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map(c=>`<tr class="clickable ${state.club===c.key?"sel":""}" data-club="${c.key}"><td><span class="cn">${sw(c.key)}${nameOf(c.key)}</span>${c.partial?'<span class="tag">partial</span>':""}${c.caveat?'<span class="tag warn">⚑ retest</span>':""}</td>
-      ${cols.map(t=>`<td class="${t.cls?t.cls(c):""}">${t.fmt(c)}</td>`).join("")}</tr>`).join("")}</tbody>`;
-  document.querySelectorAll("#tbl th.sortable").forEach(th=>th.onclick=()=>{const k=th.dataset.k; state.sort=[k, state.sort[0]===k?-state.sort[1]:(k==="loft"?1:-1)]; renderClubTable(A);});
-  document.querySelectorAll("#tbl tr.clickable").forEach(tr=>tr.onclick=()=>{state.club=state.club===tr.dataset.club?null:tr.dataset.club;render();window.scrollTo({top:0,behavior:"smooth"});});
-  document.querySelectorAll("#tab-session .toggle[data-club]").forEach(b=>b.onclick=()=>{state.club=null;render();});
+function renderTable(A){
+  const [sk,dir]=state.sort, col=TCOLS.find(c=>c.k===sk)||TCOLS[0], val=c=>col.v?col.v(c):c[col.k];
+  const rows=A.keys.map(k=>A.clubs[k]).sort((a,b)=>((val(a)??-1e9)-(val(b)??-1e9))*dir);
+  $("tbl").innerHTML=`<thead><tr><th>Club</th>${TCOLS.map(c=>`<th class="sortable" data-k="${c.k}">${tip(c.g||c.k,c.h)}${sk===c.k?(dir>0?" ↑":" ↓"):""}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(c=>`<tr class="clickable ${state.club===c.key?"sel":""}" data-row="${c.key}"><td><span class="cn">${sw(c.key)}${nameOf(c.key)}</span>${c.partial?'<span class="tag">partial</span>':""}</td>${TCOLS.map(t=>`<td>${t.fmt(c)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  document.querySelectorAll("#tbl th.sortable").forEach(th=>th.onclick=()=>{const k=th.dataset.k;state.sort=[k,state.sort[0]===k?-state.sort[1]:(k==="loft"?1:-1)];renderTable(A);});
+  document.querySelectorAll("#tbl tr[data-row]").forEach(tr=>tr.onclick=()=>{state.club=tr.dataset.row;render();scrollTo({top:0,behavior:"smooth"});});
 }
-
-const shotClick = id => (e,els)=>{ if(!els.length) return; const r=charts[id].data.datasets[els[0].datasetIndex].data[els[0].index]?.r; if(r) openShot(state.i, r.key, r.n); };
-const hoverPtr = (e,els)=>{ e.native.target.style.cursor = els.length ? "pointer" : "default"; };
-function sessionCharts(A){
-  const {keys, clubs, full} = A;
-  const fk = keys.filter(k=>!clubs[k].partial);
-  const on = k => !state.club || state.club===k;
-  const pc = k => on(k) ? colorOf(k) : alpha(colorOf(k),.12);
-  const shotTip = r => [`${nameOf(r.key)} #${r.n}`, `Carry ${f(r.carry)} yd · finish ${lr(r.side)}`, `Path ${sg(r.path)}° · face ${sg(r.face)}° · F2P ${sg(r.f2p)}°`, `Smash ${f(r.smash,2)}${r.suspect?" (possible misread)":""}`];
-  const dispKeys = state.club ? keys : fk;
-
-  // dispersion
-  const sides = dispKeys.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0)));
-  const sx = Math.max(10, Math.ceil(Math.max(...sides)/5)*5+5);
-  const centre = {id:"centre",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;const px=x.getPixelForValue(0);
-    ctx.save();ctx.strokeStyle=css('--faint');ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(px,a.top);ctx.lineTo(px,a.bottom);ctx.stroke();
-    ctx.fillStyle=css('--faint');ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText("target line",px,a.top+12);ctx.restore();}};
-  draw("cDisp",{type:"scatter",plugins:[centre],
-    data:{datasets:dispKeys.map(k=>({label:nameOf(k),data:clubs[k].shots.map(r=>({x:r.side,y:r.carry,r})),
-      backgroundColor:pc(k),borderColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8,pointStyle:clubs[k].partial?"rectRot":"circle"}))},
-    options:{maintainAspectRatio:false,onClick:shotClick("cDisp"),onHover:hoverPtr,scales:{x:{min:-sx,max:sx,grid:gridc,title:{display:true,text:"← left of target (yd)   ·   right of target (yd) →"}},
-      y:{grid:gridc,title:{display:true,text:"Carry (yd)"}}},
-      plugins:{legend:{position:"bottom",onClick:(e,item)=>{const k=dispKeys[item.datasetIndex];state.club=state.club===k?null:k;render();}},
-        tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
-
-  // compare-to-tour for the selected metric
-  const m = MET[state.metric], ck = keys, labels = ck.map(k=>nameOf(k)+(clubs[k].partial?"*":""));
-  const bench = src => ck.map(k=>clubs[k].partial?null:(BENCH[src][k]?.[m.k]??null));
-  const hasB = src => bench(src).some(v=>v!=null);
-  const tick = (label, src, color) => ({type:"scatter",label,order:1,data:ck.map((k,i)=>({x:labels[i],y:bench(src)[i]})).filter(d=>d.y!=null),
-    pointStyle:"line",pointRadius:ctx=>Math.max(10,(ctx.chart.chartArea?.width||600)/ck.length*0.3),pointHoverRadius:ctx=>Math.max(10,(ctx.chart.chartArea?.width||600)/ck.length*0.3),
-    borderColor:color,backgroundColor:color,borderWidth:3,pointHoverBorderWidth:4});
-  const cds = [{label:"You (avg)",data:ck.map(k=>clubs[k][m.k]==null?null:+clubs[k][m.k].toFixed(m.dp)),backgroundColor:ck.map(k=>alpha(colorOf(k),on(k)?.8:.15)),borderRadius:6,barPercentage:.7,categoryPercentage:.8,order:3}];
-  if (hasB("hcp25")) cds.push(tick("25 handicap","hcp25","#e7a35b"));
-  if (hasB("lpga")) cds.push(tick("LPGA Tour","lpga","#b08cf0"));
-  if (hasB("pga")) cds.push(tick("PGA Tour","pga","#6ea8fe"));
-  cds.push({type:"scatter",label:"Each shot",order:1,
-    data:ck.flatMap((k,i)=>clubs[k].shots.filter(r=>r[m.shot]!=null).map(r=>({x:labels[i],y:r[m.shot],r}))),
-    backgroundColor:ctx=>{const r=ctx.raw?.r;return r?(on(r.key)?"#ffffff":alpha("#ffffff",.12)):"#fff";},
-    borderColor:"rgba(0,0,0,.6)",borderWidth:1,pointRadius:ctx=>ctx.raw?.r&&on(ctx.raw.r.key)?4:3,pointHoverRadius:7});
-  const zeroLine = {id:"zero",afterDatasetsDraw(ch){if(!m.zero)return;const {ctx,chartArea:a,scales:{y}}=ch;const py=y.getPixelForValue(0);
-    ctx.save();ctx.strokeStyle=css('--good');ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(a.left,py);ctx.lineTo(a.right,py);ctx.stroke();
-    ctx.fillStyle=css('--good');ctx.font="600 11px sans-serif";ctx.fillText("Tour ≈ 0",a.right-58,py-6);ctx.restore();}};
-  draw("cCompare",{type:"bar",data:{labels,datasets:cds},plugins:[zeroLine],
-    options:{maintainAspectRatio:false,
-      onClick:(e,els)=>{const el=els.find(x=>ch().data.datasets[x.datasetIndex].label==="Each shot"); if(el){const r=ch().data.datasets[el.datasetIndex].data[el.index].r; openShot(state.i,r.key,r.n);}},
-      onHover:(e,els)=>{e.native.target.style.cursor=els.some(x=>ch().data.datasets[x.datasetIndex].label==="Each shot")?"pointer":"default";},
-      scales:{y:{grid:gridc,title:{display:true,text:`${m.label}${m.unit?" ("+m.unit+")":""}`},beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k)},x:{grid:{display:false}}},
-      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>{
-        if(c.raw==null) return null;
-        if(c.dataset.label==="Each shot") return [`${nameOf(c.raw.r.key)} #${c.raw.r.n}: ${fm(m,c.raw.y)}`,"Click to open this shot"];
-        if(c.dataset.type==="scatter") return `${c.dataset.label}: ${fm(m,c.raw.y)}`;
-        const k=ck[c.dataIndex];
-        return c.datasetIndex===0 ? [`You: ${fm(m,c.raw)} avg`, `Range ${fm(m,Math.min(...vals(clubs[k].shots.map(r=>r[m.shot]))))} – ${fm(m,Math.max(...vals(clubs[k].shots.map(r=>r[m.shot]))))}`] : `${c.dataset.label}: ${fm(m,c.raw)}`;}}}}}});
-  const ch = () => charts.cCompare;
-  // one-line insight for the metric
-  const withP = ck.filter(k=>!clubs[k].partial && BENCH.pga[k]?.[m.k]!=null && clubs[k][m.k]!=null);
-  const pct = src => { const ks = ck.filter(k=>!clubs[k].partial && BENCH[src][k]?.[m.k]!=null && clubs[k][m.k]!=null); return ks.length ? Math.round(mean(ks.map(k=>clubs[k][m.k]/BENCH[src][k][m.k]))*100) : null; };
-  const pP = pct("pga"), pL = pct("lpga");
-  $("cmpInsight").innerHTML = m.zero
-    ? `Tour players average close to <b>0</b>. Your full-swing average is <b>${fm(m, mean(full.map(r=>r[m.shot])))}</b>.`
-    : withP.length ? `Across ${withP.map(nameOf).join(", ")}, your ${m.label.toLowerCase()} is <b>${pP}%</b> of the PGA Tour average${pL!=null?` and <b>${pL}%</b> of the LPGA Tour average`:""}.${m.k==="launch"&&pP>110?" Higher than Tour despite your stronger lofts, which is a sign of adding loft at impact.":""}${m.k==="club"&&pL!=null&&pL>=95?" Your speed is LPGA-level, so the distance gap comes from strike quality.":""}`
-    : `No Tour benchmark for ${m.label.toLowerCase()} on the clubs in this session.`;
-
-  // face vs path + smash vs path
-  const pk = state.club ? [state.club].filter(k=>clubs[k]) : fk;
-  const paths = pk.flatMap(k=>clubs[k].shots.map(r=>r.path)).filter(x=>x!=null);
-  const xmin = Math.min(-16, Math.floor(Math.min(...paths)-2)), xmax = Math.max(4, Math.ceil(Math.max(...paths)+2));
-  const band = {id:"band",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;const l=x.getPixelForValue(-2),r=x.getPixelForValue(2);
-    ctx.save();ctx.fillStyle="rgba(90,209,122,.10)";ctx.fillRect(l,a.top,r-l,a.bottom-a.top);ctx.restore();}};
-  const ds = fn => fk.map(k=>({label:nameOf(k),data:clubs[k].shots.filter(r=>r.path!=null).map(r=>({x:r.path,y:fn(r),r})),
-    backgroundColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8}));
-  const diag = {id:"diag",afterDatasetsDraw(ch){const {ctx,scales:{x,y},chartArea:a}=ch;ctx.save();ctx.beginPath();ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top);ctx.clip();
-    ctx.setLineDash([5,5]);ctx.strokeStyle=css('--faint');ctx.beginPath();ctx.moveTo(x.getPixelForValue(xmin),y.getPixelForValue(xmin));ctx.lineTo(x.getPixelForValue(xmax),y.getPixelForValue(xmax));ctx.stroke();
-    ctx.setLineDash([]);ctx.font="600 11px sans-serif";ctx.fillStyle=css('--bad');ctx.fillText("↑ curves right",a.left+8,a.top+14);ctx.fillStyle=css('--info');ctx.fillText("↓ curves left",a.right-80,a.bottom-8);ctx.restore();}};
-  const legendClick = (e,item)=>{const k=fk[item.datasetIndex];state.club=state.club===k?null:k;render();};
-  draw("cFace",{type:"scatter",data:{datasets:ds(r=>r.face)},plugins:[band,diag],
-    options:{maintainAspectRatio:false,onClick:shotClick("cFace"),onHover:hoverPtr,scales:{x:{min:xmin,max:xmax,grid:gridc,title:{display:true,text:"Club path (°)  ← out-to-in · in-to-out →"}},
-      y:{min:xmin,max:xmax,grid:gridc,title:{display:true,text:"Face to target (°)"}}},
-      plugins:{legend:{position:"bottom",onClick:legendClick},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
-  draw("cSmash",{type:"scatter",data:{datasets:ds(r=>r.smash)},plugins:[band],
-    options:{maintainAspectRatio:false,onClick:shotClick("cSmash"),onHover:hoverPtr,scales:{x:{min:xmin,max:xmax,grid:gridc,title:{display:true,text:"Club path (°)  ← out-to-in · in-to-out →"}},
-      y:{grid:gridc,title:{display:true,text:"Smash factor"}}},
-      plugins:{legend:{position:"bottom",onClick:legendClick},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
-
-  // gapping
-  const lk = keys.filter(k=>CLUB[k]?.loft!=null);
-  draw("cGap",{type:"line",
-    data:{datasets:[
-      {label:"Carry",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].carry),k})),borderColor:css('--accent'),
-        backgroundColor:lk.map(k=>clubs[k].partial?css('--panel'):pc(k)),pointBorderColor:lk.map(k=>pc(k)),pointBorderWidth:2,pointRadius:lk.map(k=>on(k)?8:5),pointHoverRadius:10,borderWidth:2,tension:.2},
-      {label:"Total",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].total),k})),borderColor:css('--faint'),borderDash:[5,4],pointRadius:0,borderWidth:1.5,tension:.2}]},
-    options:{maintainAspectRatio:false,parsing:false,
-      onClick:(e,els)=>{if(els[0]){const k=lk[els[0].index];state.club=state.club===k?null:k;render();}},
-      scales:{x:{type:"linear",grid:gridc,title:{display:true,text:"Static loft (°)"},ticks:{callback:v=>v+"°"}},y:{grid:gridc,title:{display:true,text:"Yards"}}},
-      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>`${nameOf(c.raw.k)} (${c.raw.x}°): ${c.dataset.label.toLowerCase()} ${c.raw.y} yd`}}}}});
-}
-
-/* ---------- PROGRESS ---------- */
-function renderTrend(){
-  const list = ALL.slice(0, state.i+1), dates = list.map(A=>A.s.iso);
-  const P = A => ({ path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)),
-    smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash)),
-    disp:mean(A.keys.filter(k=>IRON(k)&&!A.clubs[k].partial).map(k=>A.clubs[k].carrySd)), shots:A.keys.reduce((n,k)=>n+A.clubs[k].n,0) });
-  const pts = list.map(P), first = pts[0], last = pts[pts.length-1], multi = list.length>1;
-  const kpi = (label, key, now, delta, better, unit, d=1) => {
-    const c = !multi||delta==null ? "" : Math.abs(delta)<(d===2?.01:.3) ? "" : better ? "good" : "bad";
-    return `<div class="kpi ${c}"><div class="l">${tip(key,label)}</div><div class="v">${multi&&delta!=null?sg(delta,d)+unit:"—"}</div><div class="c">now ${unit==="°"?sg(now,d):f(now,d)}${unit}</div><div class="t">${multi?"change since "+dates[0]:"needs a 2nd session"}</div></div>`;
-  };
-  const F = [];
-  if (!multi){
-    F.push({sev:"info", title:`Baseline set (${dates[0]})`, body:`Trend lines appear after your next session. Starting point: path ${sg(last.path)}°, face-to-path ${sg(last.f2p)}°, iron smash ${f(last.smash,2)}, iron carry spread ±${f(last.disp)} yd.`});
+function mainChart(A){
+  const {keys, clubs, full} = A, fk = keys.filter(k=>!clubs[k].partial);
+  const on = k => !state.club || state.club===k, pc = (k,a=.9) => alpha(colorOf(k), on(k)?a:.12);
+  const shotTip = r => [`${nameOf(r.key)} #${r.n} · carry ${f(r.carry)} yd · ${lr(r.side)}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
+  const click = (e,els) => { const el=els.find(x=>charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r); if(!el) return; const r=charts.cMain.data.datasets[el.datasetIndex].data[el.index].r; openShot(state.i,r.key,r.n); };
+  const hover = (e,els) => { e.native.target.style.cursor = els.some(x=>charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r) ? "pointer":"default"; };
+  const note = t => $("viewNote").textContent = t;
+  const base = {maintainAspectRatio:false, onClick:click, onHover:hover};
+  const pathBand = {id:"band",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;ctx.save();ctx.fillStyle="rgba(159,208,124,.08)";ctx.fillRect(x.getPixelForValue(-2),a.top,x.getPixelForValue(2)-x.getPixelForValue(-2),a.bottom-a.top);ctx.restore();}};
+  const scatter = fn => fk.map(k=>({label:nameOf(k),data:clubs[k].shots.filter(r=>r.path!=null).map(r=>({x:r.path,y:fn(r),r})),backgroundColor:pc(k),pointRadius:on(k)?5:3.5,pointHoverRadius:7}));
+  const v = state.view;
+  if (v==="distance"){
+    const m = MET[state.metric], labels = keys.map(k=>nameOf(k)+(clubs[k].partial?"*":""));
+    const bench = src => keys.map(k=>clubs[k].partial?null:(BENCH[src][k]?.[m.k]??null));
+    const tick = (label,src,color) => ({type:"scatter",label,data:keys.map((k,i)=>({x:labels[i],y:bench(src)[i]})).filter(d=>d.y!=null),pointStyle:"line",pointRadius:ctx=>Math.max(9,(ctx.chart.chartArea?.width||600)/keys.length*.28),borderColor:color,backgroundColor:color,borderWidth:2.5,order:1});
+    const ds = [{label:"You",data:keys.map(k=>clubs[k][m.k]==null?null:+clubs[k][m.k].toFixed(m.dp)),backgroundColor:keys.map(k=>pc(k,.75)),borderRadius:6,barPercentage:.62,order:3}];
+    if (bench("hcp25").some(x=>x!=null)) ds.push(tick("25 handicap","hcp25","#e8a676"));
+    if (bench("lpga").some(x=>x!=null)) ds.push(tick("LPGA","lpga","#b9a3e3"));
+    if (bench("pga").some(x=>x!=null)) ds.push(tick("PGA","pga","#84bcd9"));
+    ds.push({type:"scatter",label:"Shots",order:0,data:keys.flatMap((k,i)=>clubs[k].shots.filter(r=>r[m.shot]!=null).map(r=>({x:labels[i],y:r[m.shot],r}))),backgroundColor:c=>c.raw?.r&&on(c.raw.r.key)?"rgba(241,234,208,.9)":"rgba(241,234,208,.15)",pointRadius:3,pointHoverRadius:6});
+    const pct = src => { const ks=keys.filter(k=>!clubs[k].partial&&BENCH[src][k]?.[m.k]!=null&&clubs[k][m.k]!=null); return ks.length?Math.round(mean(ks.map(k=>clubs[k][m.k]/BENCH[src][k][m.k]))*100):null; };
+    const pP=pct("pga"), pL=pct("lpga");
+    note(m.zero ? `Tour players average about 0. Your full-swing average: ${fm(m,mean(full.map(r=>r[m.shot])))}.` : pP!=null ? `Your ${m.label.toLowerCase()} is ${pP}% of the PGA average${pL!=null?` and ${pL}% of the LPGA average`:""}. Ticks are benchmarks; dots are your shots.` : "Dots are your shots.");
+    const zero = {id:"zero",afterDatasetsDraw(ch){if(!m.zero)return;const {ctx,chartArea:a,scales:{y}}=ch;ctx.save();ctx.strokeStyle="rgba(159,208,124,.6)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(a.left,y.getPixelForValue(0));ctx.lineTo(a.right,y.getPixelForValue(0));ctx.stroke();ctx.restore();}};
+    draw("cMain",{type:"bar",data:{labels,datasets:ds},plugins:[zero],options:{...base,scales:{x:{grid:{display:false}},y:{grid,beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k),title:{display:true,text:m.label+(m.unit?` (${m.unit})`:"")}}},
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.raw?.r?shotTip(c.raw.r):c.dataset.type==="scatter"?`${c.dataset.label}: ${fm(m,c.raw.y)}`:`You: ${fm(m,c.raw)}`}}}}});
+  } else if (v==="dispersion"){
+    note("Each dot is a shot seen from above: left/right of the target vs. carry. Tap a dot to open it.");
+    const dk = state.club ? keys : fk, mx = Math.max(15, ...dk.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0))))+5;
+    const line = {id:"line",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;ctx.save();ctx.strokeStyle="rgba(233,229,211,.2)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x.getPixelForValue(0),a.top);ctx.lineTo(x.getPixelForValue(0),a.bottom);ctx.stroke();ctx.restore();}};
+    draw("cMain",{type:"scatter",plugins:[line],data:{datasets:dk.map(k=>({label:nameOf(k),data:clubs[k].shots.map(r=>({x:r.side,y:r.carry,r})),backgroundColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8}))},
+      options:{...base,scales:{x:{min:-Math.ceil(mx),max:Math.ceil(mx),grid,title:{display:true,text:"← left   ·   yards   ·   right →"}},y:{grid,title:{display:true,text:"Carry (yd)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+  } else if (v==="curve"){
+    note("Dots above the dashed line had the face open to the path, so the ball curved right. The green band is a neutral path.");
+    const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2), hi=4;
+    const diag = {id:"diag",afterDatasetsDraw(ch){const {ctx,scales:{x,y},chartArea:a}=ch;ctx.save();ctx.beginPath();ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top);ctx.clip();ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(233,229,211,.25)";ctx.beginPath();ctx.moveTo(x.getPixelForValue(lo),y.getPixelForValue(lo));ctx.lineTo(x.getPixelForValue(hi),y.getPixelForValue(hi));ctx.stroke();ctx.restore();}};
+    draw("cMain",{type:"scatter",plugins:[pathBand,diag],data:{datasets:scatter(r=>r.face)},options:{...base,scales:{x:{min:lo,max:hi,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{min:lo,max:hi,grid,title:{display:true,text:"Face to target (°)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+  } else if (v==="strike"){
+    note("Higher is a more centred strike. Notice how strike quality drops as the path gets more out-to-in.");
+    const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2);
+    draw("cMain",{type:"scatter",plugins:[pathBand],data:{datasets:scatter(r=>r.smash)},options:{...base,scales:{x:{min:lo,max:4,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{grid,title:{display:true,text:"Smash factor"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
   } else {
-    const t = (name, a, b, better, unit, d=1) => { if (a==null||b==null) return; const delta=b-a;
-      F.push({sev:Math.abs(delta)<(d===2?.01:.3)?"info":better(a,b)?"good":"bad", title:`${name}: ${sg(a,d)}${unit} → ${sg(b,d)}${unit}`, body:`${sg(delta,d)}${unit} since ${dates[0]}.`}); };
-    t("Club path", first.path, last.path, (a,b)=>Math.abs(b)<Math.abs(a), "°");
-    t("Face-to-path", first.f2p, last.f2p, (a,b)=>Math.abs(b)<Math.abs(a), "°");
-    t("Iron smash", first.smash, last.smash, (a,b)=>b>a, "", 2);
-    t("Carry spread", first.disp, last.disp, (a,b)=>b<a, " yd");
-    const ks = [...new Set(list.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)))].sort((a,b)=>loftOf(a)-loftOf(b));
-    const moved = ks.map(k=>{const h=list.filter(A=>A.clubs[k]&&!A.clubs[k].partial); return h.length>1?`${nameOf(k)} ${sg(h[h.length-1].clubs[k].carry-h[0].clubs[k].carry)} yd`:null;}).filter(Boolean);
-    if (moved.length) F.push({sev:"info", title:"Carry change by club", body:moved.join(" · ")});
-    if (Math.abs(last.path)<=2 && Math.abs(last.f2p)<=3) F.push({sev:"good", title:"Path and face-to-path are in the target window", body:"Shift the focus to strike quality and gapping."});
+    note("Carry by loft. Each step down in loft should add 10–12 yd. A flat stretch means two clubs overlap. Hollow points are partial swings.");
+    const lk = keys.filter(k=>CLUB[k]?.loft!=null);
+    draw("cMain",{type:"line",data:{datasets:[
+      {label:"Carry",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].carry),k})),borderColor:"#9fd07c",backgroundColor:lk.map(k=>clubs[k].partial?"#16231b":pc(k)),pointBorderColor:lk.map(k=>pc(k)),pointBorderWidth:2,pointRadius:7,pointHoverRadius:9,borderWidth:2,tension:.25},
+      {label:"Total",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].total),k})),borderColor:"rgba(233,229,211,.3)",borderDash:[4,4],pointRadius:0,borderWidth:1.5,tension:.25}]},
+      options:{maintainAspectRatio:false,parsing:false,onClick:(e,els)=>{if(els[0]){state.club=lk[els[0].index];render();}},
+        scales:{x:{type:"linear",grid,title:{display:true,text:"Loft (°)"},ticks:{callback:v=>v+"°"}},y:{grid,title:{display:true,text:"Yards"}}},
+        plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>`${nameOf(c.raw.k)} (${c.raw.x}°): ${c.dataset.label.toLowerCase()} ${c.raw.y} yd`}}}}});
   }
-  const curated = list.filter(A=>A.meta.curated).length;
-  $("tab-trend").innerHTML = `
-    ${curated ? `<div class="banner"><span class="ic">⚑</span><div><b>${curated} of ${list.length} session${list.length>1?"s":""} are best-shots-only.</b> Compare curated sessions with each other. Mixing curated and uncurated sessions will show false swings in consistency.</div></div>` : ""}
-    <section class="kpis">
-      ${kpi("Club path","path",last.path,multi?last.path-first.path:null,Math.abs(last.path)<Math.abs(first.path),"°")}
-      ${kpi("Face-to-path","f2p",last.f2p,multi?last.f2p-first.f2p:null,Math.abs(last.f2p)<Math.abs(first.f2p),"°")}
-      ${kpi("Iron smash","smash",last.smash,multi?last.smash-first.smash:null,last.smash>first.smash,"",2)}
-      ${kpi("Carry spread","spread",last.disp,multi?last.disp-first.disp:null,last.disp<first.disp," yd")}
-    </section>
-    <section class="card">
-      <div class="sec"><h2>Progress review</h2><span class="muted small">${list.length} session${list.length>1?"s":""} · ${pts.reduce((n,p)=>n+p.shots,0)} shots</span></div>
-      <ul class="findings">${F.map(x=>`<li><span class="dot ${x.sev}"></span><span><b>${x.title}.</b> ${x.body}</span></li>`).join("")}</ul>
-      ${DATA.overallReview ? `<details open><summary>Plan and drills</summary><div class="notes">${DATA.overallReview}</div></details>` : ""}
-    </section>
-    <section class="grid2">
-      <div class="card"><h2>Path and face-to-path</h2><p class="lede">Both lines should move toward the green zero line.</p><div class="chart"><canvas id="tPath"></canvas></div></div>
-      <div class="card"><h2>Strike quality</h2><p class="lede">Median smash for each iron. Up is better.</p><div class="chart"><canvas id="tSmash"></canvas></div></div>
-    </section>
-    <section class="card"><div class="sec"><h2>${MET[state.tmetric].label} by club over time</h2></div>
-      <div style="margin:12px 0">${metricChips("tmetric","tchips")}</div>
-      <p class="lede">${MET[state.tmetric].zero?"Lines should move toward 0.":state.tmetric==="carry"?"Lines that spread evenly apart mean better gapping.":"Full-swing average per session for each club."}</p>
-      <div class="chart"><canvas id="tCarry"></canvas></div></section>`;
-  document.querySelectorAll("#tchips .mchip").forEach(b=>b.onclick=()=>{state.tmetric=b.dataset.m;render();});
-
-  const opts = (yt) => ({maintainAspectRatio:false,spanGaps:true,scales:{x:{grid:{display:false}},y:{grid:gridc,title:{display:true,text:yt}}},plugins:{legend:{position:"bottom"}}});
-  draw("tPath",{type:"line",data:{labels:dates,datasets:[
-    {label:"Club path",data:pts.map(p=>p.path),borderColor:css('--bad'),backgroundColor:css('--bad'),pointRadius:6,tension:.25},
-    {label:"Face-to-path",data:pts.map(p=>p.f2p),borderColor:css('--warn'),backgroundColor:css('--warn'),pointRadius:6,tension:.25},
-    {label:"Goal (0°)",data:dates.map(()=>0),borderColor:css('--good'),borderDash:[4,4],pointRadius:0}]},options:opts("Degrees")});
-  const ik = [...new Set(list.flatMap(A=>A.keys.filter(IRON)))].sort((a,b)=>loftOf(a)-loftOf(b));
-  draw("tSmash",{type:"line",data:{labels:dates,datasets:ik.map(k=>({label:nameOf(k),data:list.map(A=>A.clubs[k]?.smash??null),borderColor:colorOf(k),backgroundColor:colorOf(k),pointRadius:6,tension:.25}))},options:opts("Median smash")});
-  const ck = [...new Set(list.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)))].sort((a,b)=>loftOf(a)-loftOf(b));
-  const tm = MET[state.tmetric];
-  draw("tCarry",{type:"line",data:{labels:dates,datasets:ck.map(k=>({label:nameOf(k),data:list.map(A=>A.clubs[k]&&!A.clubs[k].partial&&A.clubs[k][tm.k]!=null?+A.clubs[k][tm.k].toFixed(tm.dp):null),borderColor:colorOf(k),backgroundColor:colorOf(k),pointRadius:6,tension:.25}))},options:opts(`${tm.label}${tm.unit?" ("+tm.unit+")":""}`)});
 }
 
-/* ---------- BAG ---------- */
+/* ================= club model (measured or estimated) for course planning ================= */
 function latestFor(k){
   for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:ALL[i].s.iso}; }
   for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:ALL[i].s.iso}; }
   return null;
 }
-function renderBag(){
-  const L7 = latestFor("7i"), L6 = latestFor("6i"), LW = latestFor("7W");
-  const card = (title, rows, note) => `<div><b>${title}</b>${rows.map(([a,b,cls])=>`<div class="row"><span>${a}</span><span class="${cls||""}">${b}</span></div>`).join("")}${note?`<div class="muted small" style="margin-top:6px">${note}</div>`:""}</div>`;
-  let cards = [], verdict = "";
-  if (L7){
-    const c7 = L7.c.carry;
-    cards.push(card(`7 Iron · 27.5°`, [["Carry",f(c7,0)+" yd"],["Rollout",f(L7.c.roll,0)+" yd"],["Apex",f(L7.c.apex,0)+" yd"],["Spread",`±${f(L7.c.carrySd,0)} yd`]], `measured ${L7.date}${L7.c.caveat?' · <span class="warn">⚑ possible outlier</span>':""}`));
-    cards.push(card(`6 Iron · 24.5°`, L6 ? [["Carry",f(L6.c.carry,0)+" yd"],["Rollout",f(L6.c.roll,0)+" yd"],["Apex",f(L6.c.apex,0)+" yd"],["Gap to 7i",f(L6.c.carry-c7)+" yd",L6.c.carry-c7<6?"bad":"good"]]
-      : [["Carry",`${f(c7+1,0)}–${f(c7+9,0)} yd`],["Rollout","8–12 yd"],["Apex",`${f(L7.c.apex-3,0)}–${f(L7.c.apex,0)} yd`],["Overlap with 7i","Likely high","bad"]], L6?`measured ${L6.date}`:"projected from 7i"));
-    cards.push(card(`7 Wood · 21.5°`, LW ? [["Carry",f(LW.c.carry,0)+" yd"],["Rollout",f(LW.c.roll,0)+" yd"],["Apex",f(LW.c.apex,0)+" yd"],["Gap to 6i",L6?f(LW.c.carry-L6.c.carry)+" yd":"—",L6&&LW.c.carry-L6.c.carry<6?"bad":"good"]]
-      : [["Carry",`${f(c7+13,0)}–${f(c7+25,0)} yd`],["Rollout","6–10 yd"],["Apex",`${f(L7.c.apex+2,0)}–${f(L7.c.apex+6,0)} yd`],["Overlap with 6i","Partial / none","warn"]], LW?`measured ${LW.date}`:"projected from 7i"));
-    if (L6 && LW){
-      const g6 = L6.c.carry-c7, gW = LW.c.carry-L6.c.carry;
-      verdict = g6 < 6 ? `<b class="bad">Measured: the 6-iron overlaps the 7-iron (${f(g6)} yd).</b> Keep the 7-wood and drop the 6-iron, or swap it for a 6-hybrid.`
-        : gW < 6 ? `<b class="bad">Measured: the 6-iron and 7-wood overlap (${f(gW)} yd).</b> Keep the one with the tighter spread.`
-        : `<b class="good">Measured: clean gaps (7i→6i ${f(g6)} yd, 6i→7W ${f(gW)} yd).</b> Both clubs earn their spot.`;
-    } else verdict = `Projected from your latest 7-iron${L7.c.caveat?", which is flagged as a possible outlier":""}. Next session's 7i-to-driver block will replace these estimates with real numbers. If the 6-iron carries within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.`;
+// Clubs not measured yet are estimated from the latest full 7-iron (carry ratio, roll %), or from the AW for wedges.
+const EST = {Dr:[1.55,.12],"3W":[1.40,.09],"3H":[1.25,.07],"7W":[1.15,.06],"6i":[1.04,.07]};
+const WEST = {"51":12,"56":24,"60":34};
+function clubModel(k){
+  const L = latestFor(k);
+  if (L && !L.c.partial){
+    const c=L.c; return {key:k, carry:c.carry, total:c.total, carrySd:c.carrySd||5, totalSd:c.totalSd||c.carrySd||5, side:c.side||0, sideSd:c.sideSd||6,
+      shots:c.shots, est:false, caveat:c.caveat, date:L.date};
   }
-  const setTable = (set, si) => {
-    const rows = set.clubs.map(c=>{ const k=c.key||c.equiv; return {c,k,L:k?latestFor(k):null}; });
-    return `<section class="card"><div class="sec"><h2>${esc(set.name)}</h2></div>
-      <p class="lede">${si? "Yardages come from the main-bag club with the same loft (shown as ≈). Head and shaft differ, so treat them as estimates." : "Latest full-swing averages up to the selected date. Gap = carry to the next club down: red under 6 yd, amber over 20 yd."}</p>
-      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Gap ↓</th><th>Last measured</th></tr></thead><tbody>
-      ${rows.map(({c,k,L},i)=>{
-        const nx = rows.slice(i+1).find(r=>r.L && !r.L.c.partial && r.k!==k);
-        const gap = L && nx && !L.c.partial ? L.c.carry-nx.L.c.carry : null;
-        return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${L?.c.caveat?'<span class="tag warn">⚑ retest</span>':""}${c.note?`<div class="muted small" style="font-weight:400">${esc(c.note)}</div>`:""}</td>
-          <td class="tl muted">${esc(c.model || (c.equiv&&CLUB[c.equiv] ? `≈ ${CLUB[c.equiv].model.replace("Callaway ","")} ${nameOf(c.equiv)}` : ""))}</td>
-          <td>${c.loft!=null?c.loft+"°":"—"}</td>
-          <td>${L?`<b>${f(L.c.carry,0)}</b>`:"—"}${L?.c.partial?'<span class="tag">partial</span>':""}</td>
-          <td>${L?f(L.c.total,0):"—"}</td>
-          <td class="${gap==null?"":gap<6?"bad":gap>20?"warn":"good"}">${gap==null?"—":f(gap,0)}</td>
-          <td>${L?L.date:'<span class="empty">not hit yet</span>'}</td></tr>`;}).join("")}
-      </tbody></table></div></section>`;
-  };
-  $("tab-bag").innerHTML = `<section class="card"><div class="sec"><h2>6-iron vs. 7-wood</h2></div><p class="lede">${verdict||"Hit a 7-iron session first."}</p><div class="proj">${cards.join("")}</div></section>`
-    + DATA.bag.sets.map(setTable).join("");
+  const L7 = latestFor("7i"), LA = latestFor("AW"), s7 = L7&&!L7.c.partial ? L7.c : null;
+  if (EST[k] && s7){ const [r,roll]=EST[k]; const carry=s7.carry*r;
+    return {key:k, carry, total:carry*(1+roll), carrySd:(s7.carrySd||8)*r, totalSd:(s7.carrySd||8)*r*1.05, side:(s7.side||0)*r, sideSd:(s7.sideSd||10)*Math.pow(r,1.4),
+      shots:[], est:true, caveat:s7.caveat?"Estimated from a 7-iron flagged as a possible outlier.":null}; }
+  if (WEST[k]!=null && LA && !LA.c.partial){ const a=LA.c, carry=a.carry-WEST[k];
+    return {key:k, carry, total:carry*1.03, carrySd:a.carrySd||5, totalSd:a.carrySd||5, side:a.side||0, sideSd:a.sideSd||4, shots:[], est:true}; }
+  return null;
 }
 
-/* ---------- COURSE ---------- */
-function par3Yardages(set){
-  const L7 = latestFor("7i"), LA = latestFor("AW");
-  const c7 = L7 && !L7.c.partial ? L7.c.carry : null;
-  const avgSide = mean(ALL[state.i].full.map(r=>r.side));
-  const est = {"6i":c7!=null?c7+5:null,"7W":c7!=null?c7+19:null,"51":LA&&!LA.c.partial?LA.c.carry-12:null};
-  return set.clubs.filter(c=>c.equiv && c.equiv!=="Putter").map(c=>{
-    const L = latestFor(c.equiv);
-    if (L && !L.c.partial) return {c, carry:L.c.carry, side:L.c.side, est:false, caveat:L.c.caveat};
-    return {c, carry:est[c.equiv]??null, side:avgSide, est:true, partial:L?.c.partial?L.c.carry:null,
-      caveat:(c.equiv==="6i"||c.equiv==="7W") && L7?.c.caveat ? "Projected from a 7-iron that may be an outlier." : null};
-  }).filter(y=>y.carry!=null).sort((a,b)=>b.carry-a.carry);
+/* ================= COURSE ================= */
+function courseBag(course){
+  const set = DATA.bag.sets.find(s=>s.name===course.bag) || DATA.bag.sets[0];
+  return set.clubs.filter(c=>(c.key||c.equiv)!=="Putter").map(c=>{ const k=c.key||c.equiv, m=clubModel(k);
+    return m ? {...m, label:c.label, short:c.key?nameOf(k):c.label.replace(" Iron","i").replace(" Wood","W").replace("Pitching Wedge","PW")} : null; })
+    .filter(Boolean).sort((a,b)=>b.carry-a.carry);
+}
+const fitScore = (carry, yds) => carry>=yds ? carry-yds : (yds-carry)*1.5;
+function plan(course, par, yds, bag, pick){
+  const fw = (course.fairway||32)/2, greenR = 13;
+  const offset = m => state.aim ? -m.side : 0;   // aim correction shifts the pattern back to centre
+  const evalClub = m => {
+    if (par===3){
+      const p = pBetween(-greenR,greenR,m.side+offset(m),m.sideSd) * pBetween(yds-greenR,yds+greenR,m.carry,m.carrySd);
+      return {m, land:m.carry, p, plabel:"On the green", score:-fitScore(m.carry,yds)};
+    }
+    const p = pBetween(-fw,fw,m.side+offset(m),m.sideSd), left = yds - m.total;
+    return {m, land:m.total, p, plabel:"In the fairway", score: (left<40 ? -999 : m.total*(0.6+0.4*p))};
+  };
+  const evals = bag.filter(m=>par===3 || !CLUB[m.key] || loftOf(m.key)<=36).map(evalClub);
+  const best = evals.slice().sort((a,b)=>b.score-a.score)[0];
+  const chosen = evals.find(e=>e.m.key===pick) || best;
+  let next = null;
+  if (par>3 && chosen){
+    const R = yds - chosen.land, approach = bag.filter(m=>m.key!=="Dr");
+    const maxC = approach[0]?.carry || 0;
+    if (R > maxC + 15){ const lay = approach.find(m=>R - m.total >= 60) || approach[0]; const R2 = R - lay.total;
+      const a2 = approach.slice().sort((a,b)=>fitScore(a.carry,R2)-fitScore(b.carry,R2))[0];
+      next = `Lay up with the ${lay.label} (~${f(lay.total,0)} yd), then ~${f(R2,0)} yd in with the ${a2.label}.`; }
+    else { const a = approach.slice().sort((a,b)=>fitScore(a.carry,R)-fitScore(b.carry,R))[0]; next = `~${f(R,0)} yd in with the ${a.label}.`; }
+  }
+  return {best, chosen, evals, next, fw, greenR};
+}
+function holeSVG(par, yds, P){
+  const m = P.chosen.m, W = 300, H = 520, pad = 26, spanX = 60;
+  const sdY = par===3 ? m.carrySd : m.totalSd;
+  const maxD = Math.max(yds, P.chosen.land + 2*sdY) + 25;
+  const X = x => W/2 + x/spanX*(W/2-10), Y = d => H - pad - d/maxD*(H-2*pad);
+  const aimX = state.aim ? -m.side : 0, cx = m.side + aimX, cy = P.chosen.land;
+  let g = `<rect width="${W}" height="${H}" fill="#0d1610"/>`;
+  for (let d=50; d<maxD; d+=50) g += `<line x1="0" x2="${W}" y1="${Y(d)}" y2="${Y(d)}" stroke="rgba(233,229,211,.06)"/><text x="6" y="${Y(d)-4}" fill="#617566" font-size="10" font-family="IBM Plex Mono, monospace">${d}</text>`;
+  if (par>3) g += `<rect x="${X(-P.fw)}" y="${Y(yds-15)}" width="${X(P.fw)-X(-P.fw)}" height="${Y(Math.min(140,yds*.35))-Y(yds-15)}" rx="14" fill="rgba(111,174,90,.2)"/>`;
+  g += `<ellipse cx="${X(0)}" cy="${Y(yds)}" rx="${X(P.greenR)-X(0)}" ry="${Math.abs(Y(yds+P.greenR)-Y(yds))}" fill="rgba(159,208,124,.42)" stroke="#9fd07c"/>`;
+  g += `<line x1="${X(0)}" x2="${X(0)}" y1="${Y(yds)}" y2="${Y(yds)-24}" stroke="#f1ead0" stroke-width="1.5"/><path d="M${X(0)} ${Y(yds)-24} l11 5 l-11 5z" fill="#e58a76"/>`;
+  g += `<rect x="${X(-6)}" y="${Y(0)-3}" width="${X(6)-X(-6)}" height="8" rx="2" fill="#36503f"/>`;
+  g += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(aimX)}" y2="${Y(cy)}" stroke="rgba(227,201,122,.5)" stroke-dasharray="4 4"/>`;
+  const col = colorOf(m.key);
+  g += `<ellipse cx="${X(cx)}" cy="${Y(cy)}" rx="${X(2*m.sideSd)-X(0)}" ry="${Math.abs(Y(cy+2*sdY)-Y(cy))}" fill="${alpha(col,.1)}" stroke="${alpha(col,.45)}" ${m.est?'stroke-dasharray="4 4"':""}/>`;
+  g += `<ellipse cx="${X(cx)}" cy="${Y(cy)}" rx="${X(m.sideSd)-X(0)}" ry="${Math.abs(Y(cy+sdY)-Y(cy))}" fill="${alpha(col,.22)}" stroke="${alpha(col,.8)}" ${m.est?'stroke-dasharray="4 4"':""}/>`;
+  (m.shots||[]).forEach(r=>{ const d = par===3 ? r.carry : r.total; g += `<circle cx="${X(r.side+aimX)}" cy="${Y(d)}" r="3.5" fill="#f1ead0" stroke="#101a14"><title>${nameOf(r.key)} #${r.n}: ${f(d,0)} yd, ${lr(r.side)}</title></circle>`; });
+  g += `<circle cx="${X(aimX)}" cy="${Y(cy)}" r="4.5" fill="none" stroke="#e3c97a" stroke-width="1.5"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Hole map with shot dispersion">${g}</svg>`;
 }
 function renderCourse(){
-  const html = [];
-  for (const course of DATA.courses || []){
-    const set = DATA.bag.sets.find(s=>s.name===course.bag); if (!set) continue;
-    const tee = state.tee[course.name] || course.defaultTee || Object.keys(course.tees)[0];
-    const holes = course.tees[tee], ys = par3Yardages(set);
-    const maxY = Math.max(...holes, ...ys.map(y=>y.carry)) * 1.05;
-    const usage = {};
-    const cards = holes.map((yd,i)=>{
-      const ranked = ys.map(y=>({y,score:y.carry>=yd?y.carry-yd:(yd-y.carry)*1.5})).sort((a,b)=>a.score-b.score);
-      if (!ranked.length) return `<div class="hole"><div class="no">Hole ${i+1}</div><div class="empty">No yardages yet</div></div>`;
-      const b = ranked[0].y, m = b.carry-yd; usage[b.c.label]=(usage[b.c.label]||0)+1;
-      const notes = [];
-      if (b===ys[0] && m < -6) notes.push(`Longer than your longest club. Hit the ${esc(b.c.label)} and play for the front edge.`);
-      else if (Math.abs(m) > 6 && ranked[1]) notes.push(m<0 ? `Between clubs: a full ${esc(b.c.label)} comes up ~${f(-m,0)} short, or hit an easy ${esc(ranked[1].y.c.label)}.` : `Between clubs: a smooth ¾ ${esc(b.c.label)}, or a full ${esc(ranked[1].y.c.label)}.`);
-      if (b.est) notes.push(b.partial!=null ? `Only partial swings measured (${f(b.partial,0)} yd), so the full carry is estimated.` : "Carry is estimated until you hit this club in a session.");
-      if (b.caveat) notes.push(esc(b.caveat));
-      const aim = b.side==null||Math.abs(b.side)<3 ? null : b.side>0 ? `← Aim ${f(b.side,0)} yd left` : `Aim ${f(-b.side,0)} yd right →`;
-      const fitCls = m < -6 ? "bad" : Math.abs(m) > 6 ? "warn" : "good";
-      const open = state.hole===`${course.name}:${i}`;
-      return `<div class="hole" data-hole="${esc(course.name)}:${i}" aria-expanded="${open}" role="button" tabindex="0">
-        <div class="hh"><span class="no">Hole ${i+1}</span><span class="yd">${yd}<small>yd</small></span></div>
-        <div><span class="club">${esc(b.c.label)}</span><span class="eq">≈ ${nameOf(b.c.equiv)}</span></div>
-        <div class="meter" title="Your carry vs. hole length"><div class="f" style="width:${(b.carry/maxY*100).toFixed(1)}%;background:${colorOf(b.c.equiv)}"></div><div class="pin" style="left:${(yd/maxY*100).toFixed(1)}%"></div></div>
-        <div class="meta"><span>carry ${f(b.carry,0)}${b.est?" (est)":""} · <span class="${fitCls}">${sg(m,0)} yd</span></span>${aim?`<span class="pill warn">${aim}</span>`:`<span class="pill good">Aim centre</span>`}</div>
-        ${open||notes.length? `<div class="more" ${open?"":"hidden"}>${notes.join(" ")||"Good fit."}${ranked[1]?`<div class="muted small" style="margin-top:4px">Backup: ${esc(ranked[1].y.c.label)} (${f(ranked[1].y.carry,0)} yd)</div>`:""}</div>`:""}
-      </div>`;
-    }).join("");
-    const gaps=[]; for (let i=0;i<ys.length-1;i++){const g=ys[i].carry-ys[i+1].carry; if(g>20) gaps.push(`${esc(ys[i].c.label)} → ${esc(ys[i+1].c.label)}: ${f(g,0)} yd`);}
-    html.push(`<section class="card">
-      <div class="sec"><h2>${esc(course.name)} <span class="muted small" style="font-weight:500">${esc(course.location)}</span></h2>
-        <div class="seg" role="group" aria-label="Tees">${Object.keys(course.tees).map(t=>`<button data-course="${esc(course.name)}" data-tee="${esc(t)}" aria-pressed="${t===tee}">${esc(t)} · ${course.tees[t].reduce((a,b)=>a+b,0)}</button>`).join("")}</div></div>
-      <p class="lede">The club to hit on each hole from your par-3 bag, using your yardages up to the selected session. The bar shows your carry and the white tick marks the hole length. Tap a hole for notes and a backup club.</p>
-      <div class="holes">${cards}</div>
+  const courses = DATA.courses || [], course = courses.find(c=>c.id===state.course) || courses[0];
+  if (!course){ $("tab-course").innerHTML = `<section class="card empty">No courses in courses.json.</section>`; return; }
+  const tee = state.tee[course.id] || course.defaultTee || Object.keys(course.tees)[0];
+  const yards = course.tees[tee], n = yards.length; if (state.hole >= n) state.hole = 0;
+  const bag = courseBag(course);
+  const plans = yards.map((y,i)=>plan(course, course.par[i], y, bag, null));
+  const h = state.hole, par = course.par[h], yds = yards[h], P = plan(course, par, yds, bag, state.teeClub);
+  const total = yards.reduce((a,b)=>a+b,0), parT = course.par.reduce((a,b)=>a+b,0);
+  const hb = i => `<button class="hb" data-hole="${i}" aria-pressed="${i===h}"><div class="h">${i+1}</div><div class="y">${yards[i]}</div><div class="p">par ${course.par[i]}</div><div class="k">${plans[i].best?.m.short||""}</div></button>`;
+  const c = P.chosen, m = c?.m;
+  $("tab-course").innerHTML = `
+    <section class="card">
+      <div class="head">
+        <div class="row-btns">${courses.map(x=>`<button class="btn" data-course="${x.id}" aria-pressed="${x.id===course.id}">${esc(x.name)}</button>`).join("")}</div>
+        <div class="row-btns">${Object.keys(course.tees).map(t=>`<button class="btn sm" data-tee="${esc(t)}" aria-pressed="${t===tee}">${esc(t)}</button>`).join("")}</div>
+      </div>
+      <p class="sub" style="margin:0 0 14px">${esc(course.location)} · ${esc(tee)} tees ${total.toLocaleString()} yd · par ${parT}. Under each hole: the suggested tee club.</p>
+      ${n>9?`<div class="nine">Front nine</div>`:""}<div class="scorecard">${yards.slice(0,9).map((_,i)=>hb(i)).join("")}</div>
+      ${n>9?`<div class="nine">Back nine</div><div class="scorecard">${yards.slice(9).map((_,i)=>hb(i+9)).join("")}</div>`:""}
+      ${m ? `<div class="planner">
+        <div><div class="map">${holeSVG(par, yds, P)}</div>
+          <div class="legend"><span><i style="background:${alpha(colorOf(m.key),.6)}"></i>68% / 95% of shots</span>${m.shots?.length?`<span><i style="background:#f1ead0"></i>your shots</span>`:""}<span><i style="background:#e3c97a"></i>aim point</span></div>
+          <p class="muted small" style="margin:6px 0 0">Width is exaggerated so the spread is easy to see.</p></div>
+        <div>
+          <div class="hole-title">Hole ${h+1}<small>par ${par} · ${yds} yd</small></div>
+          <p class="muted small" style="margin:12px 0 8px">${par===3?"Club":"Tee club"} · ★ suggested</p>
+          <div class="row-btns">${P.evals.slice().sort((a,b)=>b.m.carry-a.m.carry).map(e=>`<button class="btn sm" data-tc="${e.m.key}" aria-pressed="${e.m.key===m.key}">${sw(e.m.key)}${esc(e.m.short)}${e===P.best?" ★":""}</button>`).join("")}</div>
+          <div class="facts">
+            <div class="fact"><div class="l">${par===3?"Carry":"Lands (with roll)"}</div><div class="v">${f(c.land,0)} yd ${m.est?'<span class="tag">est</span>':""}</div></div>
+            <div class="fact"><div class="l">Spread (68% of shots)</div><div class="v">±${f(par===3?m.carrySd:m.totalSd,0)} long · ±${f(m.sideSd,0)} wide</div></div>
+            <div class="fact"><div class="l">${c.plabel}</div><div class="v">${Math.round(c.p*100)}%</div><div class="meter"><i style="width:${(c.p*100).toFixed(0)}%"></i></div></div>
+            <div class="fact"><div class="l">Aim</div><div class="v">${Math.abs(m.side)<2?"Centre":`${f(Math.abs(m.side),0)} yd ${m.side>0?"left":"right"}`}</div></div>
+          </div>
+          ${P.next?`<p style="margin:0 0 14px"><b>Next:</b> <span class="muted">${P.next}</span></p>`:""}
+          <button class="btn sm" id="aim" aria-pressed="${state.aim}">${state.aim?"✓ ":""}Aim to offset my curve</button>
+          ${m.est?`<p class="muted small" style="margin:14px 0 0">The ${esc(m.label)} hasn't been measured yet, so its distance and spread are estimated.${m.caveat?" "+esc(m.caveat):""}</p>`:""}
+          <p class="muted small" style="margin:8px 0 0">${esc(course.note||"")}</p>
+        </div></div>` : `<p class="empty">No yardages yet.</p>`}
+    </section>`;
+  document.querySelectorAll("#tab-course [data-course]").forEach(b=>b.onclick=()=>{state.course=b.dataset.course;state.hole=0;state.teeClub=null;render();});
+  document.querySelectorAll("#tab-course [data-tee]").forEach(b=>b.onclick=()=>{state.tee[course.id]=b.dataset.tee;state.teeClub=null;render();});
+  document.querySelectorAll("#tab-course [data-hole]").forEach(b=>b.onclick=()=>{state.hole=+b.dataset.hole;state.teeClub=null;render();});
+  document.querySelectorAll("#tab-course [data-tc]").forEach(b=>b.onclick=()=>{state.teeClub=b.dataset.tc;render();});
+  $("aim") && ($("aim").onclick=()=>{state.aim=!state.aim;render();});
+}
+
+/* ================= PROGRESS ================= */
+function renderTrend(){
+  const list = ALL.slice(0,state.i+1), dates = list.map(A=>A.s.iso), multi = list.length>1;
+  const P = A => ({path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)), smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash))});
+  const pts = list.map(P), a = pts[0], z = pts[pts.length-1];
+  const ch = (label,key,now,d,better,unit,dp,g) => `<div class="stat"><div><div class="l">${tip(key,label)}</div><div class="v">${unit==="°"?sg(now,dp):f(now,dp)}${unit}</div><div class="c">${multi?`${sg(d,dp)}${unit} since ${dates[0]} · <span class="${better?"good":"bad"}">${better?"better":"worse"}</span>`:"baseline · next session adds a trend"}</div></div><div class="grade g${g}">${g}</div></div>`;
+  $("tab-trend").innerHTML = `
+    <div class="head" style="margin:0"><div><h2>Progress</h2><p class="sub">${list.length} session${multi?"s":""} · ${dates[0]}${multi?" → "+dates[dates.length-1]:""}</p></div></div>
+    <section class="stats">
+      ${ch("Club path","path",z.path,z.path-a.path,Math.abs(z.path)<Math.abs(a.path),"°",1,gPath(z.path))}
+      ${ch("Face-to-path","f2p",z.f2p,z.f2p-a.f2p,Math.abs(z.f2p)<Math.abs(a.f2p),"°",1,gF2P(z.f2p))}
+      ${ch("Iron strike","smash",z.smash,z.smash-a.smash,z.smash>a.smash,"",2,gSmash(z.smash))}
     </section>
-    <section class="card"><div class="sec"><h2>Par-3 bag yardages</h2></div>
-      <p class="lede">${esc(course.note||"")}</p>
-      <div class="ylist">${ys.map(y=>`<div class="ycard"><b><span class="cn">${sw(y.c.equiv)}${esc(y.c.label)}</span></b><div class="muted small">≈ ${nameOf(y.c.equiv)} · ${y.c.loft}°</div><div class="v">${f(y.carry,0)} <span class="muted small">yd${y.est?" est":""}</span></div><div class="muted small">used on ${usage[y.c.label]||0} hole${usage[y.c.label]===1?"":"s"}</div></div>`).join("")}</div>
-      ${gaps.length?`<p class="small" style="margin:14px 0 0"><span class="warn"><b>Yardage holes:</b></span> <span class="muted">${gaps.join(" · ")}. Partial swings have to cover these.</span></p>`:""}
-    </section>`);
-  }
-  $("tab-course").innerHTML = html.join("") || `<section class="card empty">No courses in courses.json.</section>`;
-  document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{state.tee[b.dataset.course]=b.dataset.tee;state.hole=null;render();});
-  document.querySelectorAll(".hole[data-hole]").forEach(h=>{const go=()=>{state.hole=state.hole===h.dataset.hole?null:h.dataset.hole;render();};h.onclick=go;h.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
+    <section class="card"><div class="head"><h2>Swing trend</h2></div><div class="chart" style="height:280px"><canvas id="tPath"></canvas></div></section>
+    <section class="card"><div class="head"><h2>By club</h2><select id="tmetric" aria-label="Metric">${METRICS.map(m=>`<option value="${m.k}" ${m.k===state.tmetric?"selected":""}>${m.label}</option>`).join("")}</select></div><div class="chart" style="height:300px"><canvas id="tClub"></canvas></div></section>
+    ${DATA.overallReview?`<details class="card" style="margin:0"><summary>Plan notes</summary><div class="notes">${DATA.overallReview}</div></details>`:""}`;
+  $("tmetric").onchange = e => { state.tmetric = e.target.value; render(); };
+  const tm = MET[state.tmetric];
+  const opts = yt => ({maintainAspectRatio:false,spanGaps:true,scales:{x:{grid:{display:false}},y:{grid,title:{display:true,text:yt}}},plugins:{legend:{position:"bottom"}}});
+  draw("tPath",{type:"line",data:{labels:dates,datasets:[
+    {label:"Club path",data:pts.map(p=>p.path),borderColor:"#e58a76",backgroundColor:"#e58a76",pointRadius:5,tension:.3},
+    {label:"Face-to-path",data:pts.map(p=>p.f2p),borderColor:"#e3c97a",backgroundColor:"#e3c97a",pointRadius:5,tension:.3},
+    {label:"Goal",data:dates.map(()=>0),borderColor:"rgba(159,208,124,.6)",borderDash:[4,4],pointRadius:0}]},options:opts("Degrees")});
+  const ks = [...new Set(list.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)))].sort((x,y)=>loftOf(x)-loftOf(y));
+  draw("tClub",{type:"line",data:{labels:dates,datasets:ks.map(k=>({label:nameOf(k),data:list.map(A=>A.clubs[k]&&!A.clubs[k].partial&&A.clubs[k][tm.k]!=null?+A.clubs[k][tm.k].toFixed(tm.dp):null),borderColor:colorOf(k),backgroundColor:colorOf(k),pointRadius:5,tension:.3}))},options:opts(tm.label+(tm.unit?` (${tm.unit})`:""))});
 }
 
+/* ================= BAG ================= */
+function renderBag(){
+  const L7 = clubModel("7i"), L6 = clubModel("6i"), LW = clubModel("7W");
+  const card = (t, rows, sub) => `<div><b>${t}</b>${rows.map(([a,b])=>`<div class="r"><span>${a}</span><span>${b}</span></div>`).join("")}<div class="muted small" style="margin-top:6px">${sub}</div></div>`;
+  const verdict = L6 && LW && L7 && !L6.est && !LW.est
+    ? (L6.carry-L7.carry<6 ? `Measured: the 6-iron overlaps the 7-iron (${f(L6.carry-L7.carry)} yd). Keep the 7-wood and drop the 6-iron.` : `Measured gaps: 7i→6i ${f(L6.carry-L7.carry)} yd, 6i→7W ${f(LW.carry-L6.carry)} yd.`)
+    : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
+  const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
+    return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
+  $("tab-bag").innerHTML = `
+    <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
+      <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured "+(m.date||"")):"").join("")}</div></section>
+    ${DATA.bag.sets.map(set=>`<section class="card"><div class="head"><h2>${esc(set.name)}</h2></div>
+      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Wide</th></tr></thead><tbody>${setRows(set)}</tbody></table></div>
+      <p class="muted small" style="margin:10px 0 0">"est" = not hit yet, estimated from your 7-iron (or AW for wedges). Wide = left/right spread covering 68% of shots.</p></section>`).join("")}`;
+}
 
-/* ---------- SHOT VIEWER ---------- */
-const V = { i:0, key:null, n:null, frame:0, timer:null, speed:1 };
-const vEl = $("viewer");
-function sessionShots(i){ const A=ALL[i]; return A.keys.flatMap(k=>A.clubs[k].shots); }
-function openShot(i, key, n){
-  V.i=i; V.key=key; V.n=n; V.frame=0; stopPlay();
-  renderViewer(); vEl.hidden=false; document.body.style.overflow="hidden";
-  startPlay();
-}
-function closeShot(){ stopPlay(); vEl.hidden=true; document.body.style.overflow=""; }
-function stepShot(d){
-  const list = sessionShots(V.i), idx = list.findIndex(r=>r.key===V.key&&r.n===V.n), r = list[idx+d];
-  if (r){ const playing=!!V.timer; stopPlay(); V.key=r.key; V.n=r.n; V.frame=0; renderViewer(); if(playing) startPlay(); }
-}
-function curShot(){ return ALL[V.i].clubs[V.key]?.shots.find(r=>r.n===V.n); }
-function setFrame(fi){
-  const r = curShot(), fr = r?.img?.frames || []; if (!fr.length) return;
-  V.frame = (fi + fr.length) % fr.length;
-  $("vf").src = fr[V.frame]; $("vr").value = V.frame;
-  $("vfc").textContent = `${V.frame+1} / ${fr.length}`; $("vcap").textContent = `Top view · frame ${V.frame+1}`;
-  document.querySelectorAll("#vstrip img").forEach((im,j)=>im.classList.toggle("on", j===V.frame));
-  const on = document.querySelector("#vstrip img.on"); on?.scrollIntoView({block:"nearest",inline:"nearest"});
-}
-function startPlay(){ const fr=curShot()?.img?.frames||[]; if(fr.length<2) return; stopPlay(); V.timer=setInterval(()=>setFrame(V.frame+1), 110/V.speed); const b=$("vplay"); if(b) b.textContent="❚❚ Pause"; }
-function stopPlay(){ if(V.timer){clearInterval(V.timer);V.timer=null;} const b=$("vplay"); if(b) b.textContent="▶ Play"; }
-function renderViewer(){
-  const A = ALL[V.i], c = A.clubs[V.key], r = curShot(); if (!r) return;
-  const list = sessionShots(V.i), idx = list.findIndex(x=>x.key===V.key&&x.n===V.n);
-  const fr = r.img?.frames || [];
-  fr.forEach(src=>{ const im=new Image(); im.src=src; });  // preload for smooth playback
-  const pb = BENCH.pga[V.key], lb = BENCH.lpga[V.key];
-  const st = (label, key, val, bk) => `<div class="vstat"><div class="l">${GLOSS[key]?tip(key,label):label}</div><div class="v">${val}</div>${bk!=null?`<div class="b">${bk}</div>`:""}</div>`;
-  const tb = mk => pb?.[mk]!=null ? `PGA ${fm(MET[mk],pb[mk])}${lb?.[mk]!=null?` · LPGA ${fm(MET[mk],lb[mk])}`:""}` : null;
-  vEl.innerHTML = `<div class="vbox" role="dialog" aria-modal="true" aria-label="Shot viewer">
-    <div class="vhead">
-      <h2><span class="cn">${sw(V.key)}${esc(CLUB[V.key]?.label||nameOf(V.key))} · shot ${r.n}</span> <span class="muted small" style="font-weight:500">${A.s.iso} · ${idx+1} of ${list.length} in session${r.type?` · ${esc(r.type)}`:""}</span></h2>
-      <div class="vbtns"><button class="iconbtn" id="vprev" ${idx<=0?"disabled":""}>‹ Prev shot</button><button class="iconbtn" id="vnext" ${idx>=list.length-1?"disabled":""}>Next shot ›</button><button class="iconbtn" id="vclose" aria-label="Close">✕</button></div>
-    </div>
-    ${r.suspect?`<div class="caveat"><b>Possible sensor misread:</b> smash or spin is outside what's physically likely for this club.</div>`:""}
-    ${c.caveat?`<div class="caveat"><b>⚑ Club caveat:</b> ${esc(c.caveat)}</div>`:""}
-    <div class="vgrid">
-      <div>
-        <div class="frame">${r.img?.impact?`<img src="${esc(r.img.impact)}" alt="Ball at impact">`:`<div class="empty" style="padding:40px">No impact image</div>`}<span class="cap">Impact</span></div>
-        <p class="muted small" style="margin:8px 0 0">High-speed photo of the ball at impact.</p>
-      </div>
-      <div>
-        <div class="frame">${fr.length?`<img id="vf" src="${esc(fr[0])}" alt="Top-view frame">`:`<div class="empty" style="padding:40px">No frames</div>`}<span class="cap" id="vcap">Top view · frame 1</span></div>
-        ${fr.length?`<div class="player">
-          <button class="iconbtn" id="vplay">▶ Play</button>
-          <button class="iconbtn" id="vfb" aria-label="Previous frame">‹</button>
-          <button class="iconbtn" id="vff" aria-label="Next frame">›</button>
-          <input type="range" id="vr" min="0" max="${fr.length-1}" value="0" aria-label="Frame">
-          <span class="fc" id="vfc">1 / ${fr.length}</span>
-          <select id="vspeed" aria-label="Playback speed">${[[.25,"¼×"],[.5,"½×"],[1,"1×"],[2,"2×"]].map(([v,l])=>`<option value="${v}" ${v===V.speed?"selected":""}>${l}</option>`).join("")}</select>
-        </div>
-        <div class="strip" id="vstrip">${fr.map((src,j)=>`<img src="${esc(src)}" alt="" data-f="${j}" loading="lazy">`).join("")}</div>
-        <p class="muted small" style="margin:6px 0 0">Look at where the ball sits on the face (heel vs. toe) and the club's direction through impact. Keys: ←/→ frame · space play · ↑/↓ shot · Esc close.</p>`:""}
-      </div>
-    </div>
-    <div class="vstats">
-      ${st("Carry","carry",f(r.carry)+" yd",tb("carry"))}
-      ${st("Total","total",f(r.total)+" yd")}
-      ${st("Finish","side",lr(r.side,1))}
-      ${st("Ball speed","ball",f(r.ballSpeed)+" mph",tb("ball"))}
-      ${st("Club speed","club",f(r.clubSpeed)+" mph",tb("club"))}
-      ${st("Smash","smash",f(r.smash,2),tb("smash"))}
-      ${st("Launch","launch",f(r.launch)+"°",tb("launch"))}
-      ${st("Back spin","spin",r.backSpin==null?"—":Math.round(r.backSpin).toLocaleString(),tb("spin"))}
-      ${st("Apex","apex",f(r.apex)+" yd",tb("apex"))}
-      ${st("Land angle","descent",f(r.descent)+"°",tb("descent"))}
-      ${st("Club path","path",sg(r.path)+"°","Tour ≈ 0")}
-      ${st("Face","face",sg(r.face)+"°")}
-      ${st("Face-to-path","f2p",sg(r.f2p)+"°","Goal ±3")}
-      ${st("Side spin","spin",r.sideSpin==null?"—":lr(r.sideSpin))}
-    </div></div>`;
-  $("vclose").onclick = closeShot; $("vprev").onclick = ()=>stepShot(-1); $("vnext").onclick = ()=>stepShot(1);
-  if (fr.length){
-    $("vplay").onclick = ()=> V.timer ? stopPlay() : startPlay();
-    $("vfb").onclick = ()=>{stopPlay();setFrame(V.frame-1);}; $("vff").onclick = ()=>{stopPlay();setFrame(V.frame+1);};
-    $("vr").oninput = e=>{stopPlay();setFrame(+e.target.value);};
-    $("vspeed").onchange = e=>{V.speed=+e.target.value; if(V.timer) startPlay();};
-    document.querySelectorAll("#vstrip img").forEach(im=>im.onclick=()=>{stopPlay();setFrame(+im.dataset.f);});
-    setFrame(V.frame);
-  }
-}
-vEl.addEventListener("click", e=>{ if (e.target===vEl) closeShot(); });
-document.addEventListener("keydown", e=>{
-  if (vEl.hidden) return;
-  if (e.key==="Escape") closeShot();
-  else if (e.key==="ArrowRight"){ e.preventDefault(); stopPlay(); setFrame(V.frame+1); }
-  else if (e.key==="ArrowLeft"){ e.preventDefault(); stopPlay(); setFrame(V.frame-1); }
-  else if (e.key==="ArrowDown"){ e.preventDefault(); stepShot(1); }
-  else if (e.key==="ArrowUp"){ e.preventDefault(); stepShot(-1); }
-  else if (e.key===" "){ e.preventDefault(); V.timer ? stopPlay() : startPlay(); }
-});
-
-
-/* ---------- DRILLS ---------- */
-const store = {
-  get(k, d){ try { const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-};
+/* ================= DRILLS ================= */
 const ytWatch = id => `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
-const ytSearch = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
 function renderDrills(){
-  const D = DATA.drills || {}, drills = D.drills || [], plan = D.plan || [], res = D.resources || [];
-  const done = store.get("golf-plan-v1", {});
-  const base = ALL[0], now = ALL[state.i];
-  const stat = A => ({ path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)), smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash)) });
-  const b0 = stat(base), n0 = stat(now);
-  const goals = [
-    {label:"Club path", unit:"°", start:b0.path, now:n0.path, goal:-3, dp:1, grade:gPath},
-    {label:"Face-to-path", unit:"°", start:b0.f2p, now:n0.f2p, goal:3, dp:1, grade:gF2P},
-    {label:"Iron smash", unit:"", start:b0.smash, now:n0.smash, goal:1.30, dp:2, grade:gSmash},
-  ].map(g=>({...g, pct: g.start==null||g.now==null||g.start===g.goal ? 0 : Math.max(0, Math.min(100, (g.start-g.now)/(g.start-g.goal)*100))}));
-  const totalTasks = plan.reduce((n,l)=>n+l.tasks.length,0), doneTasks = Object.values(done).filter(Boolean).length;
+  const D = DATA.drills||{}, done = store.get("golf-plan-v1",{}), plan = D.plan||[];
+  const tot = plan.reduce((n,l)=>n+l.tasks.length,0), dn = Object.values(done).filter(Boolean).length;
   $("tab-drills").innerHTML = `
-    <section class="card">
-      <div class="sec"><h2>Practice plan</h2><span class="muted small">${doneTasks}/${totalTasks} tasks done · ticks are saved in this browser</span></div>
-      <p class="lede">Four levels, in priority order. Tick tasks off as you go, and log a session at the end of each level to see whether the numbers moved.</p>
-      <div class="levels">${plan.map(l=>{
-        const n = l.tasks.length, d = l.tasks.filter((_,j)=>done[`${l.level}:${j}`]).length;
-        return `<div class="lvl ${d===n?"done":""}"><h3>Level ${l.level}${d===n?" ✓":""}</h3><div class="nm">${esc(l.name)}</div>
-          <div class="xp" title="${d}/${n}"><i style="width:${n?d/n*100:0}%"></i></div>
-          ${l.tasks.map((t,j)=>`<label class="task"><input type="checkbox" data-task="${l.level}:${j}" ${done[`${l.level}:${j}`]?"checked":""}><span>${esc(t)}</span></label>`).join("")}</div>`;}).join("")}</div>
-    </section>
-
-    <section class="card">
-      <div class="sec"><h2>Progress to targets</h2><span class="muted small">${base===now?"baseline "+now.s.iso:`${base.s.iso} → ${now.s.iso}`}</span></div>
-      <p class="lede">How far you've moved from your first session toward each goal.</p>
-      <div class="bars">${goals.map(g=>`<div class="bar" style="grid-template-columns:120px 1fr 190px"><span>${g.label}</span><div class="track"><div class="fill" style="width:${g.pct.toFixed(0)}%;background:var(--gold)"></div></div><span class="num">${g.unit==="°"?sg(g.now,g.dp):f(g.now,g.dp)}${g.unit} → ${g.unit==="°"?sg(g.goal,0):f(g.goal,2)}${g.unit} · ${g.grade(g.now)}</span></div>`).join("")}</div>
-    </section>
-
-    ${drills.map(d=>`<section class="card drill" style="--dc:${esc(d.color||"var(--gold)")}">
-      <div>
-        <div class="lv">Level ${d.level} · ${d.fixes.map(esc).join(" · ")}</div>
-        <h3>${esc(d.title)}</h3>
-        <p class="muted" style="margin:0 0 8px">${esc(d.why)}</p>
-        <ol>${d.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-        <div class="tgt"><b>Target:</b> ${esc(d.target)}</div>
-        <div class="src">Source: <a href="${esc(d.source.url)}" target="_blank" rel="noopener">${esc(d.source.name)} ↗</a></div>
-      </div>
-      <div class="vids">${d.videos.map(v=>`<div>
-          <button class="yt" data-yt="${esc(v.id)}" data-title="${esc(v.title)}" style="background-image:url('https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg')" aria-label="Play video: ${esc(v.title)}"><span class="play">▶</span><span class="ttl">${esc(v.title)}</span></button>
-          <div class="vidrow"><a class="yt-link red" href="${ytWatch(v.id)}" target="_blank" rel="noopener">Watch on YouTube ↗</a></div>
-        </div>`).join("")}
-        <a class="yt-link" href="${ytSearch(d.search)}" target="_blank" rel="noopener" style="justify-self:start">More videos: “${esc(d.search)}” ↗</a>
-      </div>
+    <section class="card"><div class="head"><h2>Practice plan</h2><span class="muted small">${dn}/${tot} done · saved in this browser</span></div>
+      <div class="levels">${plan.map(l=>`<div class="lvl"><div class="t">LEVEL ${l.level}</div><div class="nm">${esc(l.name)}</div>${l.tasks.map((t,j)=>`<label class="task"><input type="checkbox" data-task="${l.level}:${j}" ${done[`${l.level}:${j}`]?"checked":""}><span>${esc(t)}</span></label>`).join("")}</div>`).join("")}</div></section>
+    ${(D.drills||[]).map(d=>`<section class="card drill">
+      <div><div class="lv">Level ${d.level} · ${d.fixes.map(esc).join(", ")}</div><h3>${esc(d.title)}</h3><p class="muted" style="margin:0">${esc(d.why)}</p>
+        <ol>${d.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><div class="tgt"><b>Target:</b> ${esc(d.target)}</div>
+        <div class="muted small">Source: <a href="${esc(d.source.url)}" target="_blank" rel="noopener">${esc(d.source.name)}</a></div></div>
+      <div>${d.videos.slice(0,1).map(v=>`<button class="yt" data-yt="${esc(v.id)}" data-title="${esc(v.title)}" style="background-image:url('https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg')" aria-label="Play ${esc(v.title)}"></button><div class="yt-cap"><span>${esc(v.title)}</span><a href="${ytWatch(v.id)}" target="_blank" rel="noopener">YouTube ↗</a></div>`).join("")}
+        ${d.videos.slice(1).map(v=>`<div class="muted small">Also: <a href="${ytWatch(v.id)}" target="_blank" rel="noopener">${esc(v.title)} ↗</a></div>`).join("")}</div>
     </section>`).join("")}
-
-    ${res.length?`<section class="card"><div class="sec"><h2>Resources</h2></div><p class="lede">The coaching sources behind these drills.</p>
-      <div class="resources">${res.map(r=>`<a class="res" href="${esc(r.url)}" target="_blank" rel="noopener"><b>${esc(r.name)}</b><span>${esc(r.desc)}</span></a>`).join("")}</div></section>`:""}`;
-
-  document.querySelectorAll("#tab-drills input[data-task]").forEach(cb=>cb.onchange=()=>{
-    const d = store.get("golf-plan-v1", {}); d[cb.dataset.task] = cb.checked; store.set("golf-plan-v1", d);
-    sfx(cb.checked ? "coin" : "blip"); renderDrills();
-  });
-  document.querySelectorAll("#tab-drills .yt").forEach(btn=>btn.onclick=()=>{
-    const id = btn.dataset.yt;
-    if (location.protocol === "file:") { window.open(ytWatch(id), "_blank", "noopener"); return; }  // YouTube refuses embeds on file:// pages
-    btn.outerHTML = `<div class="yt" style="cursor:default"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" title="${esc(btn.dataset.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
-  });
+    ${(D.resources||[]).length?`<section class="card"><div class="head"><h2>Resources</h2></div><div class="resources">${D.resources.map(r=>`<a class="res" href="${esc(r.url)}" target="_blank" rel="noopener"><b>${esc(r.name)} ↗</b>${esc(r.desc)}</a>`).join("")}</div></section>`:""}`;
+  document.querySelectorAll("#tab-drills input[data-task]").forEach(cb=>cb.onchange=()=>{const d=store.get("golf-plan-v1",{});d[cb.dataset.task]=cb.checked;store.set("golf-plan-v1",d);renderDrills();});
+  document.querySelectorAll("#tab-drills .yt").forEach(b=>b.onclick=()=>{ const id=b.dataset.yt;
+    if (location.protocol==="file:") { window.open(ytWatch(id),"_blank","noopener"); return; }
+    b.outerHTML=`<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" title="${esc(b.dataset.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`; });
 }
 
-/* ---------- arcade sound + CRT ---------- */
-let actx = null, sfxOn = store.get("golf-sfx", false);
-function sfx(kind="blip"){
-  if (!sfxOn) return;
-  try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    const notes = kind==="coin" ? [988,1319] : kind==="tab" ? [523,784] : [660];
-    notes.forEach((hz,i)=>{
-      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i*0.07;
-      o.type = "square"; o.frequency.setValueAtTime(hz, t);
-      g.gain.setValueAtTime(0.045, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.09);
-      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.1);
-    });
-  } catch {}
+/* ================= SHOT VIEWER ================= */
+const V = {i:0,key:null,n:null,frame:0,timer:null,speed:1}, vEl = $("viewer");
+const sessionShots = i => ALL[i].keys.flatMap(k=>ALL[i].clubs[k].shots);
+const curShot = () => ALL[V.i].clubs[V.key]?.shots.find(r=>r.n===V.n);
+function openShot(i,key,n){ V.i=i;V.key=key;V.n=n;V.frame=0;stopPlay();renderViewer();vEl.hidden=false;document.body.style.overflow="hidden";startPlay(); }
+function closeShot(){ stopPlay(); vEl.hidden=true; document.body.style.overflow=""; }
+function stepShot(d){ const L=sessionShots(V.i), j=L.findIndex(r=>r.key===V.key&&r.n===V.n), r=L[j+d]; if(r){const p=!!V.timer;stopPlay();V.key=r.key;V.n=r.n;V.frame=0;renderViewer();if(p)startPlay();} }
+function setFrame(fi){ const fr=curShot()?.img?.frames||[]; if(!fr.length) return; V.frame=(fi+fr.length)%fr.length;
+  $("vf").src=fr[V.frame]; $("vr").value=V.frame; $("vfc").textContent=`${V.frame+1}/${fr.length}`;
+  document.querySelectorAll("#vstrip img").forEach((im,j)=>im.classList.toggle("on",j===V.frame)); document.querySelector("#vstrip img.on")?.scrollIntoView({block:"nearest",inline:"nearest"}); }
+function startPlay(){ const fr=curShot()?.img?.frames||[]; if(fr.length<2) return; stopPlay(); V.timer=setInterval(()=>setFrame(V.frame+1),110/V.speed); $("vplay")&&($("vplay").textContent="Pause"); }
+function stopPlay(){ if(V.timer){clearInterval(V.timer);V.timer=null;} $("vplay")&&($("vplay").textContent="Play"); }
+function renderViewer(){
+  const A=ALL[V.i], r=curShot(); if(!r) return;
+  const L=sessionShots(V.i), j=L.findIndex(x=>x.key===V.key&&x.n===V.n), fr=r.img?.frames||[];
+  fr.forEach(src=>{const im=new Image();im.src=src;});
+  const pb=BENCH.pga[V.key], st=(l,k,v,b)=>`<div class="vstat"><div class="l">${tip(k,l)}</div><div class="v">${v}</div>${b?`<div class="b">${b}</div>`:""}</div>`;
+  const tb = k => pb?.[k]!=null ? `PGA ${fm(MET[k],pb[k])}` : "";
+  vEl.innerHTML=`<div class="vbox" role="dialog" aria-modal="true" aria-label="Shot viewer">
+    <div class="head"><div><h2>${esc(CLUB[V.key]?.label||nameOf(V.key))} · shot ${r.n}</h2><p class="sub">${A.s.iso} · ${j+1} of ${L.length}${r.suspect?' · <span class="warn">possible sensor misread</span>':""}</p></div>
+      <div class="row-btns"><button class="btn sm" id="vprev" ${j<=0?"disabled":""}>‹ Prev</button><button class="btn sm" id="vnext" ${j>=L.length-1?"disabled":""}>Next ›</button><button class="btn icon" id="vclose" aria-label="Close">✕</button></div></div>
+    <div class="vgrid">
+      <div><div class="frame">${r.img?.impact?`<img src="${esc(r.img.impact)}" alt="Ball at impact">`:""}<span class="cap">Impact</span></div></div>
+      <div><div class="frame">${fr.length?`<img id="vf" src="${esc(fr[0])}" alt="Top-view frame">`:""}<span class="cap">Top view</span></div>
+        ${fr.length?`<div class="player"><button class="btn sm" id="vplay">Play</button><button class="btn icon" id="vfb" aria-label="Previous frame">‹</button><button class="btn icon" id="vff" aria-label="Next frame">›</button>
+          <input type="range" id="vr" min="0" max="${fr.length-1}" value="0" aria-label="Frame"><span class="num muted small" id="vfc">1/${fr.length}</span>
+          <select id="vspeed" aria-label="Speed">${[[.25,"¼×"],[.5,"½×"],[1,"1×"],[2,"2×"]].map(([v,l])=>`<option value="${v}" ${v===V.speed?"selected":""}>${l}</option>`).join("")}</select></div>
+        <div class="strip" id="vstrip">${fr.map((s,k)=>`<img src="${esc(s)}" alt="" data-f="${k}" loading="lazy">`).join("")}</div>`:""}</div>
+    </div>
+    <div class="vstats">${st("Carry","carry",f(r.carry)+" yd",tb("carry"))}${st("Finish","side",lr(r.side,1))}${st("Ball speed","ball",f(r.ballSpeed)+" mph",tb("ball"))}${st("Club speed","club",f(r.clubSpeed)+" mph",tb("club"))}${st("Smash","smash",f(r.smash,2),tb("smash"))}${st("Launch","launch",f(r.launch)+"°",tb("launch"))}${st("Spin","spin",r.backSpin==null?"—":Math.round(r.backSpin).toLocaleString(),tb("spin"))}${st("Path","path",sg(r.path)+"°","Tour ≈ 0")}${st("Face-to-path","f2p",sg(r.f2p)+"°","goal ±3")}</div>
+  </div>`;
+  $("vclose").onclick=closeShot; $("vprev").onclick=()=>stepShot(-1); $("vnext").onclick=()=>stepShot(1);
+  if(fr.length){ $("vplay").onclick=()=>V.timer?stopPlay():startPlay(); $("vfb").onclick=()=>{stopPlay();setFrame(V.frame-1);}; $("vff").onclick=()=>{stopPlay();setFrame(V.frame+1);};
+    $("vr").oninput=e=>{stopPlay();setFrame(+e.target.value);}; $("vspeed").onchange=e=>{V.speed=+e.target.value;if(V.timer)startPlay();};
+    document.querySelectorAll("#vstrip img").forEach(im=>im.onclick=()=>{stopPlay();setFrame(+im.dataset.f);}); setFrame(V.frame); }
 }
-function setSwitch(id, on){ $(id).setAttribute("aria-pressed", on); }
-$("sfx").onclick = () => { sfxOn = !sfxOn; store.set("golf-sfx", sfxOn); setSwitch("sfx", sfxOn); sfx("coin"); };
-let crtOn = store.get("golf-crt", false);
-document.body.classList.toggle("crt", crtOn); setSwitch("crt", crtOn); setSwitch("sfx", sfxOn);
-$("crt").onclick = () => { crtOn = !crtOn; store.set("golf-crt", crtOn); document.body.classList.toggle("crt", crtOn); setSwitch("crt", crtOn); sfx(); };
-document.addEventListener("click", e => {
-  const t = e.target.closest(".nav button"); if (t) return sfx("tab");
-  if (e.target.closest(".chip, .toggle:not(#sfx), .seg button, .hole, .iconbtn, .datepick button, summary, tr.clickable, .yt")) sfx();
-});
+vEl.addEventListener("click",e=>{if(e.target===vEl)closeShot();});
+document.addEventListener("keydown",e=>{ if(vEl.hidden) return;
+  if(e.key==="Escape")closeShot(); else if(e.key==="ArrowRight"){e.preventDefault();stopPlay();setFrame(V.frame+1);} else if(e.key==="ArrowLeft"){e.preventDefault();stopPlay();setFrame(V.frame-1);}
+  else if(e.key==="ArrowDown"){e.preventDefault();stepShot(1);} else if(e.key==="ArrowUp"){e.preventDefault();stepShot(-1);} else if(e.key===" "){e.preventDefault();V.timer?stopPlay():startPlay();} });
 
-/* ---------- wiring ---------- */
+/* ================= wiring ================= */
 const sel = $("date");
-sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${A.s.iso} · ${A.keys.reduce((n,k)=>n+A.clubs[k].n,0)} shots${A.meta.curated?" · best":""}</option>`).reverse().join("");
+sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${A.s.iso}</option>`).reverse().join("");
+const TABS = {session:renderSession, course:renderCourse, trend:renderTrend, bag:renderBag, drills:renderDrills};
 function render(){
   if (!ALL.length) return;
-  sel.value = state.i;
-  $("prev").disabled = state.i<=0; $("next").disabled = state.i>=ALL.length-1;
-  document.querySelectorAll("main").forEach(m=>m.hidden = m.id !== "tab-"+state.tab);
-  document.querySelectorAll(".nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
-  ({session:renderSession, trend:renderTrend, bag:renderBag, course:renderCourse, drills:renderDrills})[state.tab]();
-  history.replaceState(null, "", `#${ALL[state.i].s.date}/${state.tab}${state.club?"/"+state.club:""}`);
+  sel.value = state.i; $("prev").disabled = state.i<=0; $("next").disabled = state.i>=ALL.length-1;
+  document.querySelectorAll("main").forEach(m=>m.hidden = m.id!=="tab-"+state.tab);
+  document.querySelectorAll(".tabs .btn").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
+  TABS[state.tab]();
+  history.replaceState(null,"",`#${ALL[state.i].s.date}/${state.tab}`);
 }
-const [hd, ht, hc] = location.hash.slice(1).split("/");
-const hi = ALL.findIndex(A=>A.s.date===hd); if (hi>=0) state.i = hi;
-if (["session","trend","bag","course","drills"].includes(ht)) state.tab = ht;
-if (hc) state.club = hc;
-sel.onchange = () => { state.i = +sel.value; render(); };
-$("prev").onclick = () => { state.i--; render(); };
-$("next").onclick = () => { state.i++; render(); };
-document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();window.scrollTo({top:0});});
-
-// glossary tooltips
+const [hd,ht] = location.hash.slice(1).split("/"), hi = ALL.findIndex(A=>A.s.date===hd);
+if (hi>=0) state.i = hi; if (TABS[ht]) state.tab = ht;
+sel.onchange = () => { state.i=+sel.value; render(); };
+$("prev").onclick = () => { state.i--; render(); }; $("next").onclick = () => { state.i++; render(); };
+document.querySelectorAll(".tabs .btn").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();scrollTo({top:0});});
 const tipEl = $("tip");
-document.addEventListener("mouseover", e=>{ const t=e.target.closest("[data-tip]"); if(!t||!t.dataset.tip){tipEl.hidden=true;return;}
-  tipEl.textContent=t.dataset.tip; tipEl.hidden=false; const r=t.getBoundingClientRect();
-  const x=Math.min(window.innerWidth-tipEl.offsetWidth-8, Math.max(8, r.left)); const y=r.bottom+8+tipEl.offsetHeight>window.innerHeight ? r.top-tipEl.offsetHeight-8 : r.bottom+8;
-  tipEl.style.left=x+"px"; tipEl.style.top=y+"px"; });
-window.addEventListener("scroll", ()=>tipEl.hidden=true, {passive:true});
-
-$("foot").textContent = `Built ${DATA.built} from ${ALL.length} session folder(s) · Benchmarks: TrackMan PGA/LPGA Tour averages, Shot Scope 25-handicap averages · Rebuild: python3 -I scripts/build_dashboard.py`;
-if (ALL.length) render(); else $("tab-session").innerHTML = `<section class="card empty">No sessions found.</section>`;
+document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");if(!t){tipEl.hidden=true;return;}tipEl.textContent=t.dataset.tip;tipEl.hidden=false;const r=t.getBoundingClientRect();
+  tipEl.style.left=Math.min(innerWidth-tipEl.offsetWidth-8,Math.max(8,r.left))+"px";tipEl.style.top=(r.bottom+8+tipEl.offsetHeight>innerHeight?r.top-tipEl.offsetHeight-8:r.bottom+8)+"px";});
+addEventListener("scroll",()=>tipEl.hidden=true,{passive:true});
+$("foot").textContent = `Built ${DATA.built} · ${ALL.length} session${ALL.length===1?"":"s"} · Benchmarks: TrackMan Tour averages, Shot Scope 25-handicap`;
+if (ALL.length) render(); else $("tab-session").innerHTML = `<section class="card empty">No sessions yet.</section>`;
 </script>
 </body>
 </html>
