@@ -1,6 +1,6 @@
 # Golf sim data
 
-Downloads every shot from a Uneekor Power U report and builds `index.html`, a retro dashboard (live at https://mplaza27.github.io/golf/) with a date picker and five tabs: Session, Progress, Bag, Course and Drills.
+Downloads every shot from a Uneekor Power U report and builds `index.html`, a retro dashboard (live at https://mplaza27.github.io/simple-golf/) with a date picker and five tabs: Session, Progress, Bag, Course and Drills.
 
 ## New session
 1. Make a dated folder (`MM-DD-YY`) containing a `link.md` with the report link.
