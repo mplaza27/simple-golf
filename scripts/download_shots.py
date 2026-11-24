@@ -1,8 +1,8 @@
 """Download every shot's ALL export from a Uneekor Power U report.
 
 Usage: python3 -I scripts/download_shots.py [MM-DD-YY ...]
-With no args, uses the latest dated folder in golf/. Reads the report link from
-<folder>/link.md and creates <folder>/<club>/<club>_<n>/ (n = 1 for the oldest shot).
+With no args, uses the latest dated folder in golf/data/. Reads the report link from
+data/<folder>/link.md and creates <folder>/<club>/<club>_<n>/ (n = 1 for the oldest shot).
 Shots whose folder already has files are skipped.
 """
 import io
@@ -17,6 +17,7 @@ from pathlib import Path
 
 API = "https://api-v2.golfsvc.com/v2/oldmyuneekor/report"
 GOLF_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = GOLF_DIR / "data"
 # Uneekor club_name -> folder name (must match a "key" in bag.json to show up in the Bag tab).
 # Confirmed from real exports: IRON7-9, WEDGE_*. The wood/hybrid/6-iron names are best guesses;
 # an unmapped club is saved under its raw Uneekor name (e.g. "WOOD_7") so you can add it here.
@@ -81,11 +82,11 @@ def read_link(folder):
 
 if __name__ == "__main__":
     if sys.argv[1:]:
-        folders = [GOLF_DIR / a for a in sys.argv[1:]]
+        folders = [DATA_DIR / a for a in sys.argv[1:]]
     else:
-        dated = [p for p in GOLF_DIR.iterdir() if p.is_dir() and folder_date(p)]
+        dated = [p for p in DATA_DIR.iterdir() if p.is_dir() and folder_date(p)]
         if not dated:
-            raise SystemExit(f"no MM-DD-YY folders in {GOLF_DIR}")
+            raise SystemExit(f"no MM-DD-YY folders in {DATA_DIR}")
         folders = [max(dated, key=folder_date)]
     for folder in folders:
         print(f"== {folder.name}")

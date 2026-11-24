@@ -1,4 +1,4 @@
-"""Build golf/index.html (the GitHub Pages site) from every MM-DD-YY session folder plus bag.json.
+"""Build golf/index.html (the GitHub Pages site) from every data/MM-DD-YY session folder plus bag.json.
 
 Usage: python3 -I scripts/build_dashboard.py
 Each session folder may contain review.md (coach notes shown on that date's Session tab)
@@ -14,6 +14,7 @@ from pathlib import Path
 GOLF_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE = Path(__file__).resolve().parent / "dashboard_template.html"
 OUT = GOLF_DIR / "index.html"
+DATA_DIR = GOLF_DIR / "data"
 FIELDS = {
     "Carry": "carry", "Total": "total", "Side Dist": "side", "Smash Factor": "smash",
     "Club Speed": "clubSpeed", "Ball Speed": "ballSpeed", "Back Spin": "backSpin",
@@ -112,7 +113,7 @@ def load_session(folder):
 
 
 def build():
-    folders = sorted((p for p in GOLF_DIR.iterdir() if p.is_dir() and folder_date(p)), key=folder_date)
+    folders = sorted((p for p in DATA_DIR.iterdir() if p.is_dir() and folder_date(p)), key=folder_date) if DATA_DIR.exists() else []
     sessions = [s for s in (load_session(f) for f in folders) if s["clubs"]]
     bag = json.loads((GOLF_DIR / "bag.json").read_text())
     courses_file = GOLF_DIR / "courses.json"

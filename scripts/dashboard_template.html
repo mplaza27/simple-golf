@@ -66,6 +66,15 @@
   .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   .note{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--sand);background:rgba(227,201,122,.08);border:1px solid rgba(227,201,122,.25);border-radius:999px;padding:4px 12px}
 
+  /* overview strip */
+  .overview{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
+  .ov{background:var(--panel);padding:14px 18px}
+  .ov .l{color:var(--muted);font-size:12.5px}
+  .ov .v{font-family:var(--mono);font-size:22px;color:var(--cream);line-height:1.3}
+  .ov .c{font-size:12.5px;color:var(--faint)}
+  .ov.now{background:var(--panel2)}
+  .ov.now .l{color:var(--green)}
+
   /* stats */
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
@@ -198,6 +207,7 @@
   footer{color:var(--faint);font-size:12.5px;margin-top:36px}
 
   @media (max-width:860px){
+    .overview{grid-template-columns:1fr 1fr}
     .stats{grid-template-columns:1fr}
     .detail,.planner,.vgrid,.drill,.proj{grid-template-columns:1fr}
     .levels{grid-template-columns:1fr 1fr}
@@ -228,6 +238,7 @@
     </div>
   </div></div>
 
+  <section class="overview" id="overview"></section>
   <main id="tab-session" class="stack"></main>
   <main id="tab-course" class="stack" hidden></main>
   <main id="tab-trend" class="stack" hidden></main>
@@ -367,6 +378,10 @@ const gPath  = v => v==null?"?":Math.abs(v)<=2?"A":Math.abs(v)<=4?"B":Math.abs(v
 const gF2P   = v => v==null?"?":Math.abs(v)<=1.5?"A":Math.abs(v)<=3?"B":Math.abs(v)<=5?"C":Math.abs(v)<=7?"D":"F";
 const gSmash = v => v==null?"?":v>=1.33?"A":v>=1.28?"B":v>=1.22?"C":v>=1.15?"D":"F";
 
+/* ================= sessions are numbered in date order ================= */
+const sName = i => `Session ${i+1}`;
+const sDate = A => new Date(A.s.iso+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
 const state = { i:ALL.length-1, tab:"session", club:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1],
@@ -382,7 +397,7 @@ function renderSession(){
   const views = [["distance","Distance"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"],["gapping","Gapping"]];
   $("tab-session").innerHTML = `
     <div class="head" style="margin:0">
-      <div><h2>Session · ${s.iso}</h2><p class="sub">${shots} shots · ${keys.length} clubs</p></div>
+      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs</p></div>
       ${meta.curated?`<span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:""}
     </div>
     <section class="stats">
@@ -506,8 +521,8 @@ function mainChart(A){
 
 /* ================= club model (measured or estimated) for course planning ================= */
 function latestFor(k){
-  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:ALL[i].s.iso}; }
-  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:ALL[i].s.iso}; }
+  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:sName(i)}; }
+  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:sName(i)}; }
   return null;
 }
 // Clubs not measured yet are estimated from the latest full 7-iron (carry ratio, roll %), or from the AW for wedges.
@@ -630,12 +645,12 @@ function renderCourse(){
 
 /* ================= PROGRESS ================= */
 function renderTrend(){
-  const list = ALL.slice(0,state.i+1), dates = list.map(A=>A.s.iso), multi = list.length>1;
+  const list = ALL.slice(0,state.i+1), dates = list.map((A,i)=>sName(i)), multi = list.length>1;
   const P = A => ({path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)), smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash))});
   const pts = list.map(P), a = pts[0], z = pts[pts.length-1];
   const ch = (label,key,now,d,better,unit,dp,g) => `<div class="stat"><div><div class="l">${tip(key,label)}</div><div class="v">${unit==="°"?sg(now,dp):f(now,dp)}${unit}</div><div class="c">${multi?`${sg(d,dp)}${unit} since ${dates[0]} · <span class="${better?"good":"bad"}">${better?"better":"worse"}</span>`:"baseline · next session adds a trend"}</div></div><div class="grade g${g}">${g}</div></div>`;
   $("tab-trend").innerHTML = `
-    <div class="head" style="margin:0"><div><h2>Progress</h2><p class="sub">${list.length} session${multi?"s":""} · ${dates[0]}${multi?" → "+dates[dates.length-1]:""}</p></div></div>
+    <div class="head" style="margin:0"><div><h2>Progress</h2><p class="sub">${list.length} session${multi?"s":""} · ${sDate(list[0])}${multi?" → "+sDate(list[list.length-1]):""}</p></div></div>
     <section class="stats">
       ${ch("Club path","path",z.path,z.path-a.path,Math.abs(z.path)<Math.abs(a.path),"°",1,gPath(z.path))}
       ${ch("Face-to-path","f2p",z.f2p,z.f2p-a.f2p,Math.abs(z.f2p)<Math.abs(a.f2p),"°",1,gF2P(z.f2p))}
@@ -666,7 +681,7 @@ function renderBag(){
     return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
   $("tab-bag").innerHTML = `
     <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
-      <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured "+(m.date||"")):"").join("")}</div></section>
+      <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured in "+(m.date||"")):"").join("")}</div></section>
     ${DATA.bag.sets.map(set=>`<section class="card"><div class="head"><h2>${esc(set.name)}</h2></div>
       <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Wide</th></tr></thead><tbody>${setRows(set)}</tbody></table></div>
       <p class="muted small" style="margin:10px 0 0">"est" = not hit yet, estimated from your 7-iron (or AW for wedges). Wide = left/right spread covering 68% of shots.</p></section>`).join("")}`;
@@ -713,7 +728,7 @@ function renderViewer(){
   const pb=BENCH.pga[V.key], st=(l,k,v,b)=>`<div class="vstat"><div class="l">${tip(k,l)}</div><div class="v">${v}</div>${b?`<div class="b">${b}</div>`:""}</div>`;
   const tb = k => pb?.[k]!=null ? `PGA ${fm(MET[k],pb[k])}` : "";
   vEl.innerHTML=`<div class="vbox" role="dialog" aria-modal="true" aria-label="Shot viewer">
-    <div class="head"><div><h2>${esc(CLUB[V.key]?.label||nameOf(V.key))} · shot ${r.n}</h2><p class="sub">${A.s.iso} · ${j+1} of ${L.length}${r.suspect?' · <span class="warn">possible sensor misread</span>':""}</p></div>
+    <div class="head"><div><h2>${esc(CLUB[V.key]?.label||nameOf(V.key))} · shot ${r.n}</h2><p class="sub">${sName(V.i)} · ${sDate(A)} · ${j+1} of ${L.length}${r.suspect?' · <span class="warn">possible sensor misread</span>':""}</p></div>
       <div class="row-btns"><button class="btn sm" id="vprev" ${j<=0?"disabled":""}>‹ Prev</button><button class="btn sm" id="vnext" ${j>=L.length-1?"disabled":""}>Next ›</button><button class="btn icon" id="vclose" aria-label="Close">✕</button></div></div>
     <div class="vgrid">
       <div><div class="frame">${r.img?.impact?`<img src="${esc(r.img.impact)}" alt="Ball at impact">`:""}<span class="cap">Impact</span></div></div>
@@ -735,9 +750,24 @@ document.addEventListener("keydown",e=>{ if(vEl.hidden) return;
   if(e.key==="Escape")closeShot(); else if(e.key==="ArrowRight"){e.preventDefault();stopPlay();setFrame(V.frame+1);} else if(e.key==="ArrowLeft"){e.preventDefault();stopPlay();setFrame(V.frame-1);}
   else if(e.key==="ArrowDown"){e.preventDefault();stepShot(1);} else if(e.key==="ArrowUp"){e.preventDefault();stepShot(-1);} else if(e.key===" "){e.preventDefault();V.timer?stopPlay():startPlay();} });
 
+/* ================= OVERVIEW (all sessions) ================= */
+function renderOverview(){
+  const balls = A => A.keys.reduce((n,k)=>n+A.clubs[k].n,0);
+  const total = ALL.reduce((n,A)=>n+balls(A),0);
+  const measured = new Set(ALL.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)));
+  const bagN = MAIN.filter(c=>c.key!=="Putter").length;
+  const curated = ALL.some(A=>A.meta.curated);
+  const A = ALL[state.i];
+  $("overview").innerHTML = `
+    <div class="ov"><div class="l">Sessions</div><div class="v">${ALL.length}</div><div class="c">${sDate(ALL[0])}${ALL.length>1?" → "+sDate(ALL[ALL.length-1]):""}</div></div>
+    <div class="ov"><div class="l">Balls hit</div><div class="v">${total.toLocaleString()}</div><div class="c">${curated?"recorded (mishits removed)":"all sessions"}</div></div>
+    <div class="ov"><div class="l">Clubs measured</div><div class="v">${measured.size} / ${bagN}</div><div class="c">${bagN-measured.size} still estimated</div></div>
+    <div class="ov now"><div class="l">Viewing ${sName(state.i)}</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>`;
+}
+
 /* ================= wiring ================= */
 const sel = $("date");
-sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${A.s.iso}</option>`).reverse().join("");
+sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${sName(i)} · ${sDate(A)}</option>`).reverse().join("");
 const TABS = {session:renderSession, course:renderCourse, trend:renderTrend, bag:renderBag, drills:renderDrills};
 function render(){
   if (!ALL.length) return;
@@ -745,10 +775,11 @@ function render(){
   document.querySelectorAll("main").forEach(m=>m.hidden = m.id!=="tab-"+state.tab);
   document.querySelectorAll(".tabs .btn").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
   TABS[state.tab]();
-  history.replaceState(null,"",`#${ALL[state.i].s.date}/${state.tab}`);
+  history.replaceState(null,"",`#s${state.i+1}/${state.tab}`);
+  renderOverview();
 }
-const [hd,ht] = location.hash.slice(1).split("/"), hi = ALL.findIndex(A=>A.s.date===hd);
-if (hi>=0) state.i = hi; if (TABS[ht]) state.tab = ht;
+const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hn ? +hn[1]-1 : ALL.findIndex(A=>A.s.date===hd);
+if (hi>=0 && hi<ALL.length) state.i = hi; if (TABS[ht]) state.tab = ht;
 sel.onchange = () => { state.i=+sel.value; render(); };
 $("prev").onclick = () => { state.i--; render(); }; $("next").onclick = () => { state.i++; render(); };
 document.querySelectorAll(".tabs .btn").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();scrollTo({top:0});});
@@ -756,7 +787,7 @@ const tipEl = $("tip");
 document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");if(!t){tipEl.hidden=true;return;}tipEl.textContent=t.dataset.tip;tipEl.hidden=false;const r=t.getBoundingClientRect();
   tipEl.style.left=Math.min(innerWidth-tipEl.offsetWidth-8,Math.max(8,r.left))+"px";tipEl.style.top=(r.bottom+8+tipEl.offsetHeight>innerHeight?r.top-tipEl.offsetHeight-8:r.bottom+8)+"px";});
 addEventListener("scroll",()=>tipEl.hidden=true,{passive:true});
-$("foot").textContent = `Built ${DATA.built} · ${ALL.length} session${ALL.length===1?"":"s"} · Benchmarks: TrackMan Tour averages, Shot Scope 25-handicap`;
+$("foot").textContent = `Built ${DATA.built} · Benchmarks: TrackMan Tour averages, Shot Scope 25-handicap`;
 if (ALL.length) render(); else $("tab-session").innerHTML = `<section class="card empty">No sessions yet.</section>`;
 </script>
 </body>
