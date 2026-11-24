@@ -1,0 +1,16 @@
+{
+  "courses": [
+    {
+      "name": "Stoneham Oaks",
+      "location": "Stoneham, MA · 9-hole par 3 · par 27",
+      "bag": "Par 3 bag (Stoneham Oaks)",
+      "note": "Yardages from online scorecards (par3-executive-golf.com, Foretee, BlueGolf; Swing By Swing for the middle tees). Sources disagree, so check the card at the course and edit courses.json if needed.",
+      "defaultTee": "Back",
+      "tees": {
+        "Back":    [89, 147, 179, 128, 95, 113, 153, 139, 82],
+        "Middle":  [80, 131, 155, 107, 88, 91, 118, 104, 67],
+        "Forward": [71, 117, 140, 90, 72, 74, 114, 79, 54]
+      }
+    }
+  ]
+}

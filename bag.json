@@ -1,0 +1,150 @@
+{
+  "_comment": "key = club folder name used in each MM-DD-YY session folder. equiv = main-bag club whose yardage the par-3 bag club uses.",
+  "sets": [
+    {
+      "name": "Main bag",
+      "clubs": [
+        {
+          "key": "Dr",
+          "label": "Driver",
+          "model": "Callaway Elyte",
+          "loft": 10.5,
+          "group": "Top of the bag"
+        },
+        {
+          "key": "3W",
+          "label": "3 Wood",
+          "model": "Callaway Mavrik",
+          "loft": 15,
+          "group": "Top of the bag",
+          "note": "Long distance off the deck or tight tees"
+        },
+        {
+          "key": "3H",
+          "label": "3 Hybrid",
+          "model": "Callaway Mavrik",
+          "loft": 18,
+          "group": "Top of the bag",
+          "note": "Replaces 4-iron; easier out of the rough"
+        },
+        {
+          "key": "7W",
+          "label": "7 Wood",
+          "model": "Callaway Quantum Max D",
+          "loft": 21.5,
+          "group": "Top of the bag",
+          "note": "Replaces 5-iron; high launch / soft landing"
+        },
+        {
+          "key": "6i",
+          "label": "6 Iron",
+          "model": "Callaway Paradym X",
+          "loft": 24.5,
+          "group": "Core irons"
+        },
+        {
+          "key": "7i",
+          "label": "7 Iron",
+          "model": "Callaway Paradym X",
+          "loft": 27.5,
+          "group": "Core irons"
+        },
+        {
+          "key": "8i",
+          "label": "8 Iron",
+          "model": "Callaway Paradym X",
+          "loft": 31.5,
+          "group": "Core irons"
+        },
+        {
+          "key": "9i",
+          "label": "9 Iron",
+          "model": "Callaway Paradym X",
+          "loft": 36,
+          "group": "Core irons"
+        },
+        {
+          "key": "PW",
+          "label": "Pitching Wedge",
+          "model": "Callaway Paradym X",
+          "loft": 41,
+          "group": "Wedges"
+        },
+        {
+          "key": "AW",
+          "label": "Approach Wedge",
+          "model": "Callaway Paradym X",
+          "loft": 46,
+          "group": "Wedges"
+        },
+        {
+          "key": "51",
+          "label": "Gap Wedge",
+          "model": "Callaway Paradym X",
+          "loft": 51,
+          "group": "Wedges"
+        },
+        {
+          "key": "56",
+          "label": "Sand Wedge",
+          "model": "Cleveland CBX 4 ZipCore",
+          "loft": 56,
+          "group": "Wedges",
+          "note": "Bunker shots and chips"
+        },
+        {
+          "key": "60",
+          "label": "Lob Wedge",
+          "model": "Cleveland CBX 4 ZipCore",
+          "loft": 60,
+          "group": "Wedges",
+          "note": "Short-sided shots over hazards"
+        },
+        {
+          "key": "Putter",
+          "label": "Putter",
+          "model": "L.A.B. Golf",
+          "loft": null,
+          "group": "Green"
+        }
+      ]
+    },
+    {
+      "name": "Par 3 bag (Stoneham Oaks)",
+      "clubs": [
+        {
+          "label": "7 Wood",
+          "model": "Callaway Quantum Max D",
+          "loft": 21.5,
+          "equiv": "7W"
+        },
+        {
+          "label": "3 Iron",
+          "loft": 24,
+          "equiv": "6i"
+        },
+        {
+          "label": "6 Iron",
+          "loft": 35,
+          "equiv": "9i"
+        },
+        {
+          "label": "9 Iron",
+          "loft": 47,
+          "equiv": "AW"
+        },
+        {
+          "label": "Pitching Wedge",
+          "loft": 51,
+          "equiv": "51"
+        },
+        {
+          "label": "Putter",
+          "model": "L.A.B. Golf",
+          "loft": null,
+          "equiv": "Putter"
+        }
+      ]
+    }
+  ]
+}

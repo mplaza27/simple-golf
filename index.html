@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golf Sim Arcade</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9B%B3%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#1a1a2e; --panel:#16213e; --panel2:#1a2a50; --panel3:#213463; --line:#0f3460;
+    --ink:#e6e2da; --ink2:#d4d0c8; --muted:#a3a0ae; --faint:#6b6f8e; --shadow:rgba(0,0,0,.3);
+    --gold:#e8b84b; --accent:#e8b84b; --pink:#b03a3a; --yellow:#e8b84b; --orange:#d9893a; --blue:#5b8fd9;
+    --hcp:#d9893a; --lpga:#b08cf0; --pga:#5b8fd9;
+    --bad:#e0605e; --warn:#e8b84b; --good:#6fc27a; --info:#5b8fd9; --dark:#1a1a2e;
+    --pixel:"Press Start 2P",ui-monospace,Menlo,monospace;
+    --crt:"Press Start 2P",ui-monospace,Menlo,monospace;
+    --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --r:3px;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html{background:var(--bg)}
+  body{margin:0;color:var(--ink);font:15.5px/1.6 var(--sans);-webkit-font-smoothing:antialiased;background:var(--bg);image-rendering:pixelated}
+  body.crt::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px)}
+  button{font:inherit;color:inherit}
+  a{color:var(--accent)}
+  .page{max-width:1200px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+
+  /* ---- arcade buttons (shared) ---- */
+  .btn,.chip,.toggle,.iconbtn,.nav button,.seg button,.datepick button,.yt-link,.res{
+    border:2px solid var(--line);border-radius:var(--r);background:var(--panel);color:var(--ink2);
+    box-shadow:3px 3px 0 var(--shadow);cursor:pointer;transition:transform .06s, box-shadow .06s, background .15s, color .15s;
+    font-weight:700;-webkit-tap-highlight-color:transparent}
+  .btn:hover,.chip:hover,.toggle:hover,.iconbtn:hover,.nav button:hover,.seg button:hover,.datepick button:hover:not(:disabled),.yt-link:hover,.res:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow);background:var(--panel2);border-color:var(--gold);color:var(--gold)}
+  .btn:active,.chip:active,.toggle:active,.iconbtn:active,.nav button:active,.seg button:active,.datepick button:active,.yt-link:active,.res:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+  :focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+  /* header */
+  .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(22,33,62,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:2px solid var(--line);margin:0 -20px 24px;padding:12px 20px;box-shadow:0 4px 0 var(--bg),0 6px 0 var(--line)}
+  .top-in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--pixel);font-size:14px;letter-spacing:.02em;line-height:1.3}
+  .brand .logo{font-size:22px;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.4))}
+  .brand b{color:var(--gold)}
+  .brand small{display:block;font-family:var(--sans);font-size:12.5px;color:var(--muted);letter-spacing:.02em;margin-top:4px;font-weight:500}
+  .nav{display:flex;gap:8px;flex-wrap:wrap}
+  .nav button{font-family:var(--pixel);font-size:10px;padding:10px 12px;letter-spacing:.04em;text-transform:uppercase}
+  .nav button[aria-selected="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+  .datepick{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%}
+  .datepick select{min-width:0;flex:1 1 auto;max-width:calc(100vw - 140px)}
+  .datepick button{width:38px;height:38px;font-size:18px}
+  .datepick button:disabled{opacity:.3;cursor:default;box-shadow:1px 1px 0 var(--shadow)}
+  select{background:var(--panel);color:var(--gold);border:2px solid var(--line);border-radius:var(--r);padding:6px 10px;font:10px/1.4 var(--pixel);height:38px;box-shadow:3px 3px 0 var(--shadow);cursor:pointer}
+  .switches{display:flex;gap:6px}
+  .switches .toggle{font-family:var(--pixel);font-size:9px;padding:2px 10px;height:34px}
+  .switches .toggle[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+
+  /* type */
+  h2{font-family:var(--pixel);font-size:13px;line-height:1.5;margin:0;letter-spacing:.02em;text-transform:uppercase}
+  .sec{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 6px}
+  .lede{color:var(--muted);font-size:14.5px;margin:6px 0 16px;max-width:78ch}
+  .muted{color:var(--muted)} .small{font-size:13.5px}
+  .bad{color:var(--bad)} .warn{color:var(--warn)} .good{color:var(--good)} .info{color:var(--info)}
+
+  /* layout */
+  .stack{display:grid;gap:22px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .card{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);padding:20px;min-width:0;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--line)}
+  .chart{position:relative;height:320px}
+  .chart.tall{height:360px}
+
+  /* banner */
+  .banner{display:flex;gap:12px;align-items:flex-start;background:repeating-linear-gradient(-45deg, rgba(255,210,63,.10) 0 12px, rgba(255,210,63,.04) 12px 24px);border:2px dashed var(--yellow);border-radius:var(--r);padding:12px 16px;font-size:14.5px}
+  .banner b{color:var(--yellow);font-family:var(--pixel);font-size:10px;letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:4px}
+  .banner .ic{font-size:20px;line-height:1.2}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .kpi{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--line)}
+  .kpi.bad{border-color:var(--bad)} .kpi.warn{border-color:var(--warn)} .kpi.good{border-color:var(--good)}
+  .kpi .l{color:var(--muted);font-family:var(--pixel);font-size:9px;letter-spacing:.04em;text-transform:uppercase;padding-right:44px;line-height:1.6}
+  .kpi .v{font-family:var(--pixel);font-size:24px;line-height:1.2;margin:12px 0 6px}
+  .kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)} .kpi.good .v{color:var(--good)}
+  .kpi .c{font-size:14px;color:var(--ink2)}
+  .kpi .t{font-size:12.5px;color:var(--faint);margin-top:2px}
+  .grade{position:absolute;top:10px;right:10px;width:38px;height:38px;display:grid;place-items:center;font-family:var(--pixel);font-size:16px;border:2px solid currentColor;border-radius:3px;box-shadow:3px 3px 0 var(--shadow);background:var(--bg)}
+  .grade.gA{color:var(--good)} .grade.gB{color:#9fd36a} .grade.gC{color:var(--yellow)} .grade.gD{color:var(--orange)} .grade.gF{color:var(--bad)}
+
+  /* takeaways */
+  .takeaways{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .take{background:var(--panel2);border-radius:var(--r);padding:16px;border:2px solid var(--line);border-left:6px solid var(--faint)}
+  .take.bad{border-left-color:var(--bad)} .take.warn{border-left-color:var(--warn)} .take.info{border-left-color:var(--info)} .take.good{border-left-color:var(--good)}
+  .take .n{font-family:var(--pixel);font-size:10px;color:var(--muted)}
+  .take h3{font-size:17px;margin:8px 0 6px;line-height:1.3}
+  .take p{margin:0;color:var(--ink2);font-size:14.5px}
+  details{margin-top:16px}
+  summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;font-family:var(--pixel);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);padding:8px 12px;border:2px solid var(--accent);border-radius:var(--r);box-shadow:3px 3px 0 var(--shadow);transition:transform .06s,box-shadow .06s}
+  summary:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▶";font-size:9px;transition:transform .15s} details[open] > summary::before{transform:rotate(90deg)}
+  .findings{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+  .findings li{display:grid;grid-template-columns:12px 1fr;gap:12px;background:var(--panel2);border-radius:var(--r);padding:10px 14px;font-size:14.5px;color:var(--ink2)}
+  .findings b{color:var(--ink)}
+  .dot{width:10px;height:10px;margin-top:7px;background:var(--faint)}
+  .dot.bad{background:var(--bad)} .dot.warn{background:var(--warn)} .dot.good{background:var(--good)} .dot.info{background:var(--info)}
+  .notes{font-size:14.5px;color:var(--ink2);margin-top:10px}
+  .notes h3,.notes h4,.notes h5{color:var(--yellow);font-family:var(--pixel);font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px}
+  .notes ul{padding-left:20px;margin:4px 0} .notes li{margin:4px 0} .notes p{margin:6px 0} .notes strong{color:var(--ink)}
+  code{background:var(--panel3);padding:1px 6px;border-radius:4px;font-size:13px;color:var(--ink)}
+
+  /* chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;font-size:15px}
+  .chip[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+  .chip[aria-pressed="true"] .sub,.chip[aria-pressed="true"] .flag{color:var(--dark)}
+  .chip .sw{width:12px;height:12px;border:2px solid rgba(0,0,0,.5)}
+  .chip .flag{color:var(--warn);font-size:13px}
+  .chip .sub{color:var(--muted);font-weight:500;font-family:var(--pixel);font-size:9px;line-height:1}
+  .mchip{font-size:13.5px;padding:6px 11px}
+  
+
+  /* club detail */
+  .detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:22px}
+  .detail-head{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end;margin-bottom:14px}
+  .big{font-family:var(--pixel);font-size:38px;line-height:1;color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.35)}
+  .big small{font-size:12px;color:var(--muted);margin-left:4px;text-shadow:none}
+  .stat .l{color:var(--muted);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .stat .v{font-family:var(--pixel);font-size:14px;line-height:1.4}
+  .caveat{background:rgba(255,210,63,.08);border:2px dashed var(--yellow);color:var(--ink2);border-radius:var(--r);padding:8px 12px;font-size:14px;margin-bottom:14px}
+  .caveat b{color:var(--yellow)}
+  .bars{display:grid;gap:10px;margin:6px 0 4px}
+  .bar{display:grid;grid-template-columns:70px 1fr 92px;gap:10px;align-items:center;font-size:14px;font-weight:600}
+  .bar .track{height:16px;background:var(--panel3);border:2px solid var(--line);overflow:hidden}
+  .bar .fill{height:100%;background-image:repeating-linear-gradient(90deg, transparent 0 10px, rgba(0,0,0,.25) 10px 12px)!important;background-blend-mode:multiply}
+  .bar .num{text-align:right;font-family:var(--pixel);font-size:10px;line-height:1.3;color:var(--ink)}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;margin:0 -4px;padding:0 4px}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th,td{padding:9px 12px;text-align:right;border-bottom:2px solid var(--line);white-space:nowrap}
+  td{font-variant-numeric:tabular-nums;font-size:15px;font-weight:500}
+  td:first-child,td.tl,.notesrow td{font-family:var(--sans);font-size:14.5px}
+  th{color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;user-select:none}
+  th.sortable{cursor:pointer} th.sortable:hover{color:var(--yellow)}
+  th .arr{color:var(--yellow);margin-left:3px}
+  th:first-child,td:first-child,.tl{text-align:left}
+  tbody tr{transition:background .1s}
+  tbody tr:hover{background:var(--panel2)}
+  tbody tr.clickable{cursor:pointer}
+  tbody tr.clickable:hover td:first-child{color:var(--accent)}
+  tbody tr.sel{background:var(--panel3);box-shadow:inset 4px 0 0 var(--accent)}
+  .tag{display:inline-block;font-family:var(--sans);font-size:11.5px;font-weight:700;padding:1px 7px;border:1px solid var(--faint);border-radius:3px;color:var(--muted);margin-left:6px;vertical-align:2px;text-transform:uppercase;letter-spacing:.03em}
+  .tag.warn{border-color:var(--yellow);color:var(--yellow)}
+  .toggle{padding:6px 12px;font-size:13.5px}
+  .toggle[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+  .cn{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+  .cn .sw,.sw{width:11px;height:11px;display:inline-block;border:2px solid rgba(0,0,0,.5)}
+
+  /* tooltips */
+  [data-tip]{text-decoration:underline dotted var(--faint);text-underline-offset:3px;cursor:help}
+  #tip{position:fixed;z-index:200;max-width:290px;background:#000;color:var(--ink);border:2px solid var(--gold);border-radius:3px;padding:8px 10px;font-size:13px;line-height:1.45;pointer-events:none;box-shadow:3px 3px 0 var(--shadow);text-transform:none;letter-spacing:0;font-family:var(--sans);font-weight:500}
+
+  /* segmented */
+  .seg{display:inline-flex;gap:8px;flex-wrap:wrap}
+  .seg button{font-size:13.5px;padding:6px 12px}
+  .seg button[aria-pressed="true"]{background:var(--gold);color:var(--dark);border-color:var(--dark)}
+
+  /* holes */
+  .holes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .hole{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;box-shadow:3px 3px 0 var(--shadow);transition:transform .08s,box-shadow .08s,border-color .15s}
+  .hole:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow);border-color:var(--blue)}
+  .hole:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+  .hole[aria-expanded="true"]{border-color:var(--yellow)}
+  .hole .hh{display:flex;justify-content:space-between;align-items:baseline}
+  .hole .no{font-family:var(--pixel);font-size:10px;color:var(--muted)}
+  .hole .yd{font-family:var(--pixel);font-size:20px;line-height:1.1;color:var(--gold)}
+  .hole .yd small{font-size:9px;color:var(--muted);margin-left:3px}
+  .hole .club{font-size:21px;font-weight:800}
+  .hole .eq{color:var(--muted);font-size:13.5px;font-weight:500;margin-left:6px}
+  .hole .meter{position:relative;height:12px;background:var(--panel3);border:2px solid var(--line)}
+  .hole .meter .f{position:absolute;inset:0 auto 0 0}
+  .hole .meter .pin{position:absolute;top:-7px;width:3px;height:22px;background:var(--ink)}
+  .hole .meter .pin::after{content:"";position:absolute;left:3px;top:0;border-left:9px solid #d04040;border-top:5px solid transparent;border-bottom:5px solid transparent}
+  .hole .meta{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--ink2);flex-wrap:wrap;align-items:center}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;padding:3px 9px;border:2px solid currentColor;border-radius:4px;text-transform:uppercase;letter-spacing:.03em}
+  .pill.warn{color:var(--warn)} .pill.good{color:var(--good)} .pill.bad{color:var(--bad)}
+  .hole .more{font-size:14px;color:var(--ink2);border-top:2px dashed var(--line);padding-top:8px}
+  .ylist{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .ycard{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:12px 14px}
+  .ycard b{display:block;font-size:15px}
+  .ycard .v{font-family:var(--pixel);font-size:18px;line-height:1.4;color:var(--gold)}
+  .proj{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .proj > div{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px}
+  .proj b{display:block;font-size:15px;margin-bottom:6px}
+  .row{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:14.5px;padding:2px 0;align-items:baseline}
+  .row span:last-child{color:var(--ink);font-family:var(--pixel);font-size:10px;line-height:1.5}
+  .row span.bad{color:var(--bad)} .row span.warn{color:var(--warn)} .row span.good{color:var(--good)}
+  .empty{color:var(--muted);font-style:italic}
+  footer{color:var(--faint);margin-top:30px;font-family:var(--pixel);font-size:8px;line-height:1.8}
+  img.thumb{width:36px;height:38px;object-fit:cover;border:2px solid var(--line);display:block;background:#000}
+  table.shots td,table.shots th{padding:6px 9px}
+
+  /* shot viewer */
+  .viewer{position:fixed;inset:0;z-index:150;background:rgba(8,5,14,.82);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(16px,env(safe-area-inset-bottom,0px))}
+  .vbox{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);width:min(1100px,100%);max-height:100%;overflow:auto;padding:20px;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--gold)}
+  .vhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .vhead h2{font-size:12px}
+  .vbtns{display:flex;gap:8px}
+  .iconbtn{min-width:38px;height:38px;padding:0 12px;font-size:14px}
+  .iconbtn:disabled{opacity:.3;cursor:default}
+  #vplay{background:var(--gold);color:var(--dark);border-color:var(--gold);min-width:96px}
+  .vgrid{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.45fr);gap:16px}
+  .frame{background:#000;border:3px solid var(--line);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+  .frame img{width:100%;height:auto;display:block}
+  .frame .cap{position:absolute;left:8px;top:8px;font-family:var(--pixel);font-size:9px;color:#fff;background:rgba(0,0,0,.7);padding:4px 7px;border:1px solid var(--accent)}
+  .player{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .player input[type=range]{flex:1;min-width:140px;accent-color:var(--gold);height:24px}
+  .player .fc{font-family:var(--pixel);font-size:10px;color:var(--muted);min-width:64px;text-align:right}
+  .player select{font-size:10px}
+  .strip{display:flex;gap:6px;overflow-x:auto;margin-top:12px;padding-bottom:6px}
+  .strip img{height:44px;opacity:.45;cursor:pointer;border:2px solid transparent;flex:none}
+  .strip img:hover{opacity:.8}
+  .strip img.on{opacity:1;border-color:var(--gold)}
+  .vstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:10px;margin-top:16px}
+  .vstat{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:8px 12px}
+  .vstat .l{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .vstat .v{font-family:var(--pixel);font-size:13px;line-height:1.6}
+  .vstat .b{font-size:12px;color:var(--faint)}
+
+  /* drills */
+  .levels{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .lvl{background:var(--panel2);border:2px solid var(--line);border-radius:var(--r);padding:14px}
+  .lvl.done{border-color:var(--gold)}
+  .lvl h3{margin:0 0 4px;font-family:var(--pixel);font-size:10px;color:var(--yellow);text-transform:uppercase;letter-spacing:.04em;line-height:1.6}
+  .lvl .nm{font-weight:800;font-size:15px;margin-bottom:8px}
+  .xp{height:12px;border:2px solid var(--line);background:var(--panel3);margin:6px 0 10px}
+  .xp > i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--gold) 0 8px,#b98d2e 8px 10px);transition:width .3s}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:5px 0;font-size:14px;cursor:pointer;color:var(--ink2)}
+  .task input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;border:2px solid var(--line);background:var(--panel);margin:1px 0 0;cursor:pointer;box-shadow:2px 2px 0 var(--shadow);display:grid;place-items:center}
+  .task input:checked{background:var(--gold);border-color:var(--gold)}
+  .task input:checked::after{content:"✓";color:var(--dark);font-weight:900;font-size:13px}
+  .task input:checked + span{text-decoration:line-through;color:var(--muted)}
+  .drill{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;border-top:6px solid var(--dc,var(--accent))}
+  .drill .lv{font-family:var(--pixel);font-size:9px;color:var(--dc,var(--accent));letter-spacing:.04em;text-transform:uppercase}
+  .drill h3{font-size:22px;margin:6px 0 6px;line-height:1.2}
+  .drill .fx{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .drill ol{padding-left:22px;margin:8px 0;color:var(--ink2)} .drill ol li{margin:5px 0}
+  .drill .tgt{background:var(--panel2);border-left:4px solid var(--dc,var(--accent));padding:8px 12px;font-size:14px;margin:10px 0}
+  .drill .src{font-size:13.5px;color:var(--muted)}
+  .vids{display:grid;gap:12px}
+  .yt{position:relative;display:block;width:100%;aspect-ratio:16/9;max-width:100%;border:2px solid var(--line);border-radius:var(--r);background:#000 center/cover no-repeat;cursor:pointer;box-shadow:3px 3px 0 var(--shadow);overflow:hidden;padding:0;transition:transform .08s,box-shadow .08s}
+  .yt:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+  .yt::before{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.85))}
+  .yt .play{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);width:72px;height:52px;background:var(--pink);border:2px solid var(--gold);border-radius:3px;display:grid;place-items:center;font-size:22px;color:#fff;box-shadow:0 5px 0 var(--dark)}
+  .yt:hover .play{background:#c84242}
+  .yt .ttl{position:absolute;left:12px;right:12px;bottom:10px;text-align:left;font-weight:700;font-size:14.5px;color:#fff;text-shadow:1px 1px 0 #000}
+  .yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .vidrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  .yt-link{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;padding:5px 10px}
+  .yt-link.red{background:var(--bad);color:#fff;border-color:var(--dark)}
+  .resources{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .res{display:block;text-decoration:none;padding:14px 16px;color:var(--ink);font-weight:500}
+  .res b{display:block;font-size:16px;color:var(--accent);margin-bottom:4px}
+  .res span{font-size:14px;color:var(--ink2)}
+  .res::after{content:"↗";float:right;margin-top:-26px;color:var(--yellow)}
+
+  @media (max-width:900px){
+    .kpis,.levels{grid-template-columns:1fr 1fr}
+    .takeaways,.grid2,.proj,.drill,.detail-grid,.vgrid{grid-template-columns:1fr}
+    .holes{grid-template-columns:1fr 1fr}
+    .chart{height:280px}
+  }
+  @media (max-width:560px){
+    .holes,.levels{grid-template-columns:1fr}
+    .kpi .v{font-size:20px}
+    .bar{grid-template-columns:56px 1fr 82px}
+    .nav button{font-size:9px;padding:9px 9px}
+    .brand{font-size:12px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top"><div class="top-in">
+    <div class="brand"><span class="logo">⛳</span><div>GOLF <b>SIM</b><small>Uneekor sessions · shot by shot</small></div></div>
+    <div class="datepick">
+      <button id="prev" aria-label="Previous session">‹</button>
+      <select id="date" aria-label="Session date"></select>
+      <button id="next" aria-label="Next session">›</button>
+    </div>
+    <nav class="nav" role="tablist">
+      <button role="tab" data-tab="session">Session</button>
+      <button role="tab" data-tab="trend">Progress</button>
+      <button role="tab" data-tab="bag">Bag</button>
+      <button role="tab" data-tab="course">Course</button>
+      <button role="tab" data-tab="drills">Drills</button>
+    </nav>
+    <div class="switches">
+      <button class="toggle" id="sfx" aria-pressed="false" title="Arcade sound effects">♪ SFX</button>
+      <button class="toggle" id="crt" aria-pressed="false" title="CRT scanlines">▤ CRT</button>
+    </div>
+  </div></div>
+
+  <main id="tab-session" class="stack"></main>
+  <main id="tab-trend" class="stack" hidden></main>
+  <main id="tab-bag" class="stack" hidden></main>
+  <main id="tab-course" class="stack" hidden></main>
+  <main id="tab-drills" class="stack" hidden></main>
+  <footer id="foot"></footer>
+</div>
+<div id="tip" hidden></div>
+<div id="viewer" class="viewer" hidden></div>
+
+<script>
+const DATA = {"sessions":[{"meta":{"curated":true,"curatedNote":"Shanks and mishits were removed before export, so these averages are a best case. Expect on-course carry to be shorter and dispersion wider.","caveats":{"7i":"Possible outlier: carried only ~2 yd more than the 8-iron. Retest next session."},"nextSession":"Hit 7-iron through driver (7i, 6i, 7W, 3H, 3W, Driver) to retest the 7-iron and measure the long clubs."},"date":"11-24-26","iso":"2026-11-24","clubs":{"51":[{"n":1,"type":"pushpull","carry":62.2,"total":66.0,"side":-6.5,"smash":0.96,"clubSpeed":61.6,"ballSpeed":59.3,"backSpin":5951.0,"sideSpin":211.0,"launch":33.8,"sideAngle":-6.2,"descent":44.9,"apex":13.8,"flightTime":3.6,"face":-6.3,"path":-4.9,"img":{"impact":"11-24-26/51/51_1/1773008_ballimpact.jpg","frames":["11-24-26/51/51_1/1773008_topview00.jpg","11-24-26/51/51_1/1773008_topview01.jpg","11-24-26/51/51_1/1773008_topview02.jpg","11-24-26/51/51_1/1773008_topview03.jpg","11-24-26/51/51_1/1773008_topview04.jpg","11-24-26/51/51_1/1773008_topview05.jpg","11-24-26/51/51_1/1773008_topview06.jpg","11-24-26/51/51_1/1773008_topview07.jpg","11-24-26/51/51_1/1773008_topview08.jpg","11-24-26/51/51_1/1773008_topview09.jpg","11-24-26/51/51_1/1773008_topview10.jpg","11-24-26/51/51_1/1773008_topview11.jpg","11-24-26/51/51_1/1773008_topview12.jpg","11-24-26/51/51_1/1773008_topview13.jpg","11-24-26/51/51_1/1773008_topview14.jpg","11-24-26/51/51_1/1773008_topview15.jpg","11-24-26/51/51_1/1773008_topview16.jpg","11-24-26/51/51_1/1773008_topview17.jpg","11-24-26/51/51_1/1773008_topview18.jpg","11-24-26/51/51_1/1773008_topview19.jpg","11-24-26/51/51_1/1773008_topview20.jpg","11-24-26/51/51_1/1773008_topview21.jpg","11-24-26/51/51_1/1773008_topview22.jpg","11-24-26/51/51_1/1773008_topview23.jpg"]}},{"n":2,"type":"pushdrawpullfade","carry":63.8,"total":68.0,"side":-4.3,"smash":1.0,"clubSpeed":60.1,"ballSpeed":60.2,"backSpin":5607.0,"sideSpin":577.0,"launch":34.9,"sideAngle":-5.0,"descent":46.2,"apex":14.9,"flightTime":3.7,"face":-5.1,"path":-4.0,"img":{"impact":"11-24-26/51/51_2/1773006_ballimpact.jpg","frames":["11-24-26/51/51_2/1773006_topview00.jpg","11-24-26/51/51_2/1773006_topview01.jpg","11-24-26/51/51_2/1773006_topview02.jpg","11-24-26/51/51_2/1773006_topview03.jpg","11-24-26/51/51_2/1773006_topview04.jpg","11-24-26/51/51_2/1773006_topview05.jpg","11-24-26/51/51_2/1773006_topview06.jpg","11-24-26/51/51_2/1773006_topview07.jpg","11-24-26/51/51_2/1773006_topview08.jpg","11-24-26/51/51_2/1773006_topview09.jpg","11-24-26/51/51_2/1773006_topview10.jpg","11-24-26/51/51_2/1773006_topview11.jpg","11-24-26/51/51_2/1773006_topview12.jpg","11-24-26/51/51_2/1773006_topview13.jpg","11-24-26/51/51_2/1773006_topview14.jpg","11-24-26/51/51_2/1773006_topview15.jpg","11-24-26/51/51_2/1773006_topview16.jpg","11-24-26/51/51_2/1773006_topview17.jpg","11-24-26/51/51_2/1773006_topview18.jpg","11-24-26/51/51_2/1773006_topview19.jpg","11-24-26/51/51_2/1773006_topview20.jpg","11-24-26/51/51_2/1773006_topview21.jpg","11-24-26/51/51_2/1773006_topview22.jpg","11-24-26/51/51_2/1773006_topview23.jpg"]}},{"n":3,"type":"hookslice","carry":66.3,"total":69.3,"side":1.5,"smash":0.95,"clubSpeed":65.4,"ballSpeed":62.1,"backSpin":6666.0,"sideSpin":1319.0,"launch":34.8,"sideAngle":-1.6,"descent":47.2,"apex":15.9,"flightTime":3.8,"face":-0.4,"path":-12.0,"img":{"impact":"11-24-26/51/51_3/1773005_ballimpact.jpg","frames":["11-24-26/51/51_3/1773005_topview00.jpg","11-24-26/51/51_3/1773005_topview01.jpg","11-24-26/51/51_3/1773005_topview02.jpg","11-24-26/51/51_3/1773005_topview03.jpg","11-24-26/51/51_3/1773005_topview04.jpg","11-24-26/51/51_3/1773005_topview05.jpg","11-24-26/51/51_3/1773005_topview06.jpg","11-24-26/51/51_3/1773005_topview07.jpg","11-24-26/51/51_3/1773005_topview08.jpg","11-24-26/51/51_3/1773005_topview09.jpg","11-24-26/51/51_3/1773005_topview10.jpg","11-24-26/51/51_3/1773005_topview11.jpg","11-24-26/51/51_3/1773005_topview12.jpg","11-24-26/51/51_3/1773005_topview13.jpg","11-24-26/51/51_3/1773005_topview14.jpg","11-24-26/51/51_3/1773005_topview15.jpg","11-24-26/51/51_3/1773005_topview16.jpg","11-24-26/51/51_3/1773005_topview17.jpg","11-24-26/51/51_3/1773005_topview18.jpg","11-24-26/51/51_3/1773005_topview19.jpg","11-24-26/51/51_3/1773005_topview20.jpg","11-24-26/51/51_3/1773005_topview21.jpg","11-24-26/51/51_3/1773005_topview22.jpg","11-24-26/51/51_3/1773005_topview23.jpg"]}},{"n":4,"type":"pushdrawpullfade","carry":63.8,"total":67.1,"side":-2.4,"smash":0.9,"clubSpeed":67.2,"ballSpeed":60.6,"backSpin":6257.0,"sideSpin":989.0,"launch":36.1,"sideAngle":-4.2,"descent":47.8,"apex":15.8,"flightTime":3.8,"face":-4.1,"path":-5.1,"img":{"impact":"11-24-26/51/51_4/1773003_ballimpact.jpg","frames":["11-24-26/51/51_4/1773003_topview00.jpg","11-24-26/51/51_4/1773003_topview01.jpg","11-24-26/51/51_4/1773003_topview02.jpg","11-24-26/51/51_4/1773003_topview03.jpg","11-24-26/51/51_4/1773003_topview04.jpg","11-24-26/51/51_4/1773003_topview05.jpg","11-24-26/51/51_4/1773003_topview06.jpg","11-24-26/51/51_4/1773003_topview07.jpg","11-24-26/51/51_4/1773003_topview08.jpg","11-24-26/51/51_4/1773003_topview09.jpg","11-24-26/51/51_4/1773003_topview10.jpg","11-24-26/51/51_4/1773003_topview11.jpg","11-24-26/51/51_4/1773003_topview12.jpg","11-24-26/51/51_4/1773003_topview13.jpg","11-24-26/51/51_4/1773003_topview14.jpg","11-24-26/51/51_4/1773003_topview15.jpg","11-24-26/51/51_4/1773003_topview16.jpg","11-24-26/51/51_4/1773003_topview17.jpg","11-24-26/51/51_4/1773003_topview18.jpg","11-24-26/51/51_4/1773003_topview19.jpg","11-24-26/51/51_4/1773003_topview20.jpg","11-24-26/51/51_4/1773003_topview21.jpg","11-24-26/51/51_4/1773003_topview22.jpg","11-24-26/51/51_4/1773003_topview23.jpg"]}},{"n":5,"type":"hookslice","carry":69.8,"total":72.4,"side":2.4,"smash":0.92,"clubSpeed":69.7,"ballSpeed":64.4,"backSpin":7197.0,"sideSpin":1554.0,"launch":34.6,"sideAngle":-1.5,"descent":47.9,"apex":17.2,"flightTime":4.0,"face":-0.8,"path":-7.5,"img":{"impact":"11-24-26/51/51_5/1773001_ballimpact.jpg","frames":["11-24-26/51/51_5/1773001_topview00.jpg","11-24-26/51/51_5/1773001_topview01.jpg","11-24-26/51/51_5/1773001_topview02.jpg","11-24-26/51/51_5/1773001_topview03.jpg","11-24-26/51/51_5/1773001_topview04.jpg","11-24-26/51/51_5/1773001_topview05.jpg","11-24-26/51/51_5/1773001_topview06.jpg","11-24-26/51/51_5/1773001_topview07.jpg","11-24-26/51/51_5/1773001_topview08.jpg","11-24-26/51/51_5/1773001_topview09.jpg","11-24-26/51/51_5/1773001_topview10.jpg","11-24-26/51/51_5/1773001_topview11.jpg","11-24-26/51/51_5/1773001_topview12.jpg","11-24-26/51/51_5/1773001_topview13.jpg","11-24-26/51/51_5/1773001_topview14.jpg","11-24-26/51/51_5/1773001_topview15.jpg","11-24-26/51/51_5/1773001_topview16.jpg","11-24-26/51/51_5/1773001_topview17.jpg","11-24-26/51/51_5/1773001_topview18.jpg","11-24-26/51/51_5/1773001_topview19.jpg","11-24-26/51/51_5/1773001_topview20.jpg","11-24-26/51/51_5/1773001_topview21.jpg","11-24-26/51/51_5/1773001_topview22.jpg","11-24-26/51/51_5/1773001_topview23.jpg"]}},{"n":6,"type":"hookslice","carry":66.1,"total":69.2,"side":2.2,"smash":0.9,"clubSpeed":69.9,"ballSpeed":62.7,"backSpin":6480.0,"sideSpin":1168.0,"launch":38.5,"sideAngle":-0.8,"descent":50.8,"apex":18.5,"flightTime":4.1,"face":-0.2,"path":-6.7,"img":{"impact":"11-24-26/51/51_6/1772999_ballimpact.jpg","frames":["11-24-26/51/51_6/1772999_topview00.jpg","11-24-26/51/51_6/1772999_topview01.jpg","11-24-26/51/51_6/1772999_topview02.jpg","11-24-26/51/51_6/1772999_topview03.jpg","11-24-26/51/51_6/1772999_topview04.jpg","11-24-26/51/51_6/1772999_topview05.jpg","11-24-26/51/51_6/1772999_topview06.jpg","11-24-26/51/51_6/1772999_topview07.jpg","11-24-26/51/51_6/1772999_topview08.jpg","11-24-26/51/51_6/1772999_topview09.jpg","11-24-26/51/51_6/1772999_topview10.jpg","11-24-26/51/51_6/1772999_topview11.jpg","11-24-26/51/51_6/1772999_topview12.jpg","11-24-26/51/51_6/1772999_topview13.jpg","11-24-26/51/51_6/1772999_topview14.jpg","11-24-26/51/51_6/1772999_topview15.jpg","11-24-26/51/51_6/1772999_topview16.jpg","11-24-26/51/51_6/1772999_topview17.jpg","11-24-26/51/51_6/1772999_topview18.jpg","11-24-26/51/51_6/1772999_topview19.jpg","11-24-26/51/51_6/1772999_topview20.jpg","11-24-26/51/51_6/1772999_topview21.jpg","11-24-26/51/51_6/1772999_topview22.jpg","11-24-26/51/51_6/1772999_topview23.jpg"]}}],"56":[{"n":1,"type":"pushdrawpullfade","carry":55.6,"total":59.1,"side":-7.0,"smash":0.96,"clubSpeed":57.8,"ballSpeed":55.5,"backSpin":5575.0,"sideSpin":375.0,"launch":37.4,"sideAngle":-7.6,"descent":47.3,"apex":13.7,"flightTime":3.5,"face":-7.4,"path":-9.4,"img":{"impact":"11-24-26/56/56_1/1773018_ballimpact.jpg","frames":["11-24-26/56/56_1/1773018_topview00.jpg","11-24-26/56/56_1/1773018_topview01.jpg","11-24-26/56/56_1/1773018_topview02.jpg","11-24-26/56/56_1/1773018_topview03.jpg","11-24-26/56/56_1/1773018_topview04.jpg","11-24-26/56/56_1/1773018_topview05.jpg","11-24-26/56/56_1/1773018_topview06.jpg","11-24-26/56/56_1/1773018_topview07.jpg","11-24-26/56/56_1/1773018_topview08.jpg","11-24-26/56/56_1/1773018_topview09.jpg","11-24-26/56/56_1/1773018_topview10.jpg","11-24-26/56/56_1/1773018_topview11.jpg","11-24-26/56/56_1/1773018_topview12.jpg","11-24-26/56/56_1/1773018_topview13.jpg","11-24-26/56/56_1/1773018_topview14.jpg","11-24-26/56/56_1/1773018_topview15.jpg","11-24-26/56/56_1/1773018_topview16.jpg","11-24-26/56/56_1/1773018_topview17.jpg","11-24-26/56/56_1/1773018_topview18.jpg","11-24-26/56/56_1/1773018_topview19.jpg","11-24-26/56/56_1/1773018_topview20.jpg","11-24-26/56/56_1/1773018_topview21.jpg","11-24-26/56/56_1/1773018_topview22.jpg","11-24-26/56/56_1/1773018_topview23.jpg"]}},{"n":2,"type":"drawfade","carry":42.8,"total":46.4,"side":-0.6,"smash":0.81,"clubSpeed":58.6,"ballSpeed":47.6,"backSpin":4450.0,"sideSpin":603.0,"launch":40.5,"sideAngle":-1.8,"descent":47.6,"apex":11.1,"flightTime":3.1,"face":-1.2,"path":-8.0,"img":{"impact":"11-24-26/56/56_2/1773017_ballimpact.jpg","frames":["11-24-26/56/56_2/1773017_topview00.jpg","11-24-26/56/56_2/1773017_topview01.jpg","11-24-26/56/56_2/1773017_topview02.jpg","11-24-26/56/56_2/1773017_topview03.jpg","11-24-26/56/56_2/1773017_topview04.jpg","11-24-26/56/56_2/1773017_topview05.jpg","11-24-26/56/56_2/1773017_topview06.jpg","11-24-26/56/56_2/1773017_topview07.jpg","11-24-26/56/56_2/1773017_topview08.jpg","11-24-26/56/56_2/1773017_topview09.jpg","11-24-26/56/56_2/1773017_topview10.jpg","11-24-26/56/56_2/1773017_topview11.jpg","11-24-26/56/56_2/1773017_topview12.jpg","11-24-26/56/56_2/1773017_topview13.jpg","11-24-26/56/56_2/1773017_topview14.jpg","11-24-26/56/56_2/1773017_topview15.jpg","11-24-26/56/56_2/1773017_topview16.jpg","11-24-26/56/56_2/1773017_topview17.jpg","11-24-26/56/56_2/1773017_topview18.jpg","11-24-26/56/56_2/1773017_topview19.jpg","11-24-26/56/56_2/1773017_topview20.jpg","11-24-26/56/56_2/1773017_topview21.jpg","11-24-26/56/56_2/1773017_topview22.jpg","11-24-26/56/56_2/1773017_topview23.jpg"]}},{"n":3,"type":"pushpull","carry":46.2,"total":50.5,"side":-7.9,"smash":1.01,"clubSpeed":48.8,"ballSpeed":49.4,"backSpin":4290.0,"sideSpin":-218.0,"launch":36.4,"sideAngle":-8.5,"descent":44.1,"apex":10.3,"flightTime":3.0,"face":-8.6,"path":-8.2,"img":{"impact":"11-24-26/56/56_3/1773015_ballimpact.jpg","frames":["11-24-26/56/56_3/1773015_topview00.jpg","11-24-26/56/56_3/1773015_topview01.jpg","11-24-26/56/56_3/1773015_topview02.jpg","11-24-26/56/56_3/1773015_topview03.jpg","11-24-26/56/56_3/1773015_topview04.jpg","11-24-26/56/56_3/1773015_topview05.jpg","11-24-26/56/56_3/1773015_topview06.jpg","11-24-26/56/56_3/1773015_topview07.jpg","11-24-26/56/56_3/1773015_topview08.jpg","11-24-26/56/56_3/1773015_topview09.jpg","11-24-26/56/56_3/1773015_topview10.jpg","11-24-26/56/56_3/1773015_topview11.jpg","11-24-26/56/56_3/1773015_topview12.jpg","11-24-26/56/56_3/1773015_topview13.jpg","11-24-26/56/56_3/1773015_topview14.jpg","11-24-26/56/56_3/1773015_topview15.jpg","11-24-26/56/56_3/1773015_topview16.jpg","11-24-26/56/56_3/1773015_topview17.jpg","11-24-26/56/56_3/1773015_topview18.jpg","11-24-26/56/56_3/1773015_topview19.jpg","11-24-26/56/56_3/1773015_topview20.jpg","11-24-26/56/56_3/1773015_topview21.jpg","11-24-26/56/56_3/1773015_topview22.jpg","11-24-26/56/56_3/1773015_topview23.jpg"]}},{"n":4,"type":"drawfade","carry":41.9,"total":44.9,"side":-0.3,"smash":0.91,"clubSpeed":51.6,"ballSpeed":47.2,"backSpin":4871.0,"sideSpin":712.0,"launch":42.0,"sideAngle":-1.6,"descent":49.5,"apex":11.5,"flightTime":3.1,"face":-0.9,"path":-8.3,"img":{"impact":"11-24-26/56/56_4/1773014_ballimpact.jpg","frames":["11-24-26/56/56_4/1773014_topview00.jpg","11-24-26/56/56_4/1773014_topview01.jpg","11-24-26/56/56_4/1773014_topview02.jpg","11-24-26/56/56_4/1773014_topview03.jpg","11-24-26/56/56_4/1773014_topview04.jpg","11-24-26/56/56_4/1773014_topview05.jpg","11-24-26/56/56_4/1773014_topview06.jpg","11-24-26/56/56_4/1773014_topview07.jpg","11-24-26/56/56_4/1773014_topview08.jpg","11-24-26/56/56_4/1773014_topview09.jpg","11-24-26/56/56_4/1773014_topview10.jpg","11-24-26/56/56_4/1773014_topview11.jpg","11-24-26/56/56_4/1773014_topview12.jpg","11-24-26/56/56_4/1773014_topview13.jpg","11-24-26/56/56_4/1773014_topview14.jpg","11-24-26/56/56_4/1773014_topview15.jpg","11-24-26/56/56_4/1773014_topview16.jpg","11-24-26/56/56_4/1773014_topview17.jpg","11-24-26/56/56_4/1773014_topview18.jpg","11-24-26/56/56_4/1773014_topview19.jpg","11-24-26/56/56_4/1773014_topview20.jpg","11-24-26/56/56_4/1773014_topview21.jpg","11-24-26/56/56_4/1773014_topview22.jpg","11-24-26/56/56_4/1773014_topview23.jpg"]}},{"n":5,"type":"pushdrawpullfade","carry":56.4,"total":60.4,"side":-2.0,"smash":1.13,"clubSpeed":51.7,"ballSpeed":58.4,"backSpin":6096.0,"sideSpin":927.0,"launch":23.3,"sideAngle":-3.7,"descent":31.9,"apex":7.7,"flightTime":2.8,"face":-3.1,"path":-8.9,"img":{"impact":"11-24-26/56/56_5/1773012_ballimpact.jpg","frames":["11-24-26/56/56_5/1773012_topview00.jpg","11-24-26/56/56_5/1773012_topview01.jpg","11-24-26/56/56_5/1773012_topview02.jpg","11-24-26/56/56_5/1773012_topview03.jpg","11-24-26/56/56_5/1773012_topview04.jpg","11-24-26/56/56_5/1773012_topview05.jpg","11-24-26/56/56_5/1773012_topview06.jpg","11-24-26/56/56_5/1773012_topview07.jpg","11-24-26/56/56_5/1773012_topview08.jpg","11-24-26/56/56_5/1773012_topview09.jpg","11-24-26/56/56_5/1773012_topview10.jpg","11-24-26/56/56_5/1773012_topview11.jpg","11-24-26/56/56_5/1773012_topview12.jpg","11-24-26/56/56_5/1773012_topview13.jpg","11-24-26/56/56_5/1773012_topview14.jpg","11-24-26/56/56_5/1773012_topview15.jpg","11-24-26/56/56_5/1773012_topview16.jpg","11-24-26/56/56_5/1773012_topview17.jpg","11-24-26/56/56_5/1773012_topview18.jpg","11-24-26/56/56_5/1773012_topview19.jpg","11-24-26/56/56_5/1773012_topview20.jpg","11-24-26/56/56_5/1773012_topview21.jpg","11-24-26/56/56_5/1773012_topview22.jpg","11-24-26/56/56_5/1773012_topview23.jpg"]}},{"n":6,"type":"pushdrawpullfade","carry":40.1,"total":42.2,"side":-1.9,"smash":0.88,"clubSpeed":52.1,"ballSpeed":45.9,"backSpin":5901.0,"sideSpin":890.0,"launch":35.6,"sideAngle":-3.8,"descent":42.8,"apex":8.5,"flightTime":2.7,"face":-3.3,"path":-8.7,"img":{"impact":"11-24-26/56/56_6/1773010_ballimpact.jpg","frames":["11-24-26/56/56_6/1773010_topview00.jpg","11-24-26/56/56_6/1773010_topview01.jpg","11-24-26/56/56_6/1773010_topview02.jpg","11-24-26/56/56_6/1773010_topview03.jpg","11-24-26/56/56_6/1773010_topview04.jpg","11-24-26/56/56_6/1773010_topview05.jpg","11-24-26/56/56_6/1773010_topview06.jpg","11-24-26/56/56_6/1773010_topview07.jpg","11-24-26/56/56_6/1773010_topview08.jpg","11-24-26/56/56_6/1773010_topview09.jpg","11-24-26/56/56_6/1773010_topview10.jpg","11-24-26/56/56_6/1773010_topview11.jpg","11-24-26/56/56_6/1773010_topview12.jpg","11-24-26/56/56_6/1773010_topview13.jpg","11-24-26/56/56_6/1773010_topview14.jpg","11-24-26/56/56_6/1773010_topview15.jpg","11-24-26/56/56_6/1773010_topview16.jpg","11-24-26/56/56_6/1773010_topview17.jpg","11-24-26/56/56_6/1773010_topview18.jpg","11-24-26/56/56_6/1773010_topview19.jpg","11-24-26/56/56_6/1773010_topview20.jpg","11-24-26/56/56_6/1773010_topview21.jpg","11-24-26/56/56_6/1773010_topview22.jpg","11-24-26/56/56_6/1773010_topview23.jpg"]}}],"60":[{"n":1,"type":"drawfade","carry":38.0,"total":40.7,"side":1.5,"smash":0.84,"clubSpeed":53.7,"ballSpeed":44.8,"backSpin":4700.0,"sideSpin":423.0,"launch":43.5,"sideAngle":1.4,"descent":50.1,"apex":10.8,"flightTime":3.0,"face":2.4,"path":-6.6,"img":{"impact":"11-24-26/60/60_1/1773024_ballimpact.jpg","frames":["11-24-26/60/60_1/1773024_topview00.jpg","11-24-26/60/60_1/1773024_topview01.jpg","11-24-26/60/60_1/1773024_topview02.jpg","11-24-26/60/60_1/1773024_topview03.jpg","11-24-26/60/60_1/1773024_topview04.jpg","11-24-26/60/60_1/1773024_topview05.jpg","11-24-26/60/60_1/1773024_topview06.jpg","11-24-26/60/60_1/1773024_topview07.jpg","11-24-26/60/60_1/1773024_topview08.jpg","11-24-26/60/60_1/1773024_topview09.jpg","11-24-26/60/60_1/1773024_topview10.jpg","11-24-26/60/60_1/1773024_topview11.jpg","11-24-26/60/60_1/1773024_topview12.jpg","11-24-26/60/60_1/1773024_topview13.jpg","11-24-26/60/60_1/1773024_topview14.jpg","11-24-26/60/60_1/1773024_topview15.jpg","11-24-26/60/60_1/1773024_topview16.jpg","11-24-26/60/60_1/1773024_topview17.jpg","11-24-26/60/60_1/1773024_topview18.jpg","11-24-26/60/60_1/1773024_topview19.jpg","11-24-26/60/60_1/1773024_topview20.jpg","11-24-26/60/60_1/1773024_topview21.jpg","11-24-26/60/60_1/1773024_topview22.jpg","11-24-26/60/60_1/1773024_topview23.jpg"]}},{"n":2,"type":"pushdrawpullfade","carry":42.2,"total":45.8,"side":-1.6,"smash":0.84,"clubSpeed":56.5,"ballSpeed":47.3,"backSpin":4302.0,"sideSpin":314.0,"launch":42.2,"sideAngle":-2.6,"descent":49.3,"apex":11.6,"flightTime":3.1,"face":-2.2,"path":-6.5,"img":{"impact":"11-24-26/60/60_2/1773023_ballimpact.jpg","frames":["11-24-26/60/60_2/1773023_topview00.jpg","11-24-26/60/60_2/1773023_topview01.jpg","11-24-26/60/60_2/1773023_topview02.jpg","11-24-26/60/60_2/1773023_topview03.jpg","11-24-26/60/60_2/1773023_topview04.jpg","11-24-26/60/60_2/1773023_topview05.jpg","11-24-26/60/60_2/1773023_topview06.jpg","11-24-26/60/60_2/1773023_topview07.jpg","11-24-26/60/60_2/1773023_topview08.jpg","11-24-26/60/60_2/1773023_topview09.jpg","11-24-26/60/60_2/1773023_topview10.jpg","11-24-26/60/60_2/1773023_topview11.jpg","11-24-26/60/60_2/1773023_topview12.jpg","11-24-26/60/60_2/1773023_topview13.jpg","11-24-26/60/60_2/1773023_topview14.jpg","11-24-26/60/60_2/1773023_topview15.jpg","11-24-26/60/60_2/1773023_topview16.jpg","11-24-26/60/60_2/1773023_topview17.jpg","11-24-26/60/60_2/1773023_topview18.jpg","11-24-26/60/60_2/1773023_topview19.jpg","11-24-26/60/60_2/1773023_topview20.jpg","11-24-26/60/60_2/1773023_topview21.jpg","11-24-26/60/60_2/1773023_topview22.jpg","11-24-26/60/60_2/1773023_topview23.jpg"]}},{"n":3,"type":"pushdrawpullfade","carry":36.2,"total":39.4,"side":-3.0,"smash":0.82,"clubSpeed":52.7,"ballSpeed":43.1,"backSpin":4218.0,"sideSpin":233.0,"launch":41.1,"sideAngle":-4.8,"descent":47.3,"apex":9.2,"flightTime":2.8,"face":-4.3,"path":-8.6,"img":{"impact":"11-24-26/60/60_3/1773022_ballimpact.jpg","frames":["11-24-26/60/60_3/1773022_topview00.jpg","11-24-26/60/60_3/1773022_topview01.jpg","11-24-26/60/60_3/1773022_topview02.jpg","11-24-26/60/60_3/1773022_topview03.jpg","11-24-26/60/60_3/1773022_topview04.jpg","11-24-26/60/60_3/1773022_topview05.jpg","11-24-26/60/60_3/1773022_topview06.jpg","11-24-26/60/60_3/1773022_topview07.jpg","11-24-26/60/60_3/1773022_topview08.jpg","11-24-26/60/60_3/1773022_topview09.jpg","11-24-26/60/60_3/1773022_topview10.jpg","11-24-26/60/60_3/1773022_topview11.jpg","11-24-26/60/60_3/1773022_topview12.jpg","11-24-26/60/60_3/1773022_topview13.jpg","11-24-26/60/60_3/1773022_topview14.jpg","11-24-26/60/60_3/1773022_topview15.jpg","11-24-26/60/60_3/1773022_topview16.jpg","11-24-26/60/60_3/1773022_topview17.jpg","11-24-26/60/60_3/1773022_topview18.jpg","11-24-26/60/60_3/1773022_topview19.jpg","11-24-26/60/60_3/1773022_topview20.jpg","11-24-26/60/60_3/1773022_topview21.jpg","11-24-26/60/60_3/1773022_topview22.jpg","11-24-26/60/60_3/1773022_topview23.jpg"]}},{"n":4,"type":"pushdrawpullfade","carry":31.9,"total":34.5,"side":-2.0,"smash":0.71,"clubSpeed":57.2,"ballSpeed":40.5,"backSpin":4254.0,"sideSpin":556.0,"launch":43.5,"sideAngle":-4.1,"descent":48.8,"apex":8.7,"flightTime":2.7,"face":-3.6,"path":-8.2,"img":{"impact":"11-24-26/60/60_4/1773021_ballimpact.jpg","frames":["11-24-26/60/60_4/1773021_topview00.jpg","11-24-26/60/60_4/1773021_topview01.jpg","11-24-26/60/60_4/1773021_topview02.jpg","11-24-26/60/60_4/1773021_topview03.jpg","11-24-26/60/60_4/1773021_topview04.jpg","11-24-26/60/60_4/1773021_topview05.jpg","11-24-26/60/60_4/1773021_topview06.jpg","11-24-26/60/60_4/1773021_topview07.jpg","11-24-26/60/60_4/1773021_topview08.jpg","11-24-26/60/60_4/1773021_topview09.jpg","11-24-26/60/60_4/1773021_topview10.jpg","11-24-26/60/60_4/1773021_topview11.jpg","11-24-26/60/60_4/1773021_topview12.jpg","11-24-26/60/60_4/1773021_topview13.jpg","11-24-26/60/60_4/1773021_topview14.jpg","11-24-26/60/60_4/1773021_topview15.jpg","11-24-26/60/60_4/1773021_topview16.jpg","11-24-26/60/60_4/1773021_topview17.jpg","11-24-26/60/60_4/1773021_topview18.jpg","11-24-26/60/60_4/1773021_topview19.jpg","11-24-26/60/60_4/1773021_topview20.jpg","11-24-26/60/60_4/1773021_topview21.jpg","11-24-26/60/60_4/1773021_topview22.jpg","11-24-26/60/60_4/1773021_topview23.jpg"]}},{"n":5,"type":"pushdrawpullfade","carry":33.3,"total":36.1,"side":-1.1,"smash":0.73,"clubSpeed":56.2,"ballSpeed":41.3,"backSpin":4219.0,"sideSpin":568.0,"launch":42.5,"sideAngle":-2.6,"descent":48.1,"apex":8.8,"flightTime":2.7,"face":-2.0,"path":-8.0,"img":{"impact":"11-24-26/60/60_5/1773020_ballimpact.jpg","frames":["11-24-26/60/60_5/1773020_topview00.jpg","11-24-26/60/60_5/1773020_topview01.jpg","11-24-26/60/60_5/1773020_topview02.jpg","11-24-26/60/60_5/1773020_topview03.jpg","11-24-26/60/60_5/1773020_topview04.jpg","11-24-26/60/60_5/1773020_topview05.jpg","11-24-26/60/60_5/1773020_topview06.jpg","11-24-26/60/60_5/1773020_topview07.jpg","11-24-26/60/60_5/1773020_topview08.jpg","11-24-26/60/60_5/1773020_topview09.jpg","11-24-26/60/60_5/1773020_topview10.jpg","11-24-26/60/60_5/1773020_topview11.jpg","11-24-26/60/60_5/1773020_topview12.jpg","11-24-26/60/60_5/1773020_topview13.jpg","11-24-26/60/60_5/1773020_topview14.jpg","11-24-26/60/60_5/1773020_topview15.jpg","11-24-26/60/60_5/1773020_topview16.jpg","11-24-26/60/60_5/1773020_topview17.jpg","11-24-26/60/60_5/1773020_topview18.jpg","11-24-26/60/60_5/1773020_topview19.jpg","11-24-26/60/60_5/1773020_topview20.jpg","11-24-26/60/60_5/1773020_topview21.jpg","11-24-26/60/60_5/1773020_topview22.jpg","11-24-26/60/60_5/1773020_topview23.jpg"]}},{"n":6,"type":"drawfade","carry":26.4,"total":29.0,"side":-0.6,"smash":0.69,"clubSpeed":52.5,"ballSpeed":36.3,"backSpin":3584.0,"sideSpin":543.0,"launch":44.4,"sideAngle":-2.0,"descent":48.8,"apex":7.2,"flightTime":2.4,"face":-1.1,"path":-10.0,"img":{"impact":"11-24-26/60/60_6/1773019_ballimpact.jpg","frames":["11-24-26/60/60_6/1773019_topview00.jpg","11-24-26/60/60_6/1773019_topview01.jpg","11-24-26/60/60_6/1773019_topview02.jpg","11-24-26/60/60_6/1773019_topview03.jpg","11-24-26/60/60_6/1773019_topview04.jpg","11-24-26/60/60_6/1773019_topview05.jpg","11-24-26/60/60_6/1773019_topview06.jpg","11-24-26/60/60_6/1773019_topview07.jpg","11-24-26/60/60_6/1773019_topview08.jpg","11-24-26/60/60_6/1773019_topview09.jpg","11-24-26/60/60_6/1773019_topview10.jpg","11-24-26/60/60_6/1773019_topview11.jpg","11-24-26/60/60_6/1773019_topview12.jpg","11-24-26/60/60_6/1773019_topview13.jpg","11-24-26/60/60_6/1773019_topview14.jpg","11-24-26/60/60_6/1773019_topview15.jpg","11-24-26/60/60_6/1773019_topview16.jpg","11-24-26/60/60_6/1773019_topview17.jpg","11-24-26/60/60_6/1773019_topview18.jpg","11-24-26/60/60_6/1773019_topview19.jpg","11-24-26/60/60_6/1773019_topview20.jpg","11-24-26/60/60_6/1773019_topview21.jpg","11-24-26/60/60_6/1773019_topview22.jpg","11-24-26/60/60_6/1773019_topview23.jpg"]}}],"7i":[{"n":1,"type":"hookslice","carry":136.9,"total":146.3,"side":28.5,"smash":1.23,"clubSpeed":82.8,"ballSpeed":101.6,"backSpin":4579.0,"sideSpin":2347.0,"launch":22.8,"sideAngle":-0.2,"descent":44.9,"apex":26.0,"flightTime":5.3,"face":0.6,"path":-7.3,"img":{"impact":"11-24-26/7i/7i_1/1772954_ballimpact.jpg","frames":["11-24-26/7i/7i_1/1772954_topview00.jpg","11-24-26/7i/7i_1/1772954_topview01.jpg","11-24-26/7i/7i_1/1772954_topview02.jpg","11-24-26/7i/7i_1/1772954_topview03.jpg","11-24-26/7i/7i_1/1772954_topview04.jpg","11-24-26/7i/7i_1/1772954_topview05.jpg","11-24-26/7i/7i_1/1772954_topview06.jpg","11-24-26/7i/7i_1/1772954_topview07.jpg","11-24-26/7i/7i_1/1772954_topview08.jpg","11-24-26/7i/7i_1/1772954_topview09.jpg","11-24-26/7i/7i_1/1772954_topview10.jpg","11-24-26/7i/7i_1/1772954_topview11.jpg","11-24-26/7i/7i_1/1772954_topview12.jpg","11-24-26/7i/7i_1/1772954_topview13.jpg","11-24-26/7i/7i_1/1772954_topview14.jpg","11-24-26/7i/7i_1/1772954_topview15.jpg","11-24-26/7i/7i_1/1772954_topview16.jpg","11-24-26/7i/7i_1/1772954_topview17.jpg","11-24-26/7i/7i_1/1772954_topview18.jpg","11-24-26/7i/7i_1/1772954_topview19.jpg","11-24-26/7i/7i_1/1772954_topview20.jpg","11-24-26/7i/7i_1/1772954_topview21.jpg","11-24-26/7i/7i_1/1772954_topview22.jpg","11-24-26/7i/7i_1/1772954_topview23.jpg"]}},{"n":2,"type":"pushhookpullslice","carry":120.0,"total":135.2,"side":8.5,"smash":1.3,"clubSpeed":68.9,"ballSpeed":89.3,"backSpin":1388.0,"sideSpin":747.0,"launch":20.3,"sideAngle":-3.1,"descent":30.2,"apex":14.5,"flightTime":3.9,"face":-2.5,"path":-8.8,"img":{"impact":"11-24-26/7i/7i_2/1772952_ballimpact.jpg","frames":["11-24-26/7i/7i_2/1772952_topview00.jpg","11-24-26/7i/7i_2/1772952_topview01.jpg","11-24-26/7i/7i_2/1772952_topview02.jpg","11-24-26/7i/7i_2/1772952_topview03.jpg","11-24-26/7i/7i_2/1772952_topview04.jpg","11-24-26/7i/7i_2/1772952_topview05.jpg","11-24-26/7i/7i_2/1772952_topview06.jpg","11-24-26/7i/7i_2/1772952_topview07.jpg","11-24-26/7i/7i_2/1772952_topview08.jpg","11-24-26/7i/7i_2/1772952_topview09.jpg","11-24-26/7i/7i_2/1772952_topview10.jpg","11-24-26/7i/7i_2/1772952_topview11.jpg","11-24-26/7i/7i_2/1772952_topview12.jpg","11-24-26/7i/7i_2/1772952_topview13.jpg","11-24-26/7i/7i_2/1772952_topview14.jpg","11-24-26/7i/7i_2/1772952_topview15.jpg","11-24-26/7i/7i_2/1772952_topview16.jpg","11-24-26/7i/7i_2/1772952_topview17.jpg","11-24-26/7i/7i_2/1772952_topview18.jpg","11-24-26/7i/7i_2/1772952_topview19.jpg","11-24-26/7i/7i_2/1772952_topview20.jpg","11-24-26/7i/7i_2/1772952_topview21.jpg","11-24-26/7i/7i_2/1772952_topview22.jpg","11-24-26/7i/7i_2/1772952_topview23.jpg"]}},{"n":3,"type":"hookslice","carry":142.6,"total":152.8,"side":20.7,"smash":1.33,"clubSpeed":77.2,"ballSpeed":103.0,"backSpin":4247.0,"sideSpin":1793.0,"launch":21.7,"sideAngle":-1.9,"descent":43.9,"apex":25.8,"flightTime":5.3,"face":-1.1,"path":-9.2,"img":{"impact":"11-24-26/7i/7i_3/1772951_ballimpact.jpg","frames":["11-24-26/7i/7i_3/1772951_topview00.jpg","11-24-26/7i/7i_3/1772951_topview01.jpg","11-24-26/7i/7i_3/1772951_topview02.jpg","11-24-26/7i/7i_3/1772951_topview03.jpg","11-24-26/7i/7i_3/1772951_topview04.jpg","11-24-26/7i/7i_3/1772951_topview05.jpg","11-24-26/7i/7i_3/1772951_topview06.jpg","11-24-26/7i/7i_3/1772951_topview07.jpg","11-24-26/7i/7i_3/1772951_topview08.jpg","11-24-26/7i/7i_3/1772951_topview09.jpg","11-24-26/7i/7i_3/1772951_topview10.jpg","11-24-26/7i/7i_3/1772951_topview11.jpg","11-24-26/7i/7i_3/1772951_topview12.jpg","11-24-26/7i/7i_3/1772951_topview13.jpg","11-24-26/7i/7i_3/1772951_topview14.jpg","11-24-26/7i/7i_3/1772951_topview15.jpg","11-24-26/7i/7i_3/1772951_topview16.jpg","11-24-26/7i/7i_3/1772951_topview17.jpg","11-24-26/7i/7i_3/1772951_topview18.jpg","11-24-26/7i/7i_3/1772951_topview19.jpg","11-24-26/7i/7i_3/1772951_topview20.jpg","11-24-26/7i/7i_3/1772951_topview21.jpg","11-24-26/7i/7i_3/1772951_topview22.jpg","11-24-26/7i/7i_3/1772951_topview23.jpg"]}},{"n":4,"type":"pushhookpullslice","carry":130.4,"total":139.8,"side":10.8,"smash":1.26,"clubSpeed":77.0,"ballSpeed":97.2,"backSpin":4360.0,"sideSpin":1740.0,"launch":20.2,"sideAngle":-4.0,"descent":40.0,"apex":20.7,"flightTime":4.8,"face":-3.7,"path":-7.6,"img":{"impact":"11-24-26/7i/7i_4/1772949_ballimpact.jpg","frames":["11-24-26/7i/7i_4/1772949_topview00.jpg","11-24-26/7i/7i_4/1772949_topview01.jpg","11-24-26/7i/7i_4/1772949_topview02.jpg","11-24-26/7i/7i_4/1772949_topview03.jpg","11-24-26/7i/7i_4/1772949_topview04.jpg","11-24-26/7i/7i_4/1772949_topview05.jpg","11-24-26/7i/7i_4/1772949_topview06.jpg","11-24-26/7i/7i_4/1772949_topview07.jpg","11-24-26/7i/7i_4/1772949_topview08.jpg","11-24-26/7i/7i_4/1772949_topview09.jpg","11-24-26/7i/7i_4/1772949_topview10.jpg","11-24-26/7i/7i_4/1772949_topview11.jpg","11-24-26/7i/7i_4/1772949_topview12.jpg","11-24-26/7i/7i_4/1772949_topview13.jpg","11-24-26/7i/7i_4/1772949_topview14.jpg","11-24-26/7i/7i_4/1772949_topview15.jpg","11-24-26/7i/7i_4/1772949_topview16.jpg","11-24-26/7i/7i_4/1772949_topview17.jpg","11-24-26/7i/7i_4/1772949_topview18.jpg","11-24-26/7i/7i_4/1772949_topview19.jpg","11-24-26/7i/7i_4/1772949_topview20.jpg","11-24-26/7i/7i_4/1772949_topview21.jpg","11-24-26/7i/7i_4/1772949_topview22.jpg","11-24-26/7i/7i_4/1772949_topview23.jpg"]}},{"n":5,"type":"pushhookpullslice","carry":124.3,"total":139.0,"side":-11.2,"smash":1.4,"clubSpeed":63.5,"ballSpeed":88.9,"backSpin":1694.0,"sideSpin":314.0,"launch":21.4,"sideAngle":-7.4,"descent":32.8,"apex":16.7,"flightTime":4.2,"face":-7.1,"path":-10.1,"img":{"impact":"11-24-26/7i/7i_5/1772947_ballimpact.jpg","frames":["11-24-26/7i/7i_5/1772947_topview00.jpg","11-24-26/7i/7i_5/1772947_topview01.jpg","11-24-26/7i/7i_5/1772947_topview02.jpg","11-24-26/7i/7i_5/1772947_topview03.jpg","11-24-26/7i/7i_5/1772947_topview04.jpg","11-24-26/7i/7i_5/1772947_topview05.jpg","11-24-26/7i/7i_5/1772947_topview06.jpg","11-24-26/7i/7i_5/1772947_topview07.jpg","11-24-26/7i/7i_5/1772947_topview08.jpg","11-24-26/7i/7i_5/1772947_topview09.jpg","11-24-26/7i/7i_5/1772947_topview10.jpg","11-24-26/7i/7i_5/1772947_topview11.jpg","11-24-26/7i/7i_5/1772947_topview12.jpg","11-24-26/7i/7i_5/1772947_topview13.jpg","11-24-26/7i/7i_5/1772947_topview14.jpg","11-24-26/7i/7i_5/1772947_topview15.jpg","11-24-26/7i/7i_5/1772947_topview16.jpg","11-24-26/7i/7i_5/1772947_topview17.jpg","11-24-26/7i/7i_5/1772947_topview18.jpg","11-24-26/7i/7i_5/1772947_topview19.jpg","11-24-26/7i/7i_5/1772947_topview20.jpg","11-24-26/7i/7i_5/1772947_topview21.jpg","11-24-26/7i/7i_5/1772947_topview22.jpg","11-24-26/7i/7i_5/1772947_topview23.jpg"]}},{"n":6,"type":"pushhookpullslice","carry":110.1,"total":119.7,"side":-1.2,"smash":1.13,"clubSpeed":74.6,"ballSpeed":84.6,"backSpin":3729.0,"sideSpin":1320.0,"launch":25.5,"sideAngle":-7.0,"descent":41.9,"apex":20.2,"flightTime":4.6,"face":-6.8,"path":-9.2,"img":{"impact":"11-24-26/7i/7i_6/1772945_ballimpact.jpg","frames":["11-24-26/7i/7i_6/1772945_topview00.jpg","11-24-26/7i/7i_6/1772945_topview01.jpg","11-24-26/7i/7i_6/1772945_topview02.jpg","11-24-26/7i/7i_6/1772945_topview03.jpg","11-24-26/7i/7i_6/1772945_topview04.jpg","11-24-26/7i/7i_6/1772945_topview05.jpg","11-24-26/7i/7i_6/1772945_topview06.jpg","11-24-26/7i/7i_6/1772945_topview07.jpg","11-24-26/7i/7i_6/1772945_topview08.jpg","11-24-26/7i/7i_6/1772945_topview09.jpg","11-24-26/7i/7i_6/1772945_topview10.jpg","11-24-26/7i/7i_6/1772945_topview11.jpg","11-24-26/7i/7i_6/1772945_topview12.jpg","11-24-26/7i/7i_6/1772945_topview13.jpg","11-24-26/7i/7i_6/1772945_topview14.jpg","11-24-26/7i/7i_6/1772945_topview15.jpg","11-24-26/7i/7i_6/1772945_topview16.jpg","11-24-26/7i/7i_6/1772945_topview17.jpg","11-24-26/7i/7i_6/1772945_topview18.jpg","11-24-26/7i/7i_6/1772945_topview19.jpg","11-24-26/7i/7i_6/1772945_topview20.jpg","11-24-26/7i/7i_6/1772945_topview21.jpg","11-24-26/7i/7i_6/1772945_topview22.jpg","11-24-26/7i/7i_6/1772945_topview23.jpg"]}}],"8i":[{"n":1,"type":"hookslice","carry":131.9,"total":139.2,"side":14.7,"smash":1.28,"clubSpeed":77.5,"ballSpeed":99.2,"backSpin":5875.0,"sideSpin":1913.0,"launch":23.4,"sideAngle":-1.9,"descent":46.6,"apex":27.0,"flightTime":5.4,"face":-1.2,"path":-8.0,"img":{"impact":"11-24-26/8i/8i_1/1772965_ballimpact.jpg","frames":["11-24-26/8i/8i_1/1772965_topview00.jpg","11-24-26/8i/8i_1/1772965_topview01.jpg","11-24-26/8i/8i_1/1772965_topview02.jpg","11-24-26/8i/8i_1/1772965_topview03.jpg","11-24-26/8i/8i_1/1772965_topview04.jpg","11-24-26/8i/8i_1/1772965_topview05.jpg","11-24-26/8i/8i_1/1772965_topview06.jpg","11-24-26/8i/8i_1/1772965_topview07.jpg","11-24-26/8i/8i_1/1772965_topview08.jpg","11-24-26/8i/8i_1/1772965_topview09.jpg","11-24-26/8i/8i_1/1772965_topview10.jpg","11-24-26/8i/8i_1/1772965_topview11.jpg","11-24-26/8i/8i_1/1772965_topview12.jpg","11-24-26/8i/8i_1/1772965_topview13.jpg","11-24-26/8i/8i_1/1772965_topview14.jpg","11-24-26/8i/8i_1/1772965_topview15.jpg","11-24-26/8i/8i_1/1772965_topview16.jpg","11-24-26/8i/8i_1/1772965_topview17.jpg","11-24-26/8i/8i_1/1772965_topview18.jpg","11-24-26/8i/8i_1/1772965_topview19.jpg","11-24-26/8i/8i_1/1772965_topview20.jpg","11-24-26/8i/8i_1/1772965_topview21.jpg","11-24-26/8i/8i_1/1772965_topview22.jpg","11-24-26/8i/8i_1/1772965_topview23.jpg"]}},{"n":2,"type":"hookslice","carry":119.4,"total":125.1,"side":20.8,"smash":1.14,"clubSpeed":82.7,"ballSpeed":94.4,"backSpin":6786.0,"sideSpin":3080.0,"launch":20.5,"sideAngle":-0.5,"descent":42.0,"apex":20.3,"flightTime":4.8,"face":0.7,"path":-10.6,"img":{"impact":"11-24-26/8i/8i_2/1772963_ballimpact.jpg","frames":["11-24-26/8i/8i_2/1772963_topview00.jpg","11-24-26/8i/8i_2/1772963_topview01.jpg","11-24-26/8i/8i_2/1772963_topview02.jpg","11-24-26/8i/8i_2/1772963_topview03.jpg","11-24-26/8i/8i_2/1772963_topview04.jpg","11-24-26/8i/8i_2/1772963_topview05.jpg","11-24-26/8i/8i_2/1772963_topview06.jpg","11-24-26/8i/8i_2/1772963_topview07.jpg","11-24-26/8i/8i_2/1772963_topview08.jpg","11-24-26/8i/8i_2/1772963_topview09.jpg","11-24-26/8i/8i_2/1772963_topview10.jpg","11-24-26/8i/8i_2/1772963_topview11.jpg","11-24-26/8i/8i_2/1772963_topview12.jpg","11-24-26/8i/8i_2/1772963_topview13.jpg","11-24-26/8i/8i_2/1772963_topview14.jpg","11-24-26/8i/8i_2/1772963_topview15.jpg","11-24-26/8i/8i_2/1772963_topview16.jpg","11-24-26/8i/8i_2/1772963_topview17.jpg","11-24-26/8i/8i_2/1772963_topview18.jpg","11-24-26/8i/8i_2/1772963_topview19.jpg","11-24-26/8i/8i_2/1772963_topview20.jpg","11-24-26/8i/8i_2/1772963_topview21.jpg","11-24-26/8i/8i_2/1772963_topview22.jpg","11-24-26/8i/8i_2/1772963_topview23.jpg"]}},{"n":3,"type":"hookslice","carry":129.3,"total":136.6,"side":19.0,"smash":1.2,"clubSpeed":81.4,"ballSpeed":97.7,"backSpin":5749.0,"sideSpin":2074.0,"launch":23.2,"sideAngle":-0.5,"descent":45.8,"apex":25.6,"flightTime":5.3,"face":0.1,"path":-6.5,"img":{"impact":"11-24-26/8i/8i_3/1772962_ballimpact.jpg","frames":["11-24-26/8i/8i_3/1772962_topview00.jpg","11-24-26/8i/8i_3/1772962_topview01.jpg","11-24-26/8i/8i_3/1772962_topview02.jpg","11-24-26/8i/8i_3/1772962_topview03.jpg","11-24-26/8i/8i_3/1772962_topview04.jpg","11-24-26/8i/8i_3/1772962_topview05.jpg","11-24-26/8i/8i_3/1772962_topview06.jpg","11-24-26/8i/8i_3/1772962_topview07.jpg","11-24-26/8i/8i_3/1772962_topview08.jpg","11-24-26/8i/8i_3/1772962_topview09.jpg","11-24-26/8i/8i_3/1772962_topview10.jpg","11-24-26/8i/8i_3/1772962_topview11.jpg","11-24-26/8i/8i_3/1772962_topview12.jpg","11-24-26/8i/8i_3/1772962_topview13.jpg","11-24-26/8i/8i_3/1772962_topview14.jpg","11-24-26/8i/8i_3/1772962_topview15.jpg","11-24-26/8i/8i_3/1772962_topview16.jpg","11-24-26/8i/8i_3/1772962_topview17.jpg","11-24-26/8i/8i_3/1772962_topview18.jpg","11-24-26/8i/8i_3/1772962_topview19.jpg","11-24-26/8i/8i_3/1772962_topview20.jpg","11-24-26/8i/8i_3/1772962_topview21.jpg","11-24-26/8i/8i_3/1772962_topview22.jpg","11-24-26/8i/8i_3/1772962_topview23.jpg"]}},{"n":4,"type":"hookslice","carry":115.7,"total":120.8,"side":25.9,"smash":1.22,"clubSpeed":75.9,"ballSpeed":92.3,"backSpin":6996.0,"sideSpin":3428.0,"launch":24.1,"sideAngle":1.6,"descent":45.8,"apex":23.2,"flightTime":4.9,"face":2.5,"path":-6.8,"img":{"impact":"11-24-26/8i/8i_4/1772960_ballimpact.jpg","frames":["11-24-26/8i/8i_4/1772960_topview00.jpg","11-24-26/8i/8i_4/1772960_topview01.jpg","11-24-26/8i/8i_4/1772960_topview02.jpg","11-24-26/8i/8i_4/1772960_topview03.jpg","11-24-26/8i/8i_4/1772960_topview04.jpg","11-24-26/8i/8i_4/1772960_topview05.jpg","11-24-26/8i/8i_4/1772960_topview06.jpg","11-24-26/8i/8i_4/1772960_topview07.jpg","11-24-26/8i/8i_4/1772960_topview08.jpg","11-24-26/8i/8i_4/1772960_topview09.jpg","11-24-26/8i/8i_4/1772960_topview10.jpg","11-24-26/8i/8i_4/1772960_topview11.jpg","11-24-26/8i/8i_4/1772960_topview12.jpg","11-24-26/8i/8i_4/1772960_topview13.jpg","11-24-26/8i/8i_4/1772960_topview14.jpg","11-24-26/8i/8i_4/1772960_topview15.jpg","11-24-26/8i/8i_4/1772960_topview16.jpg","11-24-26/8i/8i_4/1772960_topview17.jpg","11-24-26/8i/8i_4/1772960_topview18.jpg","11-24-26/8i/8i_4/1772960_topview19.jpg","11-24-26/8i/8i_4/1772960_topview20.jpg","11-24-26/8i/8i_4/1772960_topview21.jpg","11-24-26/8i/8i_4/1772960_topview22.jpg","11-24-26/8i/8i_4/1772960_topview23.jpg"]}},{"n":5,"type":"hookslice","carry":129.0,"total":135.0,"side":23.3,"smash":1.26,"clubSpeed":79.1,"ballSpeed":99.7,"backSpin":6686.0,"sideSpin":2898.0,"launch":23.9,"sideAngle":-0.6,"descent":47.8,"apex":27.5,"flightTime":5.4,"face":0.3,"path":-9.1,"img":{"impact":"11-24-26/8i/8i_5/1772958_ballimpact.jpg","frames":["11-24-26/8i/8i_5/1772958_topview00.jpg","11-24-26/8i/8i_5/1772958_topview01.jpg","11-24-26/8i/8i_5/1772958_topview02.jpg","11-24-26/8i/8i_5/1772958_topview03.jpg","11-24-26/8i/8i_5/1772958_topview04.jpg","11-24-26/8i/8i_5/1772958_topview05.jpg","11-24-26/8i/8i_5/1772958_topview06.jpg","11-24-26/8i/8i_5/1772958_topview07.jpg","11-24-26/8i/8i_5/1772958_topview08.jpg","11-24-26/8i/8i_5/1772958_topview09.jpg","11-24-26/8i/8i_5/1772958_topview10.jpg","11-24-26/8i/8i_5/1772958_topview11.jpg","11-24-26/8i/8i_5/1772958_topview12.jpg","11-24-26/8i/8i_5/1772958_topview13.jpg","11-24-26/8i/8i_5/1772958_topview14.jpg","11-24-26/8i/8i_5/1772958_topview15.jpg","11-24-26/8i/8i_5/1772958_topview16.jpg","11-24-26/8i/8i_5/1772958_topview17.jpg","11-24-26/8i/8i_5/1772958_topview18.jpg","11-24-26/8i/8i_5/1772958_topview19.jpg","11-24-26/8i/8i_5/1772958_topview20.jpg","11-24-26/8i/8i_5/1772958_topview21.jpg","11-24-26/8i/8i_5/1772958_topview22.jpg","11-24-26/8i/8i_5/1772958_topview23.jpg"]}},{"n":6,"type":"pushhookpullslice","carry":125.3,"total":134.6,"side":4.4,"smash":1.45,"clubSpeed":64.3,"ballSpeed":93.3,"backSpin":4369.0,"sideSpin":1535.0,"launch":24.6,"sideAngle":-5.6,"descent":44.6,"apex":24.4,"flightTime":5.1,"face":-4.9,"path":-12.5,"img":{"impact":"11-24-26/8i/8i_6/1772956_ballimpact.jpg","frames":["11-24-26/8i/8i_6/1772956_topview00.jpg","11-24-26/8i/8i_6/1772956_topview01.jpg","11-24-26/8i/8i_6/1772956_topview02.jpg","11-24-26/8i/8i_6/1772956_topview03.jpg","11-24-26/8i/8i_6/1772956_topview04.jpg","11-24-26/8i/8i_6/1772956_topview05.jpg","11-24-26/8i/8i_6/1772956_topview06.jpg","11-24-26/8i/8i_6/1772956_topview07.jpg","11-24-26/8i/8i_6/1772956_topview08.jpg","11-24-26/8i/8i_6/1772956_topview09.jpg","11-24-26/8i/8i_6/1772956_topview10.jpg","11-24-26/8i/8i_6/1772956_topview11.jpg","11-24-26/8i/8i_6/1772956_topview12.jpg","11-24-26/8i/8i_6/1772956_topview13.jpg","11-24-26/8i/8i_6/1772956_topview14.jpg","11-24-26/8i/8i_6/1772956_topview15.jpg","11-24-26/8i/8i_6/1772956_topview16.jpg","11-24-26/8i/8i_6/1772956_topview17.jpg","11-24-26/8i/8i_6/1772956_topview18.jpg","11-24-26/8i/8i_6/1772956_topview19.jpg","11-24-26/8i/8i_6/1772956_topview20.jpg","11-24-26/8i/8i_6/1772956_topview21.jpg","11-24-26/8i/8i_6/1772956_topview22.jpg","11-24-26/8i/8i_6/1772956_topview23.jpg"]}}],"9i":[{"n":1,"type":"hookslice","carry":112.9,"total":123.6,"side":18.5,"smash":1.4,"clubSpeed":61.3,"ballSpeed":85.8,"backSpin":3081.0,"sideSpin":1711.0,"launch":27.3,"sideAngle":-0.8,"descent":43.3,"apex":21.8,"flightTime":4.7,"face":0.3,"path":-10.4,"img":{"impact":"11-24-26/9i/9i_1/1772976_ballimpact.jpg","frames":["11-24-26/9i/9i_1/1772976_topview00.jpg","11-24-26/9i/9i_1/1772976_topview01.jpg","11-24-26/9i/9i_1/1772976_topview02.jpg","11-24-26/9i/9i_1/1772976_topview03.jpg","11-24-26/9i/9i_1/1772976_topview04.jpg","11-24-26/9i/9i_1/1772976_topview05.jpg","11-24-26/9i/9i_1/1772976_topview06.jpg","11-24-26/9i/9i_1/1772976_topview07.jpg","11-24-26/9i/9i_1/1772976_topview08.jpg","11-24-26/9i/9i_1/1772976_topview09.jpg","11-24-26/9i/9i_1/1772976_topview10.jpg","11-24-26/9i/9i_1/1772976_topview11.jpg","11-24-26/9i/9i_1/1772976_topview12.jpg","11-24-26/9i/9i_1/1772976_topview13.jpg","11-24-26/9i/9i_1/1772976_topview14.jpg","11-24-26/9i/9i_1/1772976_topview15.jpg","11-24-26/9i/9i_1/1772976_topview16.jpg","11-24-26/9i/9i_1/1772976_topview17.jpg","11-24-26/9i/9i_1/1772976_topview18.jpg","11-24-26/9i/9i_1/1772976_topview19.jpg","11-24-26/9i/9i_1/1772976_topview20.jpg","11-24-26/9i/9i_1/1772976_topview21.jpg","11-24-26/9i/9i_1/1772976_topview22.jpg","11-24-26/9i/9i_1/1772976_topview23.jpg"]}},{"n":2,"type":"pushhookpullslice","carry":108.0,"total":112.1,"side":13.3,"smash":1.16,"clubSpeed":75.9,"ballSpeed":87.7,"backSpin":7665.0,"sideSpin":3199.0,"launch":23.0,"sideAngle":-2.1,"descent":43.5,"apex":20.0,"flightTime":4.6,"face":-0.9,"path":-13.0,"img":{"impact":"11-24-26/9i/9i_2/1772974_ballimpact.jpg","frames":["11-24-26/9i/9i_2/1772974_topview00.jpg","11-24-26/9i/9i_2/1772974_topview01.jpg","11-24-26/9i/9i_2/1772974_topview02.jpg","11-24-26/9i/9i_2/1772974_topview03.jpg","11-24-26/9i/9i_2/1772974_topview04.jpg","11-24-26/9i/9i_2/1772974_topview05.jpg","11-24-26/9i/9i_2/1772974_topview06.jpg","11-24-26/9i/9i_2/1772974_topview07.jpg","11-24-26/9i/9i_2/1772974_topview08.jpg","11-24-26/9i/9i_2/1772974_topview09.jpg","11-24-26/9i/9i_2/1772974_topview10.jpg","11-24-26/9i/9i_2/1772974_topview11.jpg","11-24-26/9i/9i_2/1772974_topview12.jpg","11-24-26/9i/9i_2/1772974_topview13.jpg","11-24-26/9i/9i_2/1772974_topview14.jpg","11-24-26/9i/9i_2/1772974_topview15.jpg","11-24-26/9i/9i_2/1772974_topview16.jpg","11-24-26/9i/9i_2/1772974_topview17.jpg","11-24-26/9i/9i_2/1772974_topview18.jpg","11-24-26/9i/9i_2/1772974_topview19.jpg","11-24-26/9i/9i_2/1772974_topview20.jpg","11-24-26/9i/9i_2/1772974_topview21.jpg","11-24-26/9i/9i_2/1772974_topview22.jpg","11-24-26/9i/9i_2/1772974_topview23.jpg"]}},{"n":3,"type":"hookslice","carry":115.3,"total":120.2,"side":15.6,"smash":1.22,"clubSpeed":75.0,"ballSpeed":91.4,"backSpin":7136.0,"sideSpin":2822.0,"launch":25.5,"sideAngle":-1.5,"descent":47.2,"apex":24.7,"flightTime":5.1,"face":-0.3,"path":-12.5,"img":{"impact":"11-24-26/9i/9i_3/1772972_ballimpact.jpg","frames":["11-24-26/9i/9i_3/1772972_topview00.jpg","11-24-26/9i/9i_3/1772972_topview01.jpg","11-24-26/9i/9i_3/1772972_topview02.jpg","11-24-26/9i/9i_3/1772972_topview03.jpg","11-24-26/9i/9i_3/1772972_topview04.jpg","11-24-26/9i/9i_3/1772972_topview05.jpg","11-24-26/9i/9i_3/1772972_topview06.jpg","11-24-26/9i/9i_3/1772972_topview07.jpg","11-24-26/9i/9i_3/1772972_topview08.jpg","11-24-26/9i/9i_3/1772972_topview09.jpg","11-24-26/9i/9i_3/1772972_topview10.jpg","11-24-26/9i/9i_3/1772972_topview11.jpg","11-24-26/9i/9i_3/1772972_topview12.jpg","11-24-26/9i/9i_3/1772972_topview13.jpg","11-24-26/9i/9i_3/1772972_topview14.jpg","11-24-26/9i/9i_3/1772972_topview15.jpg","11-24-26/9i/9i_3/1772972_topview16.jpg","11-24-26/9i/9i_3/1772972_topview17.jpg","11-24-26/9i/9i_3/1772972_topview18.jpg","11-24-26/9i/9i_3/1772972_topview19.jpg","11-24-26/9i/9i_3/1772972_topview20.jpg","11-24-26/9i/9i_3/1772972_topview21.jpg","11-24-26/9i/9i_3/1772972_topview22.jpg","11-24-26/9i/9i_3/1772972_topview23.jpg"]}},{"n":4,"type":"hookslice","carry":105.8,"total":109.1,"side":14.5,"smash":1.05,"clubSpeed":82.2,"ballSpeed":86.1,"backSpin":8048.0,"sideSpin":2633.0,"launch":26.9,"sideAngle":0.3,"descent":47.5,"apex":23.5,"flightTime":4.9,"face":1.5,"path":-10.3,"img":{"impact":"11-24-26/9i/9i_4/1772970_ballimpact.jpg","frames":["11-24-26/9i/9i_4/1772970_topview00.jpg","11-24-26/9i/9i_4/1772970_topview01.jpg","11-24-26/9i/9i_4/1772970_topview02.jpg","11-24-26/9i/9i_4/1772970_topview03.jpg","11-24-26/9i/9i_4/1772970_topview04.jpg","11-24-26/9i/9i_4/1772970_topview05.jpg","11-24-26/9i/9i_4/1772970_topview06.jpg","11-24-26/9i/9i_4/1772970_topview07.jpg","11-24-26/9i/9i_4/1772970_topview08.jpg","11-24-26/9i/9i_4/1772970_topview09.jpg","11-24-26/9i/9i_4/1772970_topview10.jpg","11-24-26/9i/9i_4/1772970_topview11.jpg","11-24-26/9i/9i_4/1772970_topview12.jpg","11-24-26/9i/9i_4/1772970_topview13.jpg","11-24-26/9i/9i_4/1772970_topview14.jpg","11-24-26/9i/9i_4/1772970_topview15.jpg","11-24-26/9i/9i_4/1772970_topview16.jpg","11-24-26/9i/9i_4/1772970_topview17.jpg","11-24-26/9i/9i_4/1772970_topview18.jpg","11-24-26/9i/9i_4/1772970_topview19.jpg","11-24-26/9i/9i_4/1772970_topview20.jpg","11-24-26/9i/9i_4/1772970_topview21.jpg","11-24-26/9i/9i_4/1772970_topview22.jpg","11-24-26/9i/9i_4/1772970_topview23.jpg"]}},{"n":5,"type":"hookslice","carry":108.7,"total":113.0,"side":17.7,"smash":1.07,"clubSpeed":82.3,"ballSpeed":88.1,"backSpin":7406.0,"sideSpin":3316.0,"launch":27.1,"sideAngle":-0.7,"descent":48.0,"apex":24.3,"flightTime":5.0,"face":0.3,"path":-10.5,"img":{"impact":"11-24-26/9i/9i_5/1772969_ballimpact.jpg","frames":["11-24-26/9i/9i_5/1772969_topview00.jpg","11-24-26/9i/9i_5/1772969_topview01.jpg","11-24-26/9i/9i_5/1772969_topview02.jpg","11-24-26/9i/9i_5/1772969_topview03.jpg","11-24-26/9i/9i_5/1772969_topview04.jpg","11-24-26/9i/9i_5/1772969_topview05.jpg","11-24-26/9i/9i_5/1772969_topview06.jpg","11-24-26/9i/9i_5/1772969_topview07.jpg","11-24-26/9i/9i_5/1772969_topview08.jpg","11-24-26/9i/9i_5/1772969_topview09.jpg","11-24-26/9i/9i_5/1772969_topview10.jpg","11-24-26/9i/9i_5/1772969_topview11.jpg","11-24-26/9i/9i_5/1772969_topview12.jpg","11-24-26/9i/9i_5/1772969_topview13.jpg","11-24-26/9i/9i_5/1772969_topview14.jpg","11-24-26/9i/9i_5/1772969_topview15.jpg","11-24-26/9i/9i_5/1772969_topview16.jpg","11-24-26/9i/9i_5/1772969_topview17.jpg","11-24-26/9i/9i_5/1772969_topview18.jpg","11-24-26/9i/9i_5/1772969_topview19.jpg","11-24-26/9i/9i_5/1772969_topview20.jpg","11-24-26/9i/9i_5/1772969_topview21.jpg","11-24-26/9i/9i_5/1772969_topview22.jpg","11-24-26/9i/9i_5/1772969_topview23.jpg"]}},{"n":6,"type":"hookslice","carry":121.7,"total":125.5,"side":11.7,"smash":1.18,"clubSpeed":81.5,"ballSpeed":95.8,"backSpin":8049.0,"sideSpin":1775.0,"launch":26.5,"sideAngle":-0.4,"descent":50.1,"apex":29.6,"flightTime":5.5,"face":0.3,"path":-6.6,"img":{"impact":"11-24-26/9i/9i_6/1772967_ballimpact.jpg","frames":["11-24-26/9i/9i_6/1772967_topview00.jpg","11-24-26/9i/9i_6/1772967_topview01.jpg","11-24-26/9i/9i_6/1772967_topview02.jpg","11-24-26/9i/9i_6/1772967_topview03.jpg","11-24-26/9i/9i_6/1772967_topview04.jpg","11-24-26/9i/9i_6/1772967_topview05.jpg","11-24-26/9i/9i_6/1772967_topview06.jpg","11-24-26/9i/9i_6/1772967_topview07.jpg","11-24-26/9i/9i_6/1772967_topview08.jpg","11-24-26/9i/9i_6/1772967_topview09.jpg","11-24-26/9i/9i_6/1772967_topview10.jpg","11-24-26/9i/9i_6/1772967_topview11.jpg","11-24-26/9i/9i_6/1772967_topview12.jpg","11-24-26/9i/9i_6/1772967_topview13.jpg","11-24-26/9i/9i_6/1772967_topview14.jpg","11-24-26/9i/9i_6/1772967_topview15.jpg","11-24-26/9i/9i_6/1772967_topview16.jpg","11-24-26/9i/9i_6/1772967_topview17.jpg","11-24-26/9i/9i_6/1772967_topview18.jpg","11-24-26/9i/9i_6/1772967_topview19.jpg","11-24-26/9i/9i_6/1772967_topview20.jpg","11-24-26/9i/9i_6/1772967_topview21.jpg","11-24-26/9i/9i_6/1772967_topview22.jpg","11-24-26/9i/9i_6/1772967_topview23.jpg"]}}],"AW":[{"n":1,"type":"pushdrawpullfade","carry":87.1,"total":89.6,"side":-2.7,"smash":1.09,"clubSpeed":68.7,"ballSpeed":74.6,"backSpin":8180.0,"sideSpin":1247.0,"launch":29.1,"sideAngle":-4.7,"descent":46.1,"apex":19.2,"flightTime":4.4,"face":-4.3,"path":-8.5,"img":{"impact":"11-24-26/AW/AW_1/1772997_ballimpact.jpg","frames":["11-24-26/AW/AW_1/1772997_topview00.jpg","11-24-26/AW/AW_1/1772997_topview01.jpg","11-24-26/AW/AW_1/1772997_topview02.jpg","11-24-26/AW/AW_1/1772997_topview03.jpg","11-24-26/AW/AW_1/1772997_topview04.jpg","11-24-26/AW/AW_1/1772997_topview05.jpg","11-24-26/AW/AW_1/1772997_topview06.jpg","11-24-26/AW/AW_1/1772997_topview07.jpg","11-24-26/AW/AW_1/1772997_topview08.jpg","11-24-26/AW/AW_1/1772997_topview09.jpg","11-24-26/AW/AW_1/1772997_topview10.jpg","11-24-26/AW/AW_1/1772997_topview11.jpg","11-24-26/AW/AW_1/1772997_topview12.jpg","11-24-26/AW/AW_1/1772997_topview13.jpg","11-24-26/AW/AW_1/1772997_topview14.jpg","11-24-26/AW/AW_1/1772997_topview15.jpg","11-24-26/AW/AW_1/1772997_topview16.jpg","11-24-26/AW/AW_1/1772997_topview17.jpg","11-24-26/AW/AW_1/1772997_topview18.jpg","11-24-26/AW/AW_1/1772997_topview19.jpg","11-24-26/AW/AW_1/1772997_topview20.jpg","11-24-26/AW/AW_1/1772997_topview21.jpg","11-24-26/AW/AW_1/1772997_topview22.jpg","11-24-26/AW/AW_1/1772997_topview23.jpg"]}},{"n":2,"type":"pushdrawpullfade","carry":93.9,"total":95.7,"side":-2.5,"smash":1.03,"clubSpeed":76.7,"ballSpeed":79.0,"backSpin":8890.0,"sideSpin":1279.0,"launch":29.0,"sideAngle":-4.6,"descent":47.9,"apex":21.8,"flightTime":4.7,"face":-4.3,"path":-7.7,"img":{"impact":"11-24-26/AW/AW_2/1772996_ballimpact.jpg","frames":["11-24-26/AW/AW_2/1772996_topview00.jpg","11-24-26/AW/AW_2/1772996_topview01.jpg","11-24-26/AW/AW_2/1772996_topview02.jpg","11-24-26/AW/AW_2/1772996_topview03.jpg","11-24-26/AW/AW_2/1772996_topview04.jpg","11-24-26/AW/AW_2/1772996_topview05.jpg","11-24-26/AW/AW_2/1772996_topview06.jpg","11-24-26/AW/AW_2/1772996_topview07.jpg","11-24-26/AW/AW_2/1772996_topview08.jpg","11-24-26/AW/AW_2/1772996_topview09.jpg","11-24-26/AW/AW_2/1772996_topview10.jpg","11-24-26/AW/AW_2/1772996_topview11.jpg","11-24-26/AW/AW_2/1772996_topview12.jpg","11-24-26/AW/AW_2/1772996_topview13.jpg","11-24-26/AW/AW_2/1772996_topview14.jpg","11-24-26/AW/AW_2/1772996_topview15.jpg","11-24-26/AW/AW_2/1772996_topview16.jpg","11-24-26/AW/AW_2/1772996_topview17.jpg","11-24-26/AW/AW_2/1772996_topview18.jpg","11-24-26/AW/AW_2/1772996_topview19.jpg","11-24-26/AW/AW_2/1772996_topview20.jpg","11-24-26/AW/AW_2/1772996_topview21.jpg","11-24-26/AW/AW_2/1772996_topview22.jpg","11-24-26/AW/AW_2/1772996_topview23.jpg"]}},{"n":3,"type":"pushhookpullslice","carry":78.3,"total":81.1,"side":0.2,"smash":0.97,"clubSpeed":71.3,"ballSpeed":69.3,"backSpin":7557.0,"sideSpin":1541.0,"launch":30.7,"sideAngle":-3.3,"descent":45.6,"apex":17.3,"flightTime":4.1,"face":-2.3,"path":-12.7,"img":{"impact":"11-24-26/AW/AW_3/1772994_ballimpact.jpg","frames":["11-24-26/AW/AW_3/1772994_topview00.jpg","11-24-26/AW/AW_3/1772994_topview01.jpg","11-24-26/AW/AW_3/1772994_topview02.jpg","11-24-26/AW/AW_3/1772994_topview03.jpg","11-24-26/AW/AW_3/1772994_topview04.jpg","11-24-26/AW/AW_3/1772994_topview05.jpg","11-24-26/AW/AW_3/1772994_topview06.jpg","11-24-26/AW/AW_3/1772994_topview07.jpg","11-24-26/AW/AW_3/1772994_topview08.jpg","11-24-26/AW/AW_3/1772994_topview09.jpg","11-24-26/AW/AW_3/1772994_topview10.jpg","11-24-26/AW/AW_3/1772994_topview11.jpg","11-24-26/AW/AW_3/1772994_topview12.jpg","11-24-26/AW/AW_3/1772994_topview13.jpg","11-24-26/AW/AW_3/1772994_topview14.jpg","11-24-26/AW/AW_3/1772994_topview15.jpg","11-24-26/AW/AW_3/1772994_topview16.jpg","11-24-26/AW/AW_3/1772994_topview17.jpg","11-24-26/AW/AW_3/1772994_topview18.jpg","11-24-26/AW/AW_3/1772994_topview19.jpg","11-24-26/AW/AW_3/1772994_topview20.jpg","11-24-26/AW/AW_3/1772994_topview21.jpg","11-24-26/AW/AW_3/1772994_topview22.jpg","11-24-26/AW/AW_3/1772994_topview23.jpg"]}},{"n":4,"type":"hookslice","carry":84.0,"total":86.5,"side":4.6,"smash":1.05,"clubSpeed":69.2,"ballSpeed":73.0,"backSpin":7953.0,"sideSpin":2112.0,"launch":30.3,"sideAngle":-1.8,"descent":46.7,"apex":19.0,"flightTime":4.3,"face":-0.5,"path":-13.6,"img":{"impact":"11-24-26/AW/AW_4/1772992_ballimpact.jpg","frames":["11-24-26/AW/AW_4/1772992_topview00.jpg","11-24-26/AW/AW_4/1772992_topview01.jpg","11-24-26/AW/AW_4/1772992_topview02.jpg","11-24-26/AW/AW_4/1772992_topview03.jpg","11-24-26/AW/AW_4/1772992_topview04.jpg","11-24-26/AW/AW_4/1772992_topview05.jpg","11-24-26/AW/AW_4/1772992_topview06.jpg","11-24-26/AW/AW_4/1772992_topview07.jpg","11-24-26/AW/AW_4/1772992_topview08.jpg","11-24-26/AW/AW_4/1772992_topview09.jpg","11-24-26/AW/AW_4/1772992_topview10.jpg","11-24-26/AW/AW_4/1772992_topview11.jpg","11-24-26/AW/AW_4/1772992_topview12.jpg","11-24-26/AW/AW_4/1772992_topview13.jpg","11-24-26/AW/AW_4/1772992_topview14.jpg","11-24-26/AW/AW_4/1772992_topview15.jpg","11-24-26/AW/AW_4/1772992_topview16.jpg","11-24-26/AW/AW_4/1772992_topview17.jpg","11-24-26/AW/AW_4/1772992_topview18.jpg","11-24-26/AW/AW_4/1772992_topview19.jpg","11-24-26/AW/AW_4/1772992_topview20.jpg","11-24-26/AW/AW_4/1772992_topview21.jpg","11-24-26/AW/AW_4/1772992_topview22.jpg","11-24-26/AW/AW_4/1772992_topview23.jpg"]}},{"n":5,"type":"pushhookpullslice","carry":79.4,"total":83.4,"side":-3.5,"smash":0.96,"clubSpeed":72.3,"ballSpeed":69.4,"backSpin":6705.0,"sideSpin":1126.0,"launch":29.2,"sideAngle":-5.2,"descent":43.7,"apex":16.1,"flightTime":4.0,"face":-5.3,"path":-4.3,"img":{"impact":"11-24-26/AW/AW_5/1772990_ballimpact.jpg","frames":["11-24-26/AW/AW_5/1772990_topview00.jpg","11-24-26/AW/AW_5/1772990_topview01.jpg","11-24-26/AW/AW_5/1772990_topview02.jpg","11-24-26/AW/AW_5/1772990_topview03.jpg","11-24-26/AW/AW_5/1772990_topview04.jpg","11-24-26/AW/AW_5/1772990_topview05.jpg","11-24-26/AW/AW_5/1772990_topview06.jpg","11-24-26/AW/AW_5/1772990_topview07.jpg","11-24-26/AW/AW_5/1772990_topview08.jpg","11-24-26/AW/AW_5/1772990_topview09.jpg","11-24-26/AW/AW_5/1772990_topview10.jpg","11-24-26/AW/AW_5/1772990_topview11.jpg","11-24-26/AW/AW_5/1772990_topview12.jpg","11-24-26/AW/AW_5/1772990_topview13.jpg","11-24-26/AW/AW_5/1772990_topview14.jpg","11-24-26/AW/AW_5/1772990_topview15.jpg","11-24-26/AW/AW_5/1772990_topview16.jpg","11-24-26/AW/AW_5/1772990_topview17.jpg","11-24-26/AW/AW_5/1772990_topview18.jpg","11-24-26/AW/AW_5/1772990_topview19.jpg","11-24-26/AW/AW_5/1772990_topview20.jpg","11-24-26/AW/AW_5/1772990_topview21.jpg","11-24-26/AW/AW_5/1772990_topview22.jpg","11-24-26/AW/AW_5/1772990_topview23.jpg"]}},{"n":6,"type":"pushhookpullslice","carry":90.1,"total":93.1,"side":-3.7,"smash":1.05,"clubSpeed":72.6,"ballSpeed":76.2,"backSpin":7760.0,"sideSpin":1344.0,"launch":30.2,"sideAngle":-5.7,"descent":47.6,"apex":20.9,"flightTime":4.6,"face":-5.5,"path":-7.2,"img":{"impact":"11-24-26/AW/AW_6/1772988_ballimpact.jpg","frames":["11-24-26/AW/AW_6/1772988_topview00.jpg","11-24-26/AW/AW_6/1772988_topview01.jpg","11-24-26/AW/AW_6/1772988_topview02.jpg","11-24-26/AW/AW_6/1772988_topview03.jpg","11-24-26/AW/AW_6/1772988_topview04.jpg","11-24-26/AW/AW_6/1772988_topview05.jpg","11-24-26/AW/AW_6/1772988_topview06.jpg","11-24-26/AW/AW_6/1772988_topview07.jpg","11-24-26/AW/AW_6/1772988_topview08.jpg","11-24-26/AW/AW_6/1772988_topview09.jpg","11-24-26/AW/AW_6/1772988_topview10.jpg","11-24-26/AW/AW_6/1772988_topview11.jpg","11-24-26/AW/AW_6/1772988_topview12.jpg","11-24-26/AW/AW_6/1772988_topview13.jpg","11-24-26/AW/AW_6/1772988_topview14.jpg","11-24-26/AW/AW_6/1772988_topview15.jpg","11-24-26/AW/AW_6/1772988_topview16.jpg","11-24-26/AW/AW_6/1772988_topview17.jpg","11-24-26/AW/AW_6/1772988_topview18.jpg","11-24-26/AW/AW_6/1772988_topview19.jpg","11-24-26/AW/AW_6/1772988_topview20.jpg","11-24-26/AW/AW_6/1772988_topview21.jpg","11-24-26/AW/AW_6/1772988_topview22.jpg","11-24-26/AW/AW_6/1772988_topview23.jpg"]}}],"PW":[{"n":1,"type":"pushhookpullslice","carry":104.3,"total":110.2,"side":-2.3,"smash":1.41,"clubSpeed":59.1,"ballSpeed":83.1,"backSpin":6121.0,"sideSpin":1091.0,"launch":26.4,"sideAngle":-4.9,"descent":45.0,"apex":21.3,"flightTime":4.7,"face":-4.4,"path":-10.0,"img":{"impact":"11-24-26/PW/PW_1/1772987_ballimpact.jpg","frames":["11-24-26/PW/PW_1/1772987_topview00.jpg","11-24-26/PW/PW_1/1772987_topview01.jpg","11-24-26/PW/PW_1/1772987_topview02.jpg","11-24-26/PW/PW_1/1772987_topview03.jpg","11-24-26/PW/PW_1/1772987_topview04.jpg","11-24-26/PW/PW_1/1772987_topview05.jpg","11-24-26/PW/PW_1/1772987_topview06.jpg","11-24-26/PW/PW_1/1772987_topview07.jpg","11-24-26/PW/PW_1/1772987_topview08.jpg","11-24-26/PW/PW_1/1772987_topview09.jpg","11-24-26/PW/PW_1/1772987_topview10.jpg","11-24-26/PW/PW_1/1772987_topview11.jpg","11-24-26/PW/PW_1/1772987_topview12.jpg","11-24-26/PW/PW_1/1772987_topview13.jpg","11-24-26/PW/PW_1/1772987_topview14.jpg","11-24-26/PW/PW_1/1772987_topview15.jpg","11-24-26/PW/PW_1/1772987_topview16.jpg","11-24-26/PW/PW_1/1772987_topview17.jpg","11-24-26/PW/PW_1/1772987_topview18.jpg","11-24-26/PW/PW_1/1772987_topview19.jpg","11-24-26/PW/PW_1/1772987_topview20.jpg","11-24-26/PW/PW_1/1772987_topview21.jpg","11-24-26/PW/PW_1/1772987_topview22.jpg","11-24-26/PW/PW_1/1772987_topview23.jpg"]}},{"n":2,"type":"pushhookpullslice","carry":95.2,"total":97.9,"side":5.9,"smash":1.07,"clubSpeed":74.5,"ballSpeed":79.6,"backSpin":8283.0,"sideSpin":2265.0,"launch":27.5,"sideAngle":-2.2,"descent":46.3,"apex":20.5,"flightTime":4.6,"face":-1.6,"path":-7.2,"img":{"impact":"11-24-26/PW/PW_2/1772985_ballimpact.jpg","frames":["11-24-26/PW/PW_2/1772985_topview00.jpg","11-24-26/PW/PW_2/1772985_topview01.jpg","11-24-26/PW/PW_2/1772985_topview02.jpg","11-24-26/PW/PW_2/1772985_topview03.jpg","11-24-26/PW/PW_2/1772985_topview04.jpg","11-24-26/PW/PW_2/1772985_topview05.jpg","11-24-26/PW/PW_2/1772985_topview06.jpg","11-24-26/PW/PW_2/1772985_topview07.jpg","11-24-26/PW/PW_2/1772985_topview08.jpg","11-24-26/PW/PW_2/1772985_topview09.jpg","11-24-26/PW/PW_2/1772985_topview10.jpg","11-24-26/PW/PW_2/1772985_topview11.jpg","11-24-26/PW/PW_2/1772985_topview12.jpg","11-24-26/PW/PW_2/1772985_topview13.jpg","11-24-26/PW/PW_2/1772985_topview14.jpg","11-24-26/PW/PW_2/1772985_topview15.jpg","11-24-26/PW/PW_2/1772985_topview16.jpg","11-24-26/PW/PW_2/1772985_topview17.jpg","11-24-26/PW/PW_2/1772985_topview18.jpg","11-24-26/PW/PW_2/1772985_topview19.jpg","11-24-26/PW/PW_2/1772985_topview20.jpg","11-24-26/PW/PW_2/1772985_topview21.jpg","11-24-26/PW/PW_2/1772985_topview22.jpg","11-24-26/PW/PW_2/1772985_topview23.jpg"]}},{"n":3,"type":"hookslice","carry":93.3,"total":94.8,"side":8.6,"smash":1.05,"clubSpeed":75.5,"ballSpeed":79.7,"backSpin":9011.0,"sideSpin":3035.0,"launch":30.4,"sideAngle":-1.8,"descent":49.6,"apex":23.1,"flightTime":4.8,"face":-1.1,"path":-8.5,"img":{"impact":"11-24-26/PW/PW_3/1772983_ballimpact.jpg","frames":["11-24-26/PW/PW_3/1772983_topview00.jpg","11-24-26/PW/PW_3/1772983_topview01.jpg","11-24-26/PW/PW_3/1772983_topview02.jpg","11-24-26/PW/PW_3/1772983_topview03.jpg","11-24-26/PW/PW_3/1772983_topview04.jpg","11-24-26/PW/PW_3/1772983_topview05.jpg","11-24-26/PW/PW_3/1772983_topview06.jpg","11-24-26/PW/PW_3/1772983_topview07.jpg","11-24-26/PW/PW_3/1772983_topview08.jpg","11-24-26/PW/PW_3/1772983_topview09.jpg","11-24-26/PW/PW_3/1772983_topview10.jpg","11-24-26/PW/PW_3/1772983_topview11.jpg","11-24-26/PW/PW_3/1772983_topview12.jpg","11-24-26/PW/PW_3/1772983_topview13.jpg","11-24-26/PW/PW_3/1772983_topview14.jpg","11-24-26/PW/PW_3/1772983_topview15.jpg","11-24-26/PW/PW_3/1772983_topview16.jpg","11-24-26/PW/PW_3/1772983_topview17.jpg","11-24-26/PW/PW_3/1772983_topview18.jpg","11-24-26/PW/PW_3/1772983_topview19.jpg","11-24-26/PW/PW_3/1772983_topview20.jpg","11-24-26/PW/PW_3/1772983_topview21.jpg","11-24-26/PW/PW_3/1772983_topview22.jpg","11-24-26/PW/PW_3/1772983_topview23.jpg"]}},{"n":4,"type":"drawfade","carry":96.0,"total":99.9,"side":1.6,"smash":1.0,"clubSpeed":79.5,"ballSpeed":79.5,"backSpin":7224.0,"sideSpin":516.0,"launch":31.2,"sideAngle":-0.6,"descent":49.4,"apex":24.0,"flightTime":4.9,"face":1.1,"path":-16.2,"img":{"impact":"11-24-26/PW/PW_4/1772981_ballimpact.jpg","frames":["11-24-26/PW/PW_4/1772981_topview00.jpg","11-24-26/PW/PW_4/1772981_topview01.jpg","11-24-26/PW/PW_4/1772981_topview02.jpg","11-24-26/PW/PW_4/1772981_topview03.jpg","11-24-26/PW/PW_4/1772981_topview04.jpg","11-24-26/PW/PW_4/1772981_topview05.jpg","11-24-26/PW/PW_4/1772981_topview06.jpg","11-24-26/PW/PW_4/1772981_topview07.jpg","11-24-26/PW/PW_4/1772981_topview08.jpg","11-24-26/PW/PW_4/1772981_topview09.jpg","11-24-26/PW/PW_4/1772981_topview10.jpg","11-24-26/PW/PW_4/1772981_topview11.jpg","11-24-26/PW/PW_4/1772981_topview12.jpg","11-24-26/PW/PW_4/1772981_topview13.jpg","11-24-26/PW/PW_4/1772981_topview14.jpg","11-24-26/PW/PW_4/1772981_topview15.jpg","11-24-26/PW/PW_4/1772981_topview16.jpg","11-24-26/PW/PW_4/1772981_topview17.jpg","11-24-26/PW/PW_4/1772981_topview18.jpg","11-24-26/PW/PW_4/1772981_topview19.jpg","11-24-26/PW/PW_4/1772981_topview20.jpg","11-24-26/PW/PW_4/1772981_topview21.jpg","11-24-26/PW/PW_4/1772981_topview22.jpg","11-24-26/PW/PW_4/1772981_topview23.jpg"]}},{"n":5,"type":"pushhookpullslice","carry":110.1,"total":113.1,"side":2.7,"smash":1.13,"clubSpeed":79.1,"ballSpeed":89.0,"backSpin":8390.0,"sideSpin":1961.0,"launch":28.2,"sideAngle":-4.3,"descent":50.0,"apex":27.1,"flightTime":5.3,"face":-3.7,"path":-9.0,"img":{"impact":"11-24-26/PW/PW_5/1772979_ballimpact.jpg","frames":["11-24-26/PW/PW_5/1772979_topview00.jpg","11-24-26/PW/PW_5/1772979_topview01.jpg","11-24-26/PW/PW_5/1772979_topview02.jpg","11-24-26/PW/PW_5/1772979_topview03.jpg","11-24-26/PW/PW_5/1772979_topview04.jpg","11-24-26/PW/PW_5/1772979_topview05.jpg","11-24-26/PW/PW_5/1772979_topview06.jpg","11-24-26/PW/PW_5/1772979_topview07.jpg","11-24-26/PW/PW_5/1772979_topview08.jpg","11-24-26/PW/PW_5/1772979_topview09.jpg","11-24-26/PW/PW_5/1772979_topview10.jpg","11-24-26/PW/PW_5/1772979_topview11.jpg","11-24-26/PW/PW_5/1772979_topview12.jpg","11-24-26/PW/PW_5/1772979_topview13.jpg","11-24-26/PW/PW_5/1772979_topview14.jpg","11-24-26/PW/PW_5/1772979_topview15.jpg","11-24-26/PW/PW_5/1772979_topview16.jpg","11-24-26/PW/PW_5/1772979_topview17.jpg","11-24-26/PW/PW_5/1772979_topview18.jpg","11-24-26/PW/PW_5/1772979_topview19.jpg","11-24-26/PW/PW_5/1772979_topview20.jpg","11-24-26/PW/PW_5/1772979_topview21.jpg","11-24-26/PW/PW_5/1772979_topview22.jpg","11-24-26/PW/PW_5/1772979_topview23.jpg"]}},{"n":6,"type":"hookslice","carry":101.0,"total":103.4,"side":13.2,"smash":1.11,"clubSpeed":75.2,"ballSpeed":83.6,"backSpin":8552.0,"sideSpin":2424.0,"launch":29.1,"sideAngle":1.1,"descent":49.3,"apex":24.4,"flightTime":5.0,"face":1.5,"path":-3.0,"img":{"impact":"11-24-26/PW/PW_6/1772978_ballimpact.jpg","frames":["11-24-26/PW/PW_6/1772978_topview00.jpg","11-24-26/PW/PW_6/1772978_topview01.jpg","11-24-26/PW/PW_6/1772978_topview02.jpg","11-24-26/PW/PW_6/1772978_topview03.jpg","11-24-26/PW/PW_6/1772978_topview04.jpg","11-24-26/PW/PW_6/1772978_topview05.jpg","11-24-26/PW/PW_6/1772978_topview06.jpg","11-24-26/PW/PW_6/1772978_topview07.jpg","11-24-26/PW/PW_6/1772978_topview08.jpg","11-24-26/PW/PW_6/1772978_topview09.jpg","11-24-26/PW/PW_6/1772978_topview10.jpg","11-24-26/PW/PW_6/1772978_topview11.jpg","11-24-26/PW/PW_6/1772978_topview12.jpg","11-24-26/PW/PW_6/1772978_topview13.jpg","11-24-26/PW/PW_6/1772978_topview14.jpg","11-24-26/PW/PW_6/1772978_topview15.jpg","11-24-26/PW/PW_6/1772978_topview16.jpg","11-24-26/PW/PW_6/1772978_topview17.jpg","11-24-26/PW/PW_6/1772978_topview18.jpg","11-24-26/PW/PW_6/1772978_topview19.jpg","11-24-26/PW/PW_6/1772978_topview20.jpg","11-24-26/PW/PW_6/1772978_topview21.jpg","11-24-26/PW/PW_6/1772978_topview22.jpg","11-24-26/PW/PW_6/1772978_topview23.jpg"]}}]},"review":"<h4>Diagnosis<\/h4>\n<ul>\n<li><strong>The path is the problem, not the face.<\/strong> Full swings averaged \u22129.2\u00b0 path with the face only \u22121.7\u00b0 to target, so the face ended +7.5\u00b0 open to the path: a pull-slice that finished 9\u201318 yd right on 7i\u20139i.<\/li>\n<li><strong>Heel strikes show up as low smash, and they get worse when you swing harder.<\/strong> The four fastest swings (79\u201383 mph) all had smash of 1.00\u20131.14, and PW_4 also had the worst path of the day (\u221216\u00b0).<\/li>\n<li><strong>Your speed is LPGA-level; your strike isn&#x27;t.<\/strong> At ~75 mph, LPGA players carry a 7-iron 141 yd. You carried a stronger-lofted 27.5\u00b0 7-iron 127 yd.<\/li>\n<li><strong>You&#x27;re adding loft at impact.<\/strong> 22\u00b0 launch with a 27.5\u00b0 7-iron (Tour players launch around half their loft). That points to a flip or early extension, which is what S-posture produces.<\/li>\n<li><strong>Your 7-iron and 8-iron go the same distance.<\/strong> There was only 2.3 yd between them, and the 8-iron had more ball speed (96 vs. 94 mph).<\/li>\n<li><strong>Probable misreads:<\/strong> 7i_2 and 7i_5 show 7-iron spin of 1,388 and 1,694 rpm, and four shots show smash of 1.40\u20131.45.<\/li>\n<\/ul>\n<h4>Caveats<\/h4>\n<ul>\n<li><strong>Best shots only.<\/strong> Shanks and mishits were removed before export, so every number here is a best case.<\/li>\n<li><strong>The 7-iron may be an outlier.<\/strong> Its near-zero gap to the 8-iron, and everything projected from it (6-iron, 7-wood, the Stoneham Oaks picks), needs a retest.<\/li>\n<\/ul>\n<h4>Next session<\/h4>\n<ul>\n<li>Hit 7-iron through driver (7i, 6i, 7W, 3H, 3W, Driver), about 10 shots each at 80% speed. This retests the 7-iron and settles the 6-iron vs. 7-wood overlap.<\/li>\n<li>Do the setup check (club along your spine, pelvis tucked to neutral) before every block of shots.<\/li>\n<\/ul>"}],"bag":{"_comment":"key = club folder name used in each MM-DD-YY session folder. equiv = main-bag club whose yardage the par-3 bag club uses.","sets":[{"name":"Main bag","clubs":[{"key":"Dr","label":"Driver","model":"Callaway Elyte","loft":10.5,"group":"Top of the bag"},{"key":"3W","label":"3 Wood","model":"Callaway Mavrik","loft":15,"group":"Top of the bag","note":"Long distance off the deck or tight tees"},{"key":"3H","label":"3 Hybrid","model":"Callaway Mavrik","loft":18,"group":"Top of the bag","note":"Replaces 4-iron; easier out of the rough"},{"key":"7W","label":"7 Wood","model":"Callaway Quantum Max D","loft":21.5,"group":"Top of the bag","note":"Replaces 5-iron; high launch / soft landing"},{"key":"6i","label":"6 Iron","model":"Callaway Paradym X","loft":24.5,"group":"Core irons"},{"key":"7i","label":"7 Iron","model":"Callaway Paradym X","loft":27.5,"group":"Core irons"},{"key":"8i","label":"8 Iron","model":"Callaway Paradym X","loft":31.5,"group":"Core irons"},{"key":"9i","label":"9 Iron","model":"Callaway Paradym X","loft":36,"group":"Core irons"},{"key":"PW","label":"Pitching Wedge","model":"Callaway Paradym X","loft":41,"group":"Wedges"},{"key":"AW","label":"Approach Wedge","model":"Callaway Paradym X","loft":46,"group":"Wedges"},{"key":"51","label":"Gap Wedge","model":"Callaway Paradym X","loft":51,"group":"Wedges"},{"key":"56","label":"Sand Wedge","model":"Cleveland CBX 4 ZipCore","loft":56,"group":"Wedges","note":"Bunker shots and chips"},{"key":"60","label":"Lob Wedge","model":"Cleveland CBX 4 ZipCore","loft":60,"group":"Wedges","note":"Short-sided shots over hazards"},{"key":"Putter","label":"Putter","model":"L.A.B. Golf","loft":null,"group":"Green"}]},{"name":"Par 3 bag (Stoneham Oaks)","clubs":[{"label":"7 Wood","model":"Callaway Quantum Max D","loft":21.5,"equiv":"7W"},{"label":"3 Iron","loft":24,"equiv":"6i"},{"label":"6 Iron","loft":35,"equiv":"9i"},{"label":"9 Iron","loft":47,"equiv":"AW"},{"label":"Pitching Wedge","loft":51,"equiv":"51"},{"label":"Putter","model":"L.A.B. Golf","loft":null,"equiv":"Putter"}]}]},"courses":[{"name":"Stoneham Oaks","location":"Stoneham, MA \u00b7 9-hole par 3 \u00b7 par 27","bag":"Par 3 bag (Stoneham Oaks)","note":"Yardages from online scorecards (par3-executive-golf.com, Foretee, BlueGolf; Swing By Swing for the middle tees). Sources disagree, so check the card at the course and edit courses.json if needed.","defaultTee":"Back","tees":{"Back":[89,147,179,128,95,113,153,139,82],"Middle":[80,131,155,107,88,91,118,104,67],"Forward":[71,117,140,90,72,74,114,79,54]}}],"drills":{"_comment":"Drills tab content. Videos are YouTube IDs (the part after watch?v=). Picked from titles/descriptions: swap any that don't fit.","drills":[{"id":"setup","level":1,"title":"Neutral pelvis setup","fixes":["S-posture","Lower back pain"],"color":"#ff5fa2","source":{"name":"Titleist Performance Institute (TPI)","url":"https://www.mytpi.com"},"why":"S-posture (an over-arched lower back) switches off your core, loads the lower back, and makes you stand up through the ball. That throws your hands out toward the heel.","steps":["Lay a club along your spine. It should touch the back of your head, upper back and tailbone.","If there's a big gap at your lower back, tuck your pelvis slightly (flatten the belt buckle) until the gap closes.","Hinge forward from the hips, keeping that flat back, and let your arms hang.","Do this check before every block of shots."],"target":"Gap at the lower back no bigger than your hand's thickness.","videos":[{"id":"3yBHKdlGEbE","title":"TPI Big 12: S-Posture fix"},{"id":"uLDVRu--w4M","title":"S Posture: TPI core activation"}],"search":"TPI S-posture golf fix"},{"id":"wall","level":1,"title":"Wall / chair drill","fixes":["Early extension","Heel strikes"],"color":"#ffd23f","source":{"name":"Titleist Performance Institute (TPI)","url":"https://www.mytpi.com"},"why":"When your hips push toward the ball (early extension), your hands get pushed out and you strike the heel. You also add loft, which explains your 22\u00b0 launch with a 27.5\u00b0 7-iron.","steps":["Set up with your backside lightly touching a wall or a chair back.","Make slow half swings. Keep your trail glute on the wall at the top.","Through impact, your lead glute should slide back to the wall, not away from it.","10 slow reps, then 5 real shots at 60% speed."],"target":"8-iron launch under 20\u00b0 and smash 1.28+.","videos":[{"id":"RCJB3YRX4Rg","title":"Chair drill for early extension"},{"id":"bpW52FNMzBE","title":"How to stop early extension and heel strikes"}],"search":"TPI early extension wall drill"},{"id":"path","level":2,"title":"Headcover path gate","fixes":["Out-to-in path","Slice"],"color":"#3ef0c8","source":{"name":"Common TrackMan / PGA teaching drill","url":"https://www.youtube.com/results?search_query=headcover+drill+over+the+top+golf"},"why":"Your path averages \u22129\u00b0 out-to-in. The face is nearly square to the target, so fixing the path alone will shrink the slice.","steps":["Put a headcover 2 in. outside the ball and 4\u20136 in. behind it.","Pull your trail foot back 2\u20133 in. (slightly closed stance).","Start the downswing by turning your hips first, then swing out toward right field. Miss the headcover.","Check the sim: path \u22125\u00b0 or better before you add speed."],"target":"Path \u22125\u00b0 (week 2), then \u22123\u00b0 (week 4).","videos":[{"id":"6MhbH1xZVtM","title":"3 drills to fix an over-the-top swing"},{"id":"SR2Il6ecpDc","title":"Fix your out-to-in swing path"}],"search":"headcover drill over the top golf"},{"id":"strike","level":3,"title":"Heel-gate two-ball drill","fixes":["Heel strikes","Low smash"],"color":"#5ab0ff","source":{"name":"Common teaching drill","url":"https://www.youtube.com/results?search_query=stop+hitting+heel+irons+drill"},"why":"Your smash drops as you swing harder, which means centre contact breaks down under speed. This drill punishes heel strikes immediately.","steps":["Spray the clubface with foot powder spray so every strike leaves a mark.","Place a second ball 1 in. inside the target ball (on the side closest to your feet).","Hit the outer ball without touching the inner one.","Check the face mark and the sim's smash after every shot."],"target":"8-iron median smash 1.28+, then 1.30+.","videos":[{"id":"9yykU3qvRLs","title":"Stop hitting the ball off the heel"},{"id":"sRrua3d0yYA","title":"How to stop hitting heel shots"}],"search":"stop hitting heel irons drill two ball"},{"id":"decade","level":4,"title":"Play the shot you have (DECADE)","fixes":["Course strategy"],"color":"#ff8c42","source":{"name":"DECADE Golf (Scott Fawcett)","url":"https://decade.golf"},"why":"DECADE is course management, not a swing fix, but it saves strokes right now. Aim for your real dispersion instead of the flag.","steps":["Until the path fix holds, aim left of target and let the fade work back.","Use the Course tab's \"Aim\" pills: they come from your average finish with each club.","On long par 3s, play to the fat side of the green, not at the pin."],"target":"More greens hit, fewer short-sided misses.","videos":[{"id":"lhhWst0Y-2Y","title":"Mastering golf strategy with DECADE: Scott Fawcett"}],"search":"Scott Fawcett DECADE golf strategy"}],"plan":[{"level":1,"name":"Setup + wall drill","tasks":["Spine-club posture check before every block","10 slow wall-drill reps","Half swings with the 8-iron at 60%","Log a session: 8-iron launch under 22\u00b0"]},{"level":2,"name":"Path gate","tasks":["Headcover gate, 20 balls","Closed-stance swings, hips first","Log a session: path \u22125\u00b0 or better"]},{"level":3,"name":"Strike","tasks":["Foot-spray face check","Two-ball heel gate, 20 balls","Log a session: 8-iron smash 1.28+"]},{"level":4,"name":"Retest","tasks":["7-iron through driver: 10 shots each","Settle 6-iron vs. 7-wood","Targets: path \u22123\u00b0, F2P under +3\u00b0, 7i\u20138i gap 8 yd+"]}],"resources":[{"name":"Titleist Performance Institute","url":"https://www.mytpi.com","desc":"Body\u2013swing connection: S-posture, early extension, over the top."},{"name":"DECADE Golf","url":"https://decade.golf","desc":"Scott Fawcett's course management system."},{"name":"DECADE on YouTube","url":"https://www.youtube.com/channel/UCeVCpvV8BfIqcLahWaJEATQ/videos","desc":"Strategy videos from the DECADE channel."}]},"overallReview":"<h4>Priorities (most urgent first)<\/h4>\n<ul>\n<li><strong>1. Setup and S-posture.<\/strong> Get a neutral pelvis using the club-along-spine check (TPI). This drives both the over-the-top move and the early extension, and protects your lower back.<\/li>\n<li><strong>2. Club path from \u22129\u00b0 to \u22123\u00b0, then to \u00b12\u00b0.<\/strong> Headcover/gate drill with a slightly closed stance; start the downswing with the lower body.<\/li>\n<li><strong>3. Strike quality.<\/strong> Iron median smash of 1.30 or better. Two-ball heel-gate drill plus foot-spray on the face.<\/li>\n<li><strong>4. Gapping and dispersion.<\/strong> 10\u201312 yd between irons, 7-iron spread under \u00b16 yd.<\/li>\n<\/ul>\n<h4>Drills<\/h4>\n<ul>\n<li><strong>TPI wall (chair) drill:<\/strong> keep your trail glute on the wall through impact. YouTube: <code>TPI early extension wall drill<\/code>, <code>TPI S-posture golf fix<\/code>.<\/li>\n<li><strong>Headcover path drill:<\/strong> headcover 2 in. outside and 4\u20136 in. behind the ball. YouTube: <code>headcover drill over the top golf<\/code>.<\/li>\n<li><strong>Heel-gate two-ball drill:<\/strong> a second ball 1 in. inside the target ball; miss it. YouTube: <code>stop hitting heel irons drill two ball<\/code>.<\/li>\n<\/ul>\n<h4>Four-week targets<\/h4>\n<ul>\n<li><strong>Week 1:<\/strong> setup plus wall drill, half swings with the 8-iron.<\/li>\n<li><strong>Week 2:<\/strong> add the gate drill. Target path \u22125\u00b0 or better.<\/li>\n<li><strong>Week 3:<\/strong> add the two-ball drill. Target 8-iron smash of 1.28 or better.<\/li>\n<li><strong>Week 4:<\/strong> full-speed retest including 6i vs. 7W. Targets: path \u22123\u00b0 or better, F2P under +3\u00b0, 7i\u20138i gap of 8 yd or more.<\/li>\n<\/ul>\n<h4>On the course (DECADE)<\/h4>\n<ul>\n<li>Until the path fix holds, aim left and let the fade work back. Play the shot shape you have.<\/li>\n<\/ul>","built":"2026-11-24 17:33"};
+
+/* ---------- reference data ---------- */
+// TrackMan tour averages (legacy published table; 2023 update: PGA 7i 176 yd / 92 mph / 123 mph ball / 1.34).
+// club/ball mph · launch & descent (land angle) ° · spin rpm · apex (max height) yd · carry yd.
+const T = (club,ball,smash,launch,spin,apex,descent,carry) => ({club,ball,smash,launch,spin,apex,descent,carry});
+const BENCH = {
+  pga: {Dr:T(113,167,1.48,10.9,2686,32,38,275), "3W":T(107,158,1.48,9.2,3655,30,43,243), "3H":T(100,146,1.46,10.2,4437,29,47,225),
+        "6i":T(92,127,1.38,14.1,6231,30,50,183), "7i":T(90,120,1.33,16.3,7097,32,50,172), "8i":T(87,115,1.32,18.1,7998,31,50,160),
+        "9i":T(85,109,1.28,20.4,8647,30,51,148), PW:T(83,102,1.23,24.2,9304,29,52,136)},
+  lpga:{Dr:T(94,140,1.48,13.2,2611,25,37,218), "3W":T(90,132,1.47,11.2,2704,23,39,195), "7W":T(85,123,1.45,12.7,4693,25,46,174),
+        "6i":T(78,109,1.40,17.1,5943,25,46,152), "7i":T(76,104,1.37,19.0,6699,26,47,141), "8i":T(74,100,1.35,20.8,7494,25,47,130),
+        "9i":T(72,93,1.29,23.9,7589,26,47,119), PW:T(70,86,1.23,25.6,8403,23,48,107)},
+  hcp25:{"6i":{carry:137},"7i":{carry:132},"8i":{carry:122},"9i":{carry:108}},
+};
+// Metrics you can focus on. `k` = club-average field (from analyze), `shot` = per-shot field, zero = Tour target is ~0.
+const METRICS = [
+  {k:"carry",   label:"Carry",        unit:"yd",  shot:"carry",     dp:1},
+  {k:"total",   label:"Total",        unit:"yd",  shot:"total",     dp:1},
+  {k:"ball",    label:"Ball speed",   unit:"mph", shot:"ballSpeed", dp:1},
+  {k:"club",    label:"Club speed",   unit:"mph", shot:"clubSpeed", dp:1},
+  {k:"smash",   label:"Smash",        unit:"",    shot:"smash",     dp:2},
+  {k:"launch",  label:"Launch",       unit:"°",   shot:"launch",    dp:1},
+  {k:"spin",    label:"Back spin",    unit:"rpm", shot:"backSpin",  dp:0},
+  {k:"apex",    label:"Apex",         unit:"yd",  shot:"apex",      dp:1},
+  {k:"descent", label:"Land angle",   unit:"°",   shot:"descent",   dp:1},
+  {k:"path",    label:"Club path",    unit:"°",   shot:"path",      dp:1, zero:true},
+  {k:"f2p",     label:"Face-to-path", unit:"°",   shot:"f2p",       dp:1, zero:true},
+  {k:"side",    label:"Finish L/R",   unit:"yd",  shot:"side",      dp:1, zero:true},
+];
+const MET = Object.fromEntries(METRICS.map(m=>[m.k,m]));
+const fm = (m, v) => v==null ? "—" : (m.zero ? sg(v, m.dp) : m.k==="spin" ? Math.round(v).toLocaleString() : v.toFixed(m.dp)) + (m.unit && m.unit!=="°" ? " "+m.unit : m.unit);
+const GLOSS = {
+  carry:"Distance the ball flies in the air before it lands.",
+  total:"Carry plus roll after landing.",
+  roll:"How far the ball rolled after landing (total − carry).",
+  spread:"Carry consistency: about two-thirds of your shots land within ± this many yards of your average.",
+  smash:"Ball speed ÷ club speed, i.e. how centred the strike was. Irons: 1.30+ is good. Low numbers usually mean heel, toe or thin contact.",
+  path:"Direction the club head travels through impact. Negative = out-to-in (the slice path). Tour players sit around 0 ± 2°.",
+  face:"Where the clubface points at impact, relative to the target.",
+  f2p:"Face-to-path = face − path. Positive = the face is open to the path, so the ball curves right (fade/slice). Keep within ±3°.",
+  side:"How far left or right of the target line the ball finished.",
+  launch:"Vertical launch angle off the face. Too high for the loft means you're adding loft (flipping) at impact.",
+  apex:"Peak height of the ball flight.",
+  spin:"Backspin in rpm. Irons need spin to stop on greens.",
+  ball:"Ball speed off the face. It's the single biggest driver of distance.", club:"Club head speed at impact.",
+  descent:"Angle the ball lands at. Steeper (45°+) means it stops faster on the green.",
+};
+const MAIN = DATA.bag.sets[0].clubs;
+const CLUB = Object.fromEntries(MAIN.map(c=>[c.key,c]));
+const SHORT = {Dr:"Driver","3W":"3W","3H":"3H","7W":"7W","6i":"6i","7i":"7i","8i":"8i","9i":"9i",PW:"PW",AW:"AW","51":"GW","56":"SW","60":"LW",Putter:"Putter"};
+const nameOf = k => SHORT[k] || k;
+const loftOf = k => CLUB[k]?.loft ?? 99;
+const IRON = k => { const l = loftOf(k); return l >= 24 && l <= 41; };
+const WEDGE = k => loftOf(k) > 41 && loftOf(k) < 99;
+const COLORS = {Dr:"#ff8a65","3W":"#ffb74d","3H":"#ffd54f","7W":"#dce775","6i":"#81c784","7i":"#45d0c0","8i":"#edd36a","9i":"#e78c73",PW:"#b08cf0",AW:"#6ea8fe","51":"#f39ad1","56":"#a1887f","60":"#90a4ae"};
+const colorOf = k => COLORS[k] || "#8a94a1";
+const alpha = (hex,a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
+
+/* ---------- helpers ---------- */
+const vals = a => a.filter(x => x != null && !Number.isNaN(x));
+const mean = a => { a = vals(a); return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; };
+const median = a => { a = vals(a).sort((x,y)=>x-y); if(!a.length) return null; const m=a.length>>1; return a.length%2?a[m]:(a[m-1]+a[m])/2; };
+const sd = a => { a = vals(a); const m = mean(a); return a.length ? Math.sqrt(mean(a.map(x=>(x-m)**2))) : null; };
+const corr = (a,b) => { const p=a.map((x,i)=>[x,b[i]]).filter(([x,y])=>x!=null&&y!=null); if(p.length<5) return null;
+  const ma=mean(p.map(q=>q[0])), mb=mean(p.map(q=>q[1])), sa=sd(p.map(q=>q[0])), sb=sd(p.map(q=>q[1]));
+  return sa&&sb ? mean(p.map(([x,y])=>(x-ma)*(y-mb)))/(sa*sb) : null; };
+const f = (x,d=1) => x==null ? "—" : x.toFixed(d);
+const sg = (x,d=1) => x==null ? "—" : (x>0?"+":"")+x.toFixed(d);
+const lr = (x,d=0) => x==null ? "—" : Math.abs(x) < 0.5 ? "centre" : `${Math.abs(x).toFixed(d)} ${x>0?"R":"L"}`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const tip = (key, label) => `<span data-tip="${esc(GLOSS[key]||"")}">${label}</span>`;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = id => document.getElementById(id);
+const sw = k => `<span class="sw" style="background:${colorOf(k)}"></span>`;
+
+Chart.defaults.color = css('--muted');
+Chart.defaults.borderColor = css('--line');
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+Chart.defaults.font.size = 12.5;
+Chart.defaults.plugins.tooltip.backgroundColor = "#000";
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+const charts = {};
+function draw(id, cfg){ charts[id]?.destroy(); const el=$(id); if(el) charts[id] = new Chart(el, cfg); }
+const gridc = {color:css('--line')};
+
+/* ---------- analysis ---------- */
+function analyze(s){
+  const keys = Object.keys(s.clubs).sort((a,b)=>loftOf(a)-loftOf(b));
+  const ironSpeed = mean(keys.filter(IRON).flatMap(k=>s.clubs[k].map(r=>r.clubSpeed)));
+  const meta = s.meta || {};
+  const clubs = {};
+  for (const k of keys){
+    const shots = s.clubs[k].map(r=>({...r, key:k, f2p:(r.face!=null&&r.path!=null)?+(r.face-r.path).toFixed(1):null,
+      suspect:(loftOf(k)>=24 && r.smash>1.38) || (loftOf(k)>=27 && loftOf(k)<=41 && r.backSpin<2500)}));
+    const g = p => shots.map(r=>r[p]);
+    const cs = mean(g("clubSpeed"));
+    const partial = WEDGE(k) && ironSpeed!=null && cs < 0.9*ironSpeed;
+    clubs[k] = { key:k, shots, partial, n:shots.length, caveat:meta.caveats?.[k] || null,
+      carry:mean(g("carry")), total:mean(g("total")), roll:mean(shots.map(r=>r.total-r.carry)), carrySd:sd(g("carry")),
+      cmin:Math.min(...vals(g("carry"))), cmax:Math.max(...vals(g("carry"))),
+      smash:median(g("smash")), ball:mean(g("ballSpeed")), club:cs, spin:mean(g("backSpin")), launch:mean(g("launch")),
+      apex:mean(g("apex")), descent:mean(g("descent")), path:mean(g("path")), face:mean(g("face")), f2p:mean(g("f2p")), side:mean(g("side")) };
+  }
+  const full = keys.filter(k=>!clubs[k].partial).flatMap(k=>clubs[k].shots);
+  return { s, meta, keys, clubs, full, ironSpeed };
+}
+
+// Each finding: {sev, title, body}. Sorted bad → warn → info → good for the takeaways.
+function sessionFindings(A){
+  const F = [], {clubs, keys, full, meta} = A;
+  const fp = mean(full.map(r=>r.path)), ff = mean(full.map(r=>r.f2p)), fface = mean(full.map(r=>r.face));
+  if (fp!=null){
+    const nOut = full.filter(r=>r.path<=-6).length;
+    if (fp < -4) F.push({sev:"bad", title:`Swinging out-to-in (${sg(fp)}°)`, body:`${nOut} of ${full.length} full swings had a path of −6° or worse. This is the root of the slice and the heel strikes, so fix it first.`});
+    else if (fp < -2) F.push({sev:"warn", title:`Path slightly out-to-in (${sg(fp)}°)`, body:"Close to the ±2° neutral window. Keep going."});
+    else if (fp > 4) F.push({sev:"warn", title:`Path in-to-out (${sg(fp)}°)`, body:"Watch for pushes and hooks."});
+    else F.push({sev:"good", title:`Neutral path (${sg(fp)}°)`, body:"Inside the ±2° target window."});
+  }
+  if (ff!=null){
+    const nOpen = full.filter(r=>r.f2p>3).length;
+    if (ff > 3) F.push({sev:"bad", title:`Ball curving right: face ${sg(ff)}° open to path`, body:
+      `${nOpen} of ${full.length} swings had the face more than 3° open to the path.` + (Math.abs(fface) < 3 ? ` Your face to the target is only ${sg(fface)}°, so fix the path, not the face. The curve shrinks as the path improves.` : "")});
+    else if (ff < -3) F.push({sev:"bad", title:`Ball curving left: face ${sg(ff)}° closed to path`, body:"Draw/hook curvature."});
+    else F.push({sev:"good", title:`Face-to-path under control (${sg(ff)}°)`, body:"Curvature is manageable."});
+  }
+  const lowSmash = keys.filter(k=>!clubs[k].partial && BENCH.pga[k]?.smash && clubs[k].smash!=null && clubs[k].smash < BENCH.pga[k].smash-0.06);
+  if (lowSmash.length) F.push({sev:lowSmash.length>1?"bad":"warn", title:"Strike quality below Tour", body:
+    lowSmash.map(k=>`${nameOf(k)} ${f(clubs[k].smash,2)} (Tour ${BENCH.pga[k].smash})`).join(", ") + ". Low smash on irons usually means heel or thin contact."});
+  const clean = full.filter(r=>!r.suspect);
+  const r = corr(clean.map(x=>x.clubSpeed), clean.map(x=>x.smash));
+  if (r!=null && r < -0.3) F.push({sev:"bad", title:"Contact gets worse when you swing harder", body:`Speed vs. smash correlation r = ${f(r,2)}. The arms take over (over the top). Groove the path at 70–80% speed before adding speed.`});
+  const ir = keys.filter(k=>IRON(k) && !clubs[k].partial && clubs[k].launch!=null);
+  if (ir.length){
+    const ratio = mean(ir.map(k=>clubs[k].launch/loftOf(k)));
+    const ex = ir.includes("8i") ? "8i" : ir[0];
+    if (ratio > 0.7) F.push({sev:"warn", title:"Launching too high for the loft", body:`${f(clubs[ex].launch)}° launch with a ${loftOf(ex)}° ${nameOf(ex)}, ${Math.round(ratio*100)}% of loft (Tour players launch at about 50–55%). You're adding loft at impact, a flip or early extension, which ties back to S-posture.`});
+  }
+  const fk = keys.filter(k=>!clubs[k].partial && CLUB[k]);
+  for (let i=0;i<fk.length-1;i++){
+    const a=fk[i], b=fk[i+1], gap = clubs[a].carry-clubs[b].carry;
+    const cav = clubs[a].caveat || clubs[b].caveat;
+    if (gap < 6) F.push({sev:cav?"warn":"bad", title:`${nameOf(a)} and ${nameOf(b)} go the same distance`, body:`Only ${f(gap)} yd between them (target 10–12).` + (cav ? ` The ${clubs[a].caveat?nameOf(a):nameOf(b)} is flagged as a possible outlier, so retest before acting on this.` : "")});
+    else if (gap > 20) F.push({sev:"warn", title:`Big gap: ${nameOf(a)} → ${nameOf(b)}`, body:`${f(gap)} yd between them.`});
+  }
+  const wide = keys.filter(k=>IRON(k) && clubs[k].carrySd > 8);
+  if (wide.length) F.push({sev:"warn", title:"Wide carry spread", body:wide.map(k=>`${nameOf(k)} ±${f(clubs[k].carrySd)} yd`).join(", ") + (meta.curated ? ". And that's with mishits already removed." : ".")});
+  const c7 = clubs["7i"];
+  if (c7 && !c7.partial && c7.club>70 && c7.club<82 && c7.carry < 133)
+    F.push({sev:"info", title:"You have LPGA speed. The distance is lost at the strike.", body:`Your 7-iron speed is ${f(c7.club)} mph, about what LPGA players swing, and they carry it 141 yd. You carried ${f(c7.carry,0)}.`});
+  const sus = full.filter(x=>x.suspect).map(x=>`${nameOf(x.key)} #${x.n}`);
+  if (sus.length) F.push({sev:"info", title:"Possible sensor misreads", body:`${sus.join(", ")} (smash above 1.38 or iron spin below 2,500 rpm). Medians are used to limit their effect.`});
+  const missing = MAIN.filter(c=>c.key!=="Putter" && !clubs[c.key]).map(c=>nameOf(c.key));
+  if (missing.length) F.push({sev:"info", title:"Not hit this session", body:missing.join(", ")});
+  const order = {bad:0,warn:1,info:2,good:3};
+  return F.sort((a,b)=>order[a.sev]-order[b.sev]);
+}
+
+/* ---------- state ---------- */
+const ALL = DATA.sessions.map(analyze);
+const state = { i: ALL.length-1, tab:"session", club:null, allCols:false, sort:["loft",1], tee:{}, hole:null, metric:"carry", tmetric:"carry" };
+const metricChips = (stateKey, id) => `<div class="chips" id="${id}">${METRICS.map(m=>`<button class="chip mchip" data-m="${m.k}" aria-pressed="${state[stateKey]===m.k}">${m.label}</button>`).join("")}</div>`;
+
+/* ---------- grades (arcade-style rank per metric) ---------- */
+const gPath  = v => v==null?"?":Math.abs(v)<=2?"A":Math.abs(v)<=4?"B":Math.abs(v)<=6?"C":Math.abs(v)<=8?"D":"F";
+const gF2P   = v => v==null?"?":Math.abs(v)<=1.5?"A":Math.abs(v)<=3?"B":Math.abs(v)<=5?"C":Math.abs(v)<=7?"D":"F";
+const gSmash = v => v==null?"?":v>=1.33?"A":v>=1.28?"B":v>=1.22?"C":v>=1.15?"D":"F";
+const gradeBox = g => `<div class="grade g${g}" title="Grade: A = Tour level, F = biggest fix">${g}</div>`;
+
+/* ---------- SESSION ---------- */
+function renderSession(){
+  const A = ALL[state.i], {s, keys, clubs, full, meta} = A;
+  if (state.club && !clubs[state.club]) state.club = null;
+  const fp = mean(full.map(r=>r.path)), ff = mean(full.map(r=>r.f2p));
+  const ironSm = median(full.filter(r=>IRON(r.key)).map(r=>r.smash));
+  const shots = keys.reduce((n,k)=>n+clubs[k].n,0);
+  const F = sessionFindings(A);
+  const top = F.filter(x=>x.sev==="bad"||x.sev==="warn").slice(0,3);
+  const cls = (v,warnAt,badAt) => Math.abs(v)>badAt?"bad":Math.abs(v)>warnAt?"warn":"good";
+  const longest = keys.filter(k=>!clubs[k].partial).sort((a,b)=>clubs[b].carry-clubs[a].carry)[0];
+
+  $("tab-session").innerHTML = `
+    ${meta.curated ? `<div class="banner"><span class="ic">⚑</span><div><b>Best shots only.</b> ${esc(meta.curatedNote || "Mishits were removed before export, so these numbers are a best case.")}</div></div>` : ""}
+    <section class="kpis">
+      <div class="kpi ${cls(fp,2,4)}">${gradeBox(gPath(fp))}<div class="l">${tip("path","Club path")}</div><div class="v">${sg(fp)}°</div><div class="c">${fp<-2?"Out-to-in (slice path)":fp>2?"In-to-out":"Neutral"}</div><div class="t">Goal: 0 ± 2°</div></div>
+      <div class="kpi ${cls(ff,1.5,3)}">${gradeBox(gF2P(ff))}<div class="l">${tip("f2p","Face-to-path")}</div><div class="v">${sg(ff)}°</div><div class="c">${ff>3?"Ball curves right":ff<-3?"Ball curves left":"Controlled curve"}</div><div class="t">Goal: within ±3°</div></div>
+      <div class="kpi ${ironSm<1.22?"bad":ironSm<1.3?"warn":"good"}">${gradeBox(gSmash(ironSm))}<div class="l">${tip("smash","Iron strike (smash)")}</div><div class="v">${f(ironSm,2)}</div><div class="c">${ironSm<1.22?"Off-centre contact":ironSm<1.3?"Fair contact":"Solid contact"}</div><div class="t">Tour irons 1.28–1.38</div></div>
+      <div class="kpi"><div class="l">Session</div><div class="v">${shots} <span style="font-size:16px;color:var(--muted);font-weight:600">shots</span></div><div class="c">${keys.length} clubs · longest ${nameOf(longest)} ${f(clubs[longest].carry,0)} yd</div><div class="t">${s.iso}</div></div>
+    </section>
+
+    <section class="card">
+      <div class="sec"><h2>What to work on</h2><span class="muted small">auto-generated from ${shots} shots</span></div>
+      <p class="lede">The ${top.length} most important things from this session, most urgent first.</p>
+      <div class="takeaways">${top.map((t,i)=>`<div class="take ${t.sev}"><div class="n">#${i+1}</div><h3>${t.title}</h3><p>${t.body}</p></div>`).join("")}</div>
+      <details><summary>All findings (${F.length})</summary>
+        <ul class="findings">${F.map(x=>`<li><span class="dot ${x.sev}"></span><span><b>${x.title}.</b> ${x.body}</span></li>`).join("")}</ul></details>
+      ${s.review ? `<details><summary>Coach notes</summary><div class="notes">${s.review}</div></details>` : ""}
+      ${meta.nextSession ? `<p class="small" style="margin:14px 0 0"><b>Next session:</b> <span class="muted">${esc(meta.nextSession)}</span></p>` : ""}
+    </section>
+
+    <section class="card">
+      <div class="sec"><h2>Clubs</h2><span class="muted small">Pick a club to focus every chart on it</span></div>
+      <div class="chips" style="margin-top:12px">
+        <button class="chip" data-club="" aria-pressed="${!state.club}">All clubs</button>
+        ${keys.map(k=>`<button class="chip" data-club="${k}" aria-pressed="${state.club===k}">${sw(k)}${nameOf(k)}<span class="sub">${f(clubs[k].carry,0)}</span>${clubs[k].caveat?'<span class="flag" title="Flagged">⚑</span>':""}${clubs[k].partial?'<span class="sub">· partial</span>':""}</button>`).join("")}
+      </div>
+    </section>
+
+    ${state.club ? clubDetail(A, state.club) : ""}
+
+    <section class="card">
+      <div class="sec"><h2>Compare to the Tour</h2><span class="muted small">Pick a metric</span></div>
+      <div style="margin:12px 0 4px">${metricChips("metric","mchips")}</div>
+      <p class="lede" id="cmpInsight" style="margin-top:12px"></p>
+      <div class="chart tall"><canvas id="cCompare"></canvas></div>
+      <p class="muted small" style="margin:10px 0 0">Bars = your average · dots = each shot (click one to see its impact frames) · colored ticks = benchmarks: TrackMan Tour averages · 25 hcp = Shot Scope (carry only). Your Paradym X lofts are ~4–6° stronger than standard.</p>
+    </section>
+
+    <section class="grid2">
+      <div class="card"><div class="sec"><h2>Where your shots land</h2></div>
+        <p class="lede">Each dot is one shot, seen from above. Left/right of the target line vs. carry distance. Click a dot to see that shot.</p>
+        <div class="chart tall"><canvas id="cDisp"></canvas></div></div>
+      <div class="card"><div class="sec"><h2>Gapping</h2></div>
+        <p class="lede">Carry by loft. Each step down in loft should add 10–12 yd. A flat stretch means two clubs go the same distance. Hollow points are partial swings.</p>
+        <div class="chart tall"><canvas id="cGap"></canvas></div></div>
+      <div class="card"><div class="sec"><h2>Why the ball curves</h2></div>
+        <p class="lede">Dots above the dashed line had the face open to the path, so they curve right. The green band is a neutral path.</p>
+        <div class="chart"><canvas id="cFace"></canvas></div></div>
+      <div class="card"><div class="sec"><h2>Strike vs. path</h2></div>
+        <p class="lede">Higher is a more centred strike. Watch how strike quality drops as the path gets more out-to-in.</p>
+        <div class="chart"><canvas id="cSmash"></canvas></div></div>
+    </section>
+
+    <section class="card">
+      <div class="sec"><h2>Club averages</h2><button class="toggle" id="cols" aria-pressed="${state.allCols}">${state.allCols?"Fewer columns":"All metrics"}</button></div>
+      <p class="lede">Click a column to sort, or a row to focus that club. Hover an underlined heading for what it means.</p>
+      <div class="tablewrap"><table id="tbl"></table></div>
+    </section>`;
+
+  document.querySelectorAll("#tab-session .chip[data-club]").forEach(b=>b.onclick=()=>{state.club=b.dataset.club||null;render();});
+  document.querySelectorAll("#mchips .mchip, #dchips .mchip").forEach(b=>b.onclick=()=>{state.metric=b.dataset.m;render();});
+  document.querySelectorAll("#tab-session tr[data-shot]").forEach(tr=>tr.onclick=()=>openShot(state.i, tr.dataset.club, +tr.dataset.shot));
+  $("cols").onclick=()=>{state.allCols=!state.allCols;render();};
+  renderClubTable(A);
+  sessionCharts(A);
+}
+
+function clubDetail(A, k){
+  const c = A.clubs[k];
+  const m = MET[state.metric];
+  const bench = [["You",c[m.k],colorOf(k)],["25 hcp",BENCH.hcp25[k]?.[m.k],css('--hcp')],["LPGA",BENCH.lpga[k]?.[m.k],css('--lpga')],["PGA",BENCH.pga[k]?.[m.k],css('--pga')]].filter(b=>b[1]!=null);
+  const maxB = Math.max(...bench.map(b=>Math.abs(b[1])));
+  const cols = [["#","n",0],["Carry","carry",1],["Side","side",-1],["Ball","ballSpeed",1],["Club","clubSpeed",1],["Smash","smash",2],["Path","path",1],["F2P","f2p",1],["Spin","backSpin",0],["Launch","launch",1]];
+  return `<section class="card">
+    <div class="sec"><h2><span class="cn">${sw(k)}${esc(CLUB[k]?.label||nameOf(k))}</span> <span class="muted small">${CLUB[k]?esc(CLUB[k].model)+" · "+CLUB[k].loft+"°":""}</span></h2>
+      <button class="toggle" data-club="">Close ✕</button></div>
+    ${c.caveat ? `<div class="caveat" style="margin-top:12px"><b>⚑ Caveat:</b> ${esc(c.caveat)}</div>` : ""}
+    ${c.partial ? `<div class="caveat" style="margin-top:12px"><b>Partial swings.</b> Club speed was well below your irons, so these are not full-swing yardages.</div>` : ""}
+    <div class="detail-grid" style="margin-top:12px">
+      <div>
+        <div class="detail-head">
+          <div><div class="stat"><div class="l">${tip("carry","Avg carry")}</div></div><div class="big">${f(c.carry,0)}<small>yd</small></div></div>
+          <div class="stat"><div class="l">Range</div><div class="v">${f(c.cmin,0)}–${f(c.cmax,0)}</div></div>
+          <div class="stat"><div class="l">${tip("spread","Spread")}</div><div class="v">±${f(c.carrySd,0)}</div></div>
+          <div class="stat"><div class="l">${tip("total","Total")}</div><div class="v">${f(c.total,0)}</div></div>
+          <div class="stat"><div class="l">${tip("side","Avg finish")}</div><div class="v">${lr(c.side)}</div></div>
+        </div>
+        <div class="muted small" style="margin:4px 0 6px">Compare by:</div>
+        ${metricChips("metric","dchips")}
+        ${bench.length>1 && !m.zero ? `<div class="bars" style="margin-top:12px">${bench.map(([l,v,col])=>`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${(Math.abs(v)/maxB*100).toFixed(1)}%;background:${col}"></div></div><span class="num">${fm(m,v)}</span></div>`).join("")}</div>`
+          : `<p class="muted small" style="margin-top:12px">${m.zero ? `Your ${m.label.toLowerCase()}: <b style="color:var(--ink)">${fm(m,c[m.k])}</b>. Tour players average close to 0.` : `No published benchmark for ${m.label.toLowerCase()} with this club. Yours: <b style="color:var(--ink)">${fm(m,c[m.k])}</b>.`}</p>`}
+      </div>
+      <div>
+        <div class="tablewrap"><table class="shots"><thead><tr><th class="tl">Impact</th>${cols.map(([h])=>`<th>${h}</th>`).join("")}</tr></thead><tbody>
+          ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot ${r.n}"><td class="tl">${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td>${cols.map(([,p,d])=>`<td>${p==="side"?lr(r.side):["path","face","f2p"].includes(p)?sg(r[p],d):f(r[p],d)}${p==="n"&&r.suspect?' <span class="tag warn" title="Possible sensor misread">?</span>':""}</td>`).join("")}</tr>`).join("")}
+        </tbody></table></div>
+        <p class="muted small" style="margin:8px 0 0">Click a row to open the impact photo and swing frames.</p>
+      </div>
+    </div></section>`;
+}
+
+const TCOLS = [
+  {k:"loft",h:"Loft",fmt:c=>CLUB[c.key]?.loft!=null?CLUB[c.key].loft+"°":"—",v:c=>loftOf(c.key),core:1},
+  {k:"carry",h:"Carry",fmt:c=>f(c.carry),core:1},
+  {k:"total",h:"Total",fmt:c=>f(c.total)},
+  {k:"roll",h:"Roll",fmt:c=>f(c.roll)},
+  {k:"carrySd",h:"Spread",g:"spread",fmt:c=>"±"+f(c.carrySd),core:1},
+  {k:"smash",h:"Smash",fmt:c=>f(c.smash,2),core:1,cls:c=>c.smash==null?"":c.smash<1.15&&!c.partial&&!WEDGE(c.key)?"bad":""},
+  {k:"ball",h:"Ball mph",fmt:c=>f(c.ball)},
+  {k:"club",h:"Club mph",fmt:c=>f(c.club)},
+  {k:"spin",h:"Spin",fmt:c=>c.spin==null?"—":Math.round(c.spin).toLocaleString()},
+  {k:"launch",h:"Launch",fmt:c=>f(c.launch)+"°"},
+  {k:"apex",h:"Apex",fmt:c=>f(c.apex)},
+  {k:"path",h:"Path",fmt:c=>sg(c.path)+"°",core:1,cls:c=>Math.abs(c.path)>4?"bad":Math.abs(c.path)>2?"warn":"good"},
+  {k:"face",h:"Face",fmt:c=>sg(c.face)+"°"},
+  {k:"f2p",h:"F2P",fmt:c=>sg(c.f2p)+"°",core:1,cls:c=>Math.abs(c.f2p)>3?"bad":Math.abs(c.f2p)>1.5?"warn":"good"},
+  {k:"side",h:"Finish",fmt:c=>lr(c.side),v:c=>c.side,core:1},
+];
+function renderClubTable(A){
+  const cols = TCOLS.filter(c=>state.allCols||c.core);
+  const [sk, sd_] = state.sort;
+  const col = TCOLS.find(c=>c.k===sk) || TCOLS[0];
+  const val = c => col.v ? col.v(c) : c[col.k];
+  const rows = A.keys.map(k=>A.clubs[k]).sort((a,b)=>((val(a)??-1e9)-(val(b)??-1e9))*sd_);
+  $("tbl").innerHTML = `<thead><tr><th>Club</th>${cols.map(c=>`<th class="sortable" data-k="${c.k}">${GLOSS[c.g||c.k]?tip(c.g||c.k,c.h):c.h}${sk===c.k?`<span class="arr">${sd_>0?"↑":"↓"}</span>`:""}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(c=>`<tr class="clickable ${state.club===c.key?"sel":""}" data-club="${c.key}"><td><span class="cn">${sw(c.key)}${nameOf(c.key)}</span>${c.partial?'<span class="tag">partial</span>':""}${c.caveat?'<span class="tag warn">⚑ retest</span>':""}</td>
+      ${cols.map(t=>`<td class="${t.cls?t.cls(c):""}">${t.fmt(c)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  document.querySelectorAll("#tbl th.sortable").forEach(th=>th.onclick=()=>{const k=th.dataset.k; state.sort=[k, state.sort[0]===k?-state.sort[1]:(k==="loft"?1:-1)]; renderClubTable(A);});
+  document.querySelectorAll("#tbl tr.clickable").forEach(tr=>tr.onclick=()=>{state.club=state.club===tr.dataset.club?null:tr.dataset.club;render();window.scrollTo({top:0,behavior:"smooth"});});
+  document.querySelectorAll("#tab-session .toggle[data-club]").forEach(b=>b.onclick=()=>{state.club=null;render();});
+}
+
+const shotClick = id => (e,els)=>{ if(!els.length) return; const r=charts[id].data.datasets[els[0].datasetIndex].data[els[0].index]?.r; if(r) openShot(state.i, r.key, r.n); };
+const hoverPtr = (e,els)=>{ e.native.target.style.cursor = els.length ? "pointer" : "default"; };
+function sessionCharts(A){
+  const {keys, clubs, full} = A;
+  const fk = keys.filter(k=>!clubs[k].partial);
+  const on = k => !state.club || state.club===k;
+  const pc = k => on(k) ? colorOf(k) : alpha(colorOf(k),.12);
+  const shotTip = r => [`${nameOf(r.key)} #${r.n}`, `Carry ${f(r.carry)} yd · finish ${lr(r.side)}`, `Path ${sg(r.path)}° · face ${sg(r.face)}° · F2P ${sg(r.f2p)}°`, `Smash ${f(r.smash,2)}${r.suspect?" (possible misread)":""}`];
+  const dispKeys = state.club ? keys : fk;
+
+  // dispersion
+  const sides = dispKeys.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0)));
+  const sx = Math.max(10, Math.ceil(Math.max(...sides)/5)*5+5);
+  const centre = {id:"centre",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;const px=x.getPixelForValue(0);
+    ctx.save();ctx.strokeStyle=css('--faint');ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(px,a.top);ctx.lineTo(px,a.bottom);ctx.stroke();
+    ctx.fillStyle=css('--faint');ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText("target line",px,a.top+12);ctx.restore();}};
+  draw("cDisp",{type:"scatter",plugins:[centre],
+    data:{datasets:dispKeys.map(k=>({label:nameOf(k),data:clubs[k].shots.map(r=>({x:r.side,y:r.carry,r})),
+      backgroundColor:pc(k),borderColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8,pointStyle:clubs[k].partial?"rectRot":"circle"}))},
+    options:{maintainAspectRatio:false,onClick:shotClick("cDisp"),onHover:hoverPtr,scales:{x:{min:-sx,max:sx,grid:gridc,title:{display:true,text:"← left of target (yd)   ·   right of target (yd) →"}},
+      y:{grid:gridc,title:{display:true,text:"Carry (yd)"}}},
+      plugins:{legend:{position:"bottom",onClick:(e,item)=>{const k=dispKeys[item.datasetIndex];state.club=state.club===k?null:k;render();}},
+        tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+
+  // compare-to-tour for the selected metric
+  const m = MET[state.metric], ck = keys, labels = ck.map(k=>nameOf(k)+(clubs[k].partial?"*":""));
+  const bench = src => ck.map(k=>clubs[k].partial?null:(BENCH[src][k]?.[m.k]??null));
+  const hasB = src => bench(src).some(v=>v!=null);
+  const tick = (label, src, color) => ({type:"scatter",label,order:1,data:ck.map((k,i)=>({x:labels[i],y:bench(src)[i]})).filter(d=>d.y!=null),
+    pointStyle:"line",pointRadius:ctx=>Math.max(10,(ctx.chart.chartArea?.width||600)/ck.length*0.3),pointHoverRadius:ctx=>Math.max(10,(ctx.chart.chartArea?.width||600)/ck.length*0.3),
+    borderColor:color,backgroundColor:color,borderWidth:3,pointHoverBorderWidth:4});
+  const cds = [{label:"You (avg)",data:ck.map(k=>clubs[k][m.k]==null?null:+clubs[k][m.k].toFixed(m.dp)),backgroundColor:ck.map(k=>alpha(colorOf(k),on(k)?.8:.15)),borderRadius:6,barPercentage:.7,categoryPercentage:.8,order:3}];
+  if (hasB("hcp25")) cds.push(tick("25 handicap","hcp25","#e7a35b"));
+  if (hasB("lpga")) cds.push(tick("LPGA Tour","lpga","#b08cf0"));
+  if (hasB("pga")) cds.push(tick("PGA Tour","pga","#6ea8fe"));
+  cds.push({type:"scatter",label:"Each shot",order:1,
+    data:ck.flatMap((k,i)=>clubs[k].shots.filter(r=>r[m.shot]!=null).map(r=>({x:labels[i],y:r[m.shot],r}))),
+    backgroundColor:ctx=>{const r=ctx.raw?.r;return r?(on(r.key)?"#ffffff":alpha("#ffffff",.12)):"#fff";},
+    borderColor:"rgba(0,0,0,.6)",borderWidth:1,pointRadius:ctx=>ctx.raw?.r&&on(ctx.raw.r.key)?4:3,pointHoverRadius:7});
+  const zeroLine = {id:"zero",afterDatasetsDraw(ch){if(!m.zero)return;const {ctx,chartArea:a,scales:{y}}=ch;const py=y.getPixelForValue(0);
+    ctx.save();ctx.strokeStyle=css('--good');ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(a.left,py);ctx.lineTo(a.right,py);ctx.stroke();
+    ctx.fillStyle=css('--good');ctx.font="600 11px sans-serif";ctx.fillText("Tour ≈ 0",a.right-58,py-6);ctx.restore();}};
+  draw("cCompare",{type:"bar",data:{labels,datasets:cds},plugins:[zeroLine],
+    options:{maintainAspectRatio:false,
+      onClick:(e,els)=>{const el=els.find(x=>ch().data.datasets[x.datasetIndex].label==="Each shot"); if(el){const r=ch().data.datasets[el.datasetIndex].data[el.index].r; openShot(state.i,r.key,r.n);}},
+      onHover:(e,els)=>{e.native.target.style.cursor=els.some(x=>ch().data.datasets[x.datasetIndex].label==="Each shot")?"pointer":"default";},
+      scales:{y:{grid:gridc,title:{display:true,text:`${m.label}${m.unit?" ("+m.unit+")":""}`},beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k)},x:{grid:{display:false}}},
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>{
+        if(c.raw==null) return null;
+        if(c.dataset.label==="Each shot") return [`${nameOf(c.raw.r.key)} #${c.raw.r.n}: ${fm(m,c.raw.y)}`,"Click to open this shot"];
+        if(c.dataset.type==="scatter") return `${c.dataset.label}: ${fm(m,c.raw.y)}`;
+        const k=ck[c.dataIndex];
+        return c.datasetIndex===0 ? [`You: ${fm(m,c.raw)} avg`, `Range ${fm(m,Math.min(...vals(clubs[k].shots.map(r=>r[m.shot]))))} – ${fm(m,Math.max(...vals(clubs[k].shots.map(r=>r[m.shot]))))}`] : `${c.dataset.label}: ${fm(m,c.raw)}`;}}}}}});
+  const ch = () => charts.cCompare;
+  // one-line insight for the metric
+  const withP = ck.filter(k=>!clubs[k].partial && BENCH.pga[k]?.[m.k]!=null && clubs[k][m.k]!=null);
+  const pct = src => { const ks = ck.filter(k=>!clubs[k].partial && BENCH[src][k]?.[m.k]!=null && clubs[k][m.k]!=null); return ks.length ? Math.round(mean(ks.map(k=>clubs[k][m.k]/BENCH[src][k][m.k]))*100) : null; };
+  const pP = pct("pga"), pL = pct("lpga");
+  $("cmpInsight").innerHTML = m.zero
+    ? `Tour players average close to <b>0</b>. Your full-swing average is <b>${fm(m, mean(full.map(r=>r[m.shot])))}</b>.`
+    : withP.length ? `Across ${withP.map(nameOf).join(", ")}, your ${m.label.toLowerCase()} is <b>${pP}%</b> of the PGA Tour average${pL!=null?` and <b>${pL}%</b> of the LPGA Tour average`:""}.${m.k==="launch"&&pP>110?" Higher than Tour despite your stronger lofts, which is a sign of adding loft at impact.":""}${m.k==="club"&&pL!=null&&pL>=95?" Your speed is LPGA-level, so the distance gap comes from strike quality.":""}`
+    : `No Tour benchmark for ${m.label.toLowerCase()} on the clubs in this session.`;
+
+  // face vs path + smash vs path
+  const pk = state.club ? [state.club].filter(k=>clubs[k]) : fk;
+  const paths = pk.flatMap(k=>clubs[k].shots.map(r=>r.path)).filter(x=>x!=null);
+  const xmin = Math.min(-16, Math.floor(Math.min(...paths)-2)), xmax = Math.max(4, Math.ceil(Math.max(...paths)+2));
+  const band = {id:"band",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;const l=x.getPixelForValue(-2),r=x.getPixelForValue(2);
+    ctx.save();ctx.fillStyle="rgba(90,209,122,.10)";ctx.fillRect(l,a.top,r-l,a.bottom-a.top);ctx.restore();}};
+  const ds = fn => fk.map(k=>({label:nameOf(k),data:clubs[k].shots.filter(r=>r.path!=null).map(r=>({x:r.path,y:fn(r),r})),
+    backgroundColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8}));
+  const diag = {id:"diag",afterDatasetsDraw(ch){const {ctx,scales:{x,y},chartArea:a}=ch;ctx.save();ctx.beginPath();ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top);ctx.clip();
+    ctx.setLineDash([5,5]);ctx.strokeStyle=css('--faint');ctx.beginPath();ctx.moveTo(x.getPixelForValue(xmin),y.getPixelForValue(xmin));ctx.lineTo(x.getPixelForValue(xmax),y.getPixelForValue(xmax));ctx.stroke();
+    ctx.setLineDash([]);ctx.font="600 11px sans-serif";ctx.fillStyle=css('--bad');ctx.fillText("↑ curves right",a.left+8,a.top+14);ctx.fillStyle=css('--info');ctx.fillText("↓ curves left",a.right-80,a.bottom-8);ctx.restore();}};
+  const legendClick = (e,item)=>{const k=fk[item.datasetIndex];state.club=state.club===k?null:k;render();};
+  draw("cFace",{type:"scatter",data:{datasets:ds(r=>r.face)},plugins:[band,diag],
+    options:{maintainAspectRatio:false,onClick:shotClick("cFace"),onHover:hoverPtr,scales:{x:{min:xmin,max:xmax,grid:gridc,title:{display:true,text:"Club path (°)  ← out-to-in · in-to-out →"}},
+      y:{min:xmin,max:xmax,grid:gridc,title:{display:true,text:"Face to target (°)"}}},
+      plugins:{legend:{position:"bottom",onClick:legendClick},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+  draw("cSmash",{type:"scatter",data:{datasets:ds(r=>r.smash)},plugins:[band],
+    options:{maintainAspectRatio:false,onClick:shotClick("cSmash"),onHover:hoverPtr,scales:{x:{min:xmin,max:xmax,grid:gridc,title:{display:true,text:"Club path (°)  ← out-to-in · in-to-out →"}},
+      y:{grid:gridc,title:{display:true,text:"Smash factor"}}},
+      plugins:{legend:{position:"bottom",onClick:legendClick},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+
+  // gapping
+  const lk = keys.filter(k=>CLUB[k]?.loft!=null);
+  draw("cGap",{type:"line",
+    data:{datasets:[
+      {label:"Carry",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].carry),k})),borderColor:css('--accent'),
+        backgroundColor:lk.map(k=>clubs[k].partial?css('--panel'):pc(k)),pointBorderColor:lk.map(k=>pc(k)),pointBorderWidth:2,pointRadius:lk.map(k=>on(k)?8:5),pointHoverRadius:10,borderWidth:2,tension:.2},
+      {label:"Total",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].total),k})),borderColor:css('--faint'),borderDash:[5,4],pointRadius:0,borderWidth:1.5,tension:.2}]},
+    options:{maintainAspectRatio:false,parsing:false,
+      onClick:(e,els)=>{if(els[0]){const k=lk[els[0].index];state.club=state.club===k?null:k;render();}},
+      scales:{x:{type:"linear",grid:gridc,title:{display:true,text:"Static loft (°)"},ticks:{callback:v=>v+"°"}},y:{grid:gridc,title:{display:true,text:"Yards"}}},
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>`${nameOf(c.raw.k)} (${c.raw.x}°): ${c.dataset.label.toLowerCase()} ${c.raw.y} yd`}}}}});
+}
+
+/* ---------- PROGRESS ---------- */
+function renderTrend(){
+  const list = ALL.slice(0, state.i+1), dates = list.map(A=>A.s.iso);
+  const P = A => ({ path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)),
+    smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash)),
+    disp:mean(A.keys.filter(k=>IRON(k)&&!A.clubs[k].partial).map(k=>A.clubs[k].carrySd)), shots:A.keys.reduce((n,k)=>n+A.clubs[k].n,0) });
+  const pts = list.map(P), first = pts[0], last = pts[pts.length-1], multi = list.length>1;
+  const kpi = (label, key, now, delta, better, unit, d=1) => {
+    const c = !multi||delta==null ? "" : Math.abs(delta)<(d===2?.01:.3) ? "" : better ? "good" : "bad";
+    return `<div class="kpi ${c}"><div class="l">${tip(key,label)}</div><div class="v">${multi&&delta!=null?sg(delta,d)+unit:"—"}</div><div class="c">now ${unit==="°"?sg(now,d):f(now,d)}${unit}</div><div class="t">${multi?"change since "+dates[0]:"needs a 2nd session"}</div></div>`;
+  };
+  const F = [];
+  if (!multi){
+    F.push({sev:"info", title:`Baseline set (${dates[0]})`, body:`Trend lines appear after your next session. Starting point: path ${sg(last.path)}°, face-to-path ${sg(last.f2p)}°, iron smash ${f(last.smash,2)}, iron carry spread ±${f(last.disp)} yd.`});
+  } else {
+    const t = (name, a, b, better, unit, d=1) => { if (a==null||b==null) return; const delta=b-a;
+      F.push({sev:Math.abs(delta)<(d===2?.01:.3)?"info":better(a,b)?"good":"bad", title:`${name}: ${sg(a,d)}${unit} → ${sg(b,d)}${unit}`, body:`${sg(delta,d)}${unit} since ${dates[0]}.`}); };
+    t("Club path", first.path, last.path, (a,b)=>Math.abs(b)<Math.abs(a), "°");
+    t("Face-to-path", first.f2p, last.f2p, (a,b)=>Math.abs(b)<Math.abs(a), "°");
+    t("Iron smash", first.smash, last.smash, (a,b)=>b>a, "", 2);
+    t("Carry spread", first.disp, last.disp, (a,b)=>b<a, " yd");
+    const ks = [...new Set(list.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)))].sort((a,b)=>loftOf(a)-loftOf(b));
+    const moved = ks.map(k=>{const h=list.filter(A=>A.clubs[k]&&!A.clubs[k].partial); return h.length>1?`${nameOf(k)} ${sg(h[h.length-1].clubs[k].carry-h[0].clubs[k].carry)} yd`:null;}).filter(Boolean);
+    if (moved.length) F.push({sev:"info", title:"Carry change by club", body:moved.join(" · ")});
+    if (Math.abs(last.path)<=2 && Math.abs(last.f2p)<=3) F.push({sev:"good", title:"Path and face-to-path are in the target window", body:"Shift the focus to strike quality and gapping."});
+  }
+  const curated = list.filter(A=>A.meta.curated).length;
+  $("tab-trend").innerHTML = `
+    ${curated ? `<div class="banner"><span class="ic">⚑</span><div><b>${curated} of ${list.length} session${list.length>1?"s":""} are best-shots-only.</b> Compare curated sessions with each other. Mixing curated and uncurated sessions will show false swings in consistency.</div></div>` : ""}
+    <section class="kpis">
+      ${kpi("Club path","path",last.path,multi?last.path-first.path:null,Math.abs(last.path)<Math.abs(first.path),"°")}
+      ${kpi("Face-to-path","f2p",last.f2p,multi?last.f2p-first.f2p:null,Math.abs(last.f2p)<Math.abs(first.f2p),"°")}
+      ${kpi("Iron smash","smash",last.smash,multi?last.smash-first.smash:null,last.smash>first.smash,"",2)}
+      ${kpi("Carry spread","spread",last.disp,multi?last.disp-first.disp:null,last.disp<first.disp," yd")}
+    </section>
+    <section class="card">
+      <div class="sec"><h2>Progress review</h2><span class="muted small">${list.length} session${list.length>1?"s":""} · ${pts.reduce((n,p)=>n+p.shots,0)} shots</span></div>
+      <ul class="findings">${F.map(x=>`<li><span class="dot ${x.sev}"></span><span><b>${x.title}.</b> ${x.body}</span></li>`).join("")}</ul>
+      ${DATA.overallReview ? `<details open><summary>Plan and drills</summary><div class="notes">${DATA.overallReview}</div></details>` : ""}
+    </section>
+    <section class="grid2">
+      <div class="card"><h2>Path and face-to-path</h2><p class="lede">Both lines should move toward the green zero line.</p><div class="chart"><canvas id="tPath"></canvas></div></div>
+      <div class="card"><h2>Strike quality</h2><p class="lede">Median smash for each iron. Up is better.</p><div class="chart"><canvas id="tSmash"></canvas></div></div>
+    </section>
+    <section class="card"><div class="sec"><h2>${MET[state.tmetric].label} by club over time</h2></div>
+      <div style="margin:12px 0">${metricChips("tmetric","tchips")}</div>
+      <p class="lede">${MET[state.tmetric].zero?"Lines should move toward 0.":state.tmetric==="carry"?"Lines that spread evenly apart mean better gapping.":"Full-swing average per session for each club."}</p>
+      <div class="chart"><canvas id="tCarry"></canvas></div></section>`;
+  document.querySelectorAll("#tchips .mchip").forEach(b=>b.onclick=()=>{state.tmetric=b.dataset.m;render();});
+
+  const opts = (yt) => ({maintainAspectRatio:false,spanGaps:true,scales:{x:{grid:{display:false}},y:{grid:gridc,title:{display:true,text:yt}}},plugins:{legend:{position:"bottom"}}});
+  draw("tPath",{type:"line",data:{labels:dates,datasets:[
+    {label:"Club path",data:pts.map(p=>p.path),borderColor:css('--bad'),backgroundColor:css('--bad'),pointRadius:6,tension:.25},
+    {label:"Face-to-path",data:pts.map(p=>p.f2p),borderColor:css('--warn'),backgroundColor:css('--warn'),pointRadius:6,tension:.25},
+    {label:"Goal (0°)",data:dates.map(()=>0),borderColor:css('--good'),borderDash:[4,4],pointRadius:0}]},options:opts("Degrees")});
+  const ik = [...new Set(list.flatMap(A=>A.keys.filter(IRON)))].sort((a,b)=>loftOf(a)-loftOf(b));
+  draw("tSmash",{type:"line",data:{labels:dates,datasets:ik.map(k=>({label:nameOf(k),data:list.map(A=>A.clubs[k]?.smash??null),borderColor:colorOf(k),backgroundColor:colorOf(k),pointRadius:6,tension:.25}))},options:opts("Median smash")});
+  const ck = [...new Set(list.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)))].sort((a,b)=>loftOf(a)-loftOf(b));
+  const tm = MET[state.tmetric];
+  draw("tCarry",{type:"line",data:{labels:dates,datasets:ck.map(k=>({label:nameOf(k),data:list.map(A=>A.clubs[k]&&!A.clubs[k].partial&&A.clubs[k][tm.k]!=null?+A.clubs[k][tm.k].toFixed(tm.dp):null),borderColor:colorOf(k),backgroundColor:colorOf(k),pointRadius:6,tension:.25}))},options:opts(`${tm.label}${tm.unit?" ("+tm.unit+")":""}`)});
+}
+
+/* ---------- BAG ---------- */
+function latestFor(k){
+  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:ALL[i].s.iso}; }
+  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:ALL[i].s.iso}; }
+  return null;
+}
+function renderBag(){
+  const L7 = latestFor("7i"), L6 = latestFor("6i"), LW = latestFor("7W");
+  const card = (title, rows, note) => `<div><b>${title}</b>${rows.map(([a,b,cls])=>`<div class="row"><span>${a}</span><span class="${cls||""}">${b}</span></div>`).join("")}${note?`<div class="muted small" style="margin-top:6px">${note}</div>`:""}</div>`;
+  let cards = [], verdict = "";
+  if (L7){
+    const c7 = L7.c.carry;
+    cards.push(card(`7 Iron · 27.5°`, [["Carry",f(c7,0)+" yd"],["Rollout",f(L7.c.roll,0)+" yd"],["Apex",f(L7.c.apex,0)+" yd"],["Spread",`±${f(L7.c.carrySd,0)} yd`]], `measured ${L7.date}${L7.c.caveat?' · <span class="warn">⚑ possible outlier</span>':""}`));
+    cards.push(card(`6 Iron · 24.5°`, L6 ? [["Carry",f(L6.c.carry,0)+" yd"],["Rollout",f(L6.c.roll,0)+" yd"],["Apex",f(L6.c.apex,0)+" yd"],["Gap to 7i",f(L6.c.carry-c7)+" yd",L6.c.carry-c7<6?"bad":"good"]]
+      : [["Carry",`${f(c7+1,0)}–${f(c7+9,0)} yd`],["Rollout","8–12 yd"],["Apex",`${f(L7.c.apex-3,0)}–${f(L7.c.apex,0)} yd`],["Overlap with 7i","Likely high","bad"]], L6?`measured ${L6.date}`:"projected from 7i"));
+    cards.push(card(`7 Wood · 21.5°`, LW ? [["Carry",f(LW.c.carry,0)+" yd"],["Rollout",f(LW.c.roll,0)+" yd"],["Apex",f(LW.c.apex,0)+" yd"],["Gap to 6i",L6?f(LW.c.carry-L6.c.carry)+" yd":"—",L6&&LW.c.carry-L6.c.carry<6?"bad":"good"]]
+      : [["Carry",`${f(c7+13,0)}–${f(c7+25,0)} yd`],["Rollout","6–10 yd"],["Apex",`${f(L7.c.apex+2,0)}–${f(L7.c.apex+6,0)} yd`],["Overlap with 6i","Partial / none","warn"]], LW?`measured ${LW.date}`:"projected from 7i"));
+    if (L6 && LW){
+      const g6 = L6.c.carry-c7, gW = LW.c.carry-L6.c.carry;
+      verdict = g6 < 6 ? `<b class="bad">Measured: the 6-iron overlaps the 7-iron (${f(g6)} yd).</b> Keep the 7-wood and drop the 6-iron, or swap it for a 6-hybrid.`
+        : gW < 6 ? `<b class="bad">Measured: the 6-iron and 7-wood overlap (${f(gW)} yd).</b> Keep the one with the tighter spread.`
+        : `<b class="good">Measured: clean gaps (7i→6i ${f(g6)} yd, 6i→7W ${f(gW)} yd).</b> Both clubs earn their spot.`;
+    } else verdict = `Projected from your latest 7-iron${L7.c.caveat?", which is flagged as a possible outlier":""}. Next session's 7i-to-driver block will replace these estimates with real numbers. If the 6-iron carries within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.`;
+  }
+  const setTable = (set, si) => {
+    const rows = set.clubs.map(c=>{ const k=c.key||c.equiv; return {c,k,L:k?latestFor(k):null}; });
+    return `<section class="card"><div class="sec"><h2>${esc(set.name)}</h2></div>
+      <p class="lede">${si? "Yardages come from the main-bag club with the same loft (shown as ≈). Head and shaft differ, so treat them as estimates." : "Latest full-swing averages up to the selected date. Gap = carry to the next club down: red under 6 yd, amber over 20 yd."}</p>
+      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Gap ↓</th><th>Last measured</th></tr></thead><tbody>
+      ${rows.map(({c,k,L},i)=>{
+        const nx = rows.slice(i+1).find(r=>r.L && !r.L.c.partial && r.k!==k);
+        const gap = L && nx && !L.c.partial ? L.c.carry-nx.L.c.carry : null;
+        return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${L?.c.caveat?'<span class="tag warn">⚑ retest</span>':""}${c.note?`<div class="muted small" style="font-weight:400">${esc(c.note)}</div>`:""}</td>
+          <td class="tl muted">${esc(c.model || (c.equiv&&CLUB[c.equiv] ? `≈ ${CLUB[c.equiv].model.replace("Callaway ","")} ${nameOf(c.equiv)}` : ""))}</td>
+          <td>${c.loft!=null?c.loft+"°":"—"}</td>
+          <td>${L?`<b>${f(L.c.carry,0)}</b>`:"—"}${L?.c.partial?'<span class="tag">partial</span>':""}</td>
+          <td>${L?f(L.c.total,0):"—"}</td>
+          <td class="${gap==null?"":gap<6?"bad":gap>20?"warn":"good"}">${gap==null?"—":f(gap,0)}</td>
+          <td>${L?L.date:'<span class="empty">not hit yet</span>'}</td></tr>`;}).join("")}
+      </tbody></table></div></section>`;
+  };
+  $("tab-bag").innerHTML = `<section class="card"><div class="sec"><h2>6-iron vs. 7-wood</h2></div><p class="lede">${verdict||"Hit a 7-iron session first."}</p><div class="proj">${cards.join("")}</div></section>`
+    + DATA.bag.sets.map(setTable).join("");
+}
+
+/* ---------- COURSE ---------- */
+function par3Yardages(set){
+  const L7 = latestFor("7i"), LA = latestFor("AW");
+  const c7 = L7 && !L7.c.partial ? L7.c.carry : null;
+  const avgSide = mean(ALL[state.i].full.map(r=>r.side));
+  const est = {"6i":c7!=null?c7+5:null,"7W":c7!=null?c7+19:null,"51":LA&&!LA.c.partial?LA.c.carry-12:null};
+  return set.clubs.filter(c=>c.equiv && c.equiv!=="Putter").map(c=>{
+    const L = latestFor(c.equiv);
+    if (L && !L.c.partial) return {c, carry:L.c.carry, side:L.c.side, est:false, caveat:L.c.caveat};
+    return {c, carry:est[c.equiv]??null, side:avgSide, est:true, partial:L?.c.partial?L.c.carry:null,
+      caveat:(c.equiv==="6i"||c.equiv==="7W") && L7?.c.caveat ? "Projected from a 7-iron that may be an outlier." : null};
+  }).filter(y=>y.carry!=null).sort((a,b)=>b.carry-a.carry);
+}
+function renderCourse(){
+  const html = [];
+  for (const course of DATA.courses || []){
+    const set = DATA.bag.sets.find(s=>s.name===course.bag); if (!set) continue;
+    const tee = state.tee[course.name] || course.defaultTee || Object.keys(course.tees)[0];
+    const holes = course.tees[tee], ys = par3Yardages(set);
+    const maxY = Math.max(...holes, ...ys.map(y=>y.carry)) * 1.05;
+    const usage = {};
+    const cards = holes.map((yd,i)=>{
+      const ranked = ys.map(y=>({y,score:y.carry>=yd?y.carry-yd:(yd-y.carry)*1.5})).sort((a,b)=>a.score-b.score);
+      if (!ranked.length) return `<div class="hole"><div class="no">Hole ${i+1}</div><div class="empty">No yardages yet</div></div>`;
+      const b = ranked[0].y, m = b.carry-yd; usage[b.c.label]=(usage[b.c.label]||0)+1;
+      const notes = [];
+      if (b===ys[0] && m < -6) notes.push(`Longer than your longest club. Hit the ${esc(b.c.label)} and play for the front edge.`);
+      else if (Math.abs(m) > 6 && ranked[1]) notes.push(m<0 ? `Between clubs: a full ${esc(b.c.label)} comes up ~${f(-m,0)} short, or hit an easy ${esc(ranked[1].y.c.label)}.` : `Between clubs: a smooth ¾ ${esc(b.c.label)}, or a full ${esc(ranked[1].y.c.label)}.`);
+      if (b.est) notes.push(b.partial!=null ? `Only partial swings measured (${f(b.partial,0)} yd), so the full carry is estimated.` : "Carry is estimated until you hit this club in a session.");
+      if (b.caveat) notes.push(esc(b.caveat));
+      const aim = b.side==null||Math.abs(b.side)<3 ? null : b.side>0 ? `← Aim ${f(b.side,0)} yd left` : `Aim ${f(-b.side,0)} yd right →`;
+      const fitCls = m < -6 ? "bad" : Math.abs(m) > 6 ? "warn" : "good";
+      const open = state.hole===`${course.name}:${i}`;
+      return `<div class="hole" data-hole="${esc(course.name)}:${i}" aria-expanded="${open}" role="button" tabindex="0">
+        <div class="hh"><span class="no">Hole ${i+1}</span><span class="yd">${yd}<small>yd</small></span></div>
+        <div><span class="club">${esc(b.c.label)}</span><span class="eq">≈ ${nameOf(b.c.equiv)}</span></div>
+        <div class="meter" title="Your carry vs. hole length"><div class="f" style="width:${(b.carry/maxY*100).toFixed(1)}%;background:${colorOf(b.c.equiv)}"></div><div class="pin" style="left:${(yd/maxY*100).toFixed(1)}%"></div></div>
+        <div class="meta"><span>carry ${f(b.carry,0)}${b.est?" (est)":""} · <span class="${fitCls}">${sg(m,0)} yd</span></span>${aim?`<span class="pill warn">${aim}</span>`:`<span class="pill good">Aim centre</span>`}</div>
+        ${open||notes.length? `<div class="more" ${open?"":"hidden"}>${notes.join(" ")||"Good fit."}${ranked[1]?`<div class="muted small" style="margin-top:4px">Backup: ${esc(ranked[1].y.c.label)} (${f(ranked[1].y.carry,0)} yd)</div>`:""}</div>`:""}
+      </div>`;
+    }).join("");
+    const gaps=[]; for (let i=0;i<ys.length-1;i++){const g=ys[i].carry-ys[i+1].carry; if(g>20) gaps.push(`${esc(ys[i].c.label)} → ${esc(ys[i+1].c.label)}: ${f(g,0)} yd`);}
+    html.push(`<section class="card">
+      <div class="sec"><h2>${esc(course.name)} <span class="muted small" style="font-weight:500">${esc(course.location)}</span></h2>
+        <div class="seg" role="group" aria-label="Tees">${Object.keys(course.tees).map(t=>`<button data-course="${esc(course.name)}" data-tee="${esc(t)}" aria-pressed="${t===tee}">${esc(t)} · ${course.tees[t].reduce((a,b)=>a+b,0)}</button>`).join("")}</div></div>
+      <p class="lede">The club to hit on each hole from your par-3 bag, using your yardages up to the selected session. The bar shows your carry and the white tick marks the hole length. Tap a hole for notes and a backup club.</p>
+      <div class="holes">${cards}</div>
+    </section>
+    <section class="card"><div class="sec"><h2>Par-3 bag yardages</h2></div>
+      <p class="lede">${esc(course.note||"")}</p>
+      <div class="ylist">${ys.map(y=>`<div class="ycard"><b><span class="cn">${sw(y.c.equiv)}${esc(y.c.label)}</span></b><div class="muted small">≈ ${nameOf(y.c.equiv)} · ${y.c.loft}°</div><div class="v">${f(y.carry,0)} <span class="muted small">yd${y.est?" est":""}</span></div><div class="muted small">used on ${usage[y.c.label]||0} hole${usage[y.c.label]===1?"":"s"}</div></div>`).join("")}</div>
+      ${gaps.length?`<p class="small" style="margin:14px 0 0"><span class="warn"><b>Yardage holes:</b></span> <span class="muted">${gaps.join(" · ")}. Partial swings have to cover these.</span></p>`:""}
+    </section>`);
+  }
+  $("tab-course").innerHTML = html.join("") || `<section class="card empty">No courses in courses.json.</section>`;
+  document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{state.tee[b.dataset.course]=b.dataset.tee;state.hole=null;render();});
+  document.querySelectorAll(".hole[data-hole]").forEach(h=>{const go=()=>{state.hole=state.hole===h.dataset.hole?null:h.dataset.hole;render();};h.onclick=go;h.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
+}
+
+
+/* ---------- SHOT VIEWER ---------- */
+const V = { i:0, key:null, n:null, frame:0, timer:null, speed:1 };
+const vEl = $("viewer");
+function sessionShots(i){ const A=ALL[i]; return A.keys.flatMap(k=>A.clubs[k].shots); }
+function openShot(i, key, n){
+  V.i=i; V.key=key; V.n=n; V.frame=0; stopPlay();
+  renderViewer(); vEl.hidden=false; document.body.style.overflow="hidden";
+  startPlay();
+}
+function closeShot(){ stopPlay(); vEl.hidden=true; document.body.style.overflow=""; }
+function stepShot(d){
+  const list = sessionShots(V.i), idx = list.findIndex(r=>r.key===V.key&&r.n===V.n), r = list[idx+d];
+  if (r){ const playing=!!V.timer; stopPlay(); V.key=r.key; V.n=r.n; V.frame=0; renderViewer(); if(playing) startPlay(); }
+}
+function curShot(){ return ALL[V.i].clubs[V.key]?.shots.find(r=>r.n===V.n); }
+function setFrame(fi){
+  const r = curShot(), fr = r?.img?.frames || []; if (!fr.length) return;
+  V.frame = (fi + fr.length) % fr.length;
+  $("vf").src = fr[V.frame]; $("vr").value = V.frame;
+  $("vfc").textContent = `${V.frame+1} / ${fr.length}`; $("vcap").textContent = `Top view · frame ${V.frame+1}`;
+  document.querySelectorAll("#vstrip img").forEach((im,j)=>im.classList.toggle("on", j===V.frame));
+  const on = document.querySelector("#vstrip img.on"); on?.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+function startPlay(){ const fr=curShot()?.img?.frames||[]; if(fr.length<2) return; stopPlay(); V.timer=setInterval(()=>setFrame(V.frame+1), 110/V.speed); const b=$("vplay"); if(b) b.textContent="❚❚ Pause"; }
+function stopPlay(){ if(V.timer){clearInterval(V.timer);V.timer=null;} const b=$("vplay"); if(b) b.textContent="▶ Play"; }
+function renderViewer(){
+  const A = ALL[V.i], c = A.clubs[V.key], r = curShot(); if (!r) return;
+  const list = sessionShots(V.i), idx = list.findIndex(x=>x.key===V.key&&x.n===V.n);
+  const fr = r.img?.frames || [];
+  fr.forEach(src=>{ const im=new Image(); im.src=src; });  // preload for smooth playback
+  const pb = BENCH.pga[V.key], lb = BENCH.lpga[V.key];
+  const st = (label, key, val, bk) => `<div class="vstat"><div class="l">${GLOSS[key]?tip(key,label):label}</div><div class="v">${val}</div>${bk!=null?`<div class="b">${bk}</div>`:""}</div>`;
+  const tb = mk => pb?.[mk]!=null ? `PGA ${fm(MET[mk],pb[mk])}${lb?.[mk]!=null?` · LPGA ${fm(MET[mk],lb[mk])}`:""}` : null;
+  vEl.innerHTML = `<div class="vbox" role="dialog" aria-modal="true" aria-label="Shot viewer">
+    <div class="vhead">
+      <h2><span class="cn">${sw(V.key)}${esc(CLUB[V.key]?.label||nameOf(V.key))} · shot ${r.n}</span> <span class="muted small" style="font-weight:500">${A.s.iso} · ${idx+1} of ${list.length} in session${r.type?` · ${esc(r.type)}`:""}</span></h2>
+      <div class="vbtns"><button class="iconbtn" id="vprev" ${idx<=0?"disabled":""}>‹ Prev shot</button><button class="iconbtn" id="vnext" ${idx>=list.length-1?"disabled":""}>Next shot ›</button><button class="iconbtn" id="vclose" aria-label="Close">✕</button></div>
+    </div>
+    ${r.suspect?`<div class="caveat"><b>Possible sensor misread:</b> smash or spin is outside what's physically likely for this club.</div>`:""}
+    ${c.caveat?`<div class="caveat"><b>⚑ Club caveat:</b> ${esc(c.caveat)}</div>`:""}
+    <div class="vgrid">
+      <div>
+        <div class="frame">${r.img?.impact?`<img src="${esc(r.img.impact)}" alt="Ball at impact">`:`<div class="empty" style="padding:40px">No impact image</div>`}<span class="cap">Impact</span></div>
+        <p class="muted small" style="margin:8px 0 0">High-speed photo of the ball at impact.</p>
+      </div>
+      <div>
+        <div class="frame">${fr.length?`<img id="vf" src="${esc(fr[0])}" alt="Top-view frame">`:`<div class="empty" style="padding:40px">No frames</div>`}<span class="cap" id="vcap">Top view · frame 1</span></div>
+        ${fr.length?`<div class="player">
+          <button class="iconbtn" id="vplay">▶ Play</button>
+          <button class="iconbtn" id="vfb" aria-label="Previous frame">‹</button>
+          <button class="iconbtn" id="vff" aria-label="Next frame">›</button>
+          <input type="range" id="vr" min="0" max="${fr.length-1}" value="0" aria-label="Frame">
+          <span class="fc" id="vfc">1 / ${fr.length}</span>
+          <select id="vspeed" aria-label="Playback speed">${[[.25,"¼×"],[.5,"½×"],[1,"1×"],[2,"2×"]].map(([v,l])=>`<option value="${v}" ${v===V.speed?"selected":""}>${l}</option>`).join("")}</select>
+        </div>
+        <div class="strip" id="vstrip">${fr.map((src,j)=>`<img src="${esc(src)}" alt="" data-f="${j}" loading="lazy">`).join("")}</div>
+        <p class="muted small" style="margin:6px 0 0">Look at where the ball sits on the face (heel vs. toe) and the club's direction through impact. Keys: ←/→ frame · space play · ↑/↓ shot · Esc close.</p>`:""}
+      </div>
+    </div>
+    <div class="vstats">
+      ${st("Carry","carry",f(r.carry)+" yd",tb("carry"))}
+      ${st("Total","total",f(r.total)+" yd")}
+      ${st("Finish","side",lr(r.side,1))}
+      ${st("Ball speed","ball",f(r.ballSpeed)+" mph",tb("ball"))}
+      ${st("Club speed","club",f(r.clubSpeed)+" mph",tb("club"))}
+      ${st("Smash","smash",f(r.smash,2),tb("smash"))}
+      ${st("Launch","launch",f(r.launch)+"°",tb("launch"))}
+      ${st("Back spin","spin",r.backSpin==null?"—":Math.round(r.backSpin).toLocaleString(),tb("spin"))}
+      ${st("Apex","apex",f(r.apex)+" yd",tb("apex"))}
+      ${st("Land angle","descent",f(r.descent)+"°",tb("descent"))}
+      ${st("Club path","path",sg(r.path)+"°","Tour ≈ 0")}
+      ${st("Face","face",sg(r.face)+"°")}
+      ${st("Face-to-path","f2p",sg(r.f2p)+"°","Goal ±3")}
+      ${st("Side spin","spin",r.sideSpin==null?"—":lr(r.sideSpin))}
+    </div></div>`;
+  $("vclose").onclick = closeShot; $("vprev").onclick = ()=>stepShot(-1); $("vnext").onclick = ()=>stepShot(1);
+  if (fr.length){
+    $("vplay").onclick = ()=> V.timer ? stopPlay() : startPlay();
+    $("vfb").onclick = ()=>{stopPlay();setFrame(V.frame-1);}; $("vff").onclick = ()=>{stopPlay();setFrame(V.frame+1);};
+    $("vr").oninput = e=>{stopPlay();setFrame(+e.target.value);};
+    $("vspeed").onchange = e=>{V.speed=+e.target.value; if(V.timer) startPlay();};
+    document.querySelectorAll("#vstrip img").forEach(im=>im.onclick=()=>{stopPlay();setFrame(+im.dataset.f);});
+    setFrame(V.frame);
+  }
+}
+vEl.addEventListener("click", e=>{ if (e.target===vEl) closeShot(); });
+document.addEventListener("keydown", e=>{
+  if (vEl.hidden) return;
+  if (e.key==="Escape") closeShot();
+  else if (e.key==="ArrowRight"){ e.preventDefault(); stopPlay(); setFrame(V.frame+1); }
+  else if (e.key==="ArrowLeft"){ e.preventDefault(); stopPlay(); setFrame(V.frame-1); }
+  else if (e.key==="ArrowDown"){ e.preventDefault(); stepShot(1); }
+  else if (e.key==="ArrowUp"){ e.preventDefault(); stepShot(-1); }
+  else if (e.key===" "){ e.preventDefault(); V.timer ? stopPlay() : startPlay(); }
+});
+
+
+/* ---------- DRILLS ---------- */
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const ytWatch = id => `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+const ytSearch = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+function renderDrills(){
+  const D = DATA.drills || {}, drills = D.drills || [], plan = D.plan || [], res = D.resources || [];
+  const done = store.get("golf-plan-v1", {});
+  const base = ALL[0], now = ALL[state.i];
+  const stat = A => ({ path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)), smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash)) });
+  const b0 = stat(base), n0 = stat(now);
+  const goals = [
+    {label:"Club path", unit:"°", start:b0.path, now:n0.path, goal:-3, dp:1, grade:gPath},
+    {label:"Face-to-path", unit:"°", start:b0.f2p, now:n0.f2p, goal:3, dp:1, grade:gF2P},
+    {label:"Iron smash", unit:"", start:b0.smash, now:n0.smash, goal:1.30, dp:2, grade:gSmash},
+  ].map(g=>({...g, pct: g.start==null||g.now==null||g.start===g.goal ? 0 : Math.max(0, Math.min(100, (g.start-g.now)/(g.start-g.goal)*100))}));
+  const totalTasks = plan.reduce((n,l)=>n+l.tasks.length,0), doneTasks = Object.values(done).filter(Boolean).length;
+  $("tab-drills").innerHTML = `
+    <section class="card">
+      <div class="sec"><h2>Practice plan</h2><span class="muted small">${doneTasks}/${totalTasks} tasks done · ticks are saved in this browser</span></div>
+      <p class="lede">Four levels, in priority order. Tick tasks off as you go, and log a session at the end of each level to see whether the numbers moved.</p>
+      <div class="levels">${plan.map(l=>{
+        const n = l.tasks.length, d = l.tasks.filter((_,j)=>done[`${l.level}:${j}`]).length;
+        return `<div class="lvl ${d===n?"done":""}"><h3>Level ${l.level}${d===n?" ✓":""}</h3><div class="nm">${esc(l.name)}</div>
+          <div class="xp" title="${d}/${n}"><i style="width:${n?d/n*100:0}%"></i></div>
+          ${l.tasks.map((t,j)=>`<label class="task"><input type="checkbox" data-task="${l.level}:${j}" ${done[`${l.level}:${j}`]?"checked":""}><span>${esc(t)}</span></label>`).join("")}</div>`;}).join("")}</div>
+    </section>
+
+    <section class="card">
+      <div class="sec"><h2>Progress to targets</h2><span class="muted small">${base===now?"baseline "+now.s.iso:`${base.s.iso} → ${now.s.iso}`}</span></div>
+      <p class="lede">How far you've moved from your first session toward each goal.</p>
+      <div class="bars">${goals.map(g=>`<div class="bar" style="grid-template-columns:120px 1fr 190px"><span>${g.label}</span><div class="track"><div class="fill" style="width:${g.pct.toFixed(0)}%;background:var(--gold)"></div></div><span class="num">${g.unit==="°"?sg(g.now,g.dp):f(g.now,g.dp)}${g.unit} → ${g.unit==="°"?sg(g.goal,0):f(g.goal,2)}${g.unit} · ${g.grade(g.now)}</span></div>`).join("")}</div>
+    </section>
+
+    ${drills.map(d=>`<section class="card drill" style="--dc:${esc(d.color||"var(--gold)")}">
+      <div>
+        <div class="lv">Level ${d.level} · ${d.fixes.map(esc).join(" · ")}</div>
+        <h3>${esc(d.title)}</h3>
+        <p class="muted" style="margin:0 0 8px">${esc(d.why)}</p>
+        <ol>${d.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+        <div class="tgt"><b>Target:</b> ${esc(d.target)}</div>
+        <div class="src">Source: <a href="${esc(d.source.url)}" target="_blank" rel="noopener">${esc(d.source.name)} ↗</a></div>
+      </div>
+      <div class="vids">${d.videos.map(v=>`<div>
+          <button class="yt" data-yt="${esc(v.id)}" data-title="${esc(v.title)}" style="background-image:url('https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg')" aria-label="Play video: ${esc(v.title)}"><span class="play">▶</span><span class="ttl">${esc(v.title)}</span></button>
+          <div class="vidrow"><a class="yt-link red" href="${ytWatch(v.id)}" target="_blank" rel="noopener">Watch on YouTube ↗</a></div>
+        </div>`).join("")}
+        <a class="yt-link" href="${ytSearch(d.search)}" target="_blank" rel="noopener" style="justify-self:start">More videos: “${esc(d.search)}” ↗</a>
+      </div>
+    </section>`).join("")}
+
+    ${res.length?`<section class="card"><div class="sec"><h2>Resources</h2></div><p class="lede">The coaching sources behind these drills.</p>
+      <div class="resources">${res.map(r=>`<a class="res" href="${esc(r.url)}" target="_blank" rel="noopener"><b>${esc(r.name)}</b><span>${esc(r.desc)}</span></a>`).join("")}</div></section>`:""}`;
+
+  document.querySelectorAll("#tab-drills input[data-task]").forEach(cb=>cb.onchange=()=>{
+    const d = store.get("golf-plan-v1", {}); d[cb.dataset.task] = cb.checked; store.set("golf-plan-v1", d);
+    sfx(cb.checked ? "coin" : "blip"); renderDrills();
+  });
+  document.querySelectorAll("#tab-drills .yt").forEach(btn=>btn.onclick=()=>{
+    const id = btn.dataset.yt;
+    if (location.protocol === "file:") { window.open(ytWatch(id), "_blank", "noopener"); return; }  // YouTube refuses embeds on file:// pages
+    btn.outerHTML = `<div class="yt" style="cursor:default"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" title="${esc(btn.dataset.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+  });
+}
+
+/* ---------- arcade sound + CRT ---------- */
+let actx = null, sfxOn = store.get("golf-sfx", false);
+function sfx(kind="blip"){
+  if (!sfxOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = kind==="coin" ? [988,1319] : kind==="tab" ? [523,784] : [660];
+    notes.forEach((hz,i)=>{
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i*0.07;
+      o.type = "square"; o.frequency.setValueAtTime(hz, t);
+      g.gain.setValueAtTime(0.045, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.09);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.1);
+    });
+  } catch {}
+}
+function setSwitch(id, on){ $(id).setAttribute("aria-pressed", on); }
+$("sfx").onclick = () => { sfxOn = !sfxOn; store.set("golf-sfx", sfxOn); setSwitch("sfx", sfxOn); sfx("coin"); };
+let crtOn = store.get("golf-crt", false);
+document.body.classList.toggle("crt", crtOn); setSwitch("crt", crtOn); setSwitch("sfx", sfxOn);
+$("crt").onclick = () => { crtOn = !crtOn; store.set("golf-crt", crtOn); document.body.classList.toggle("crt", crtOn); setSwitch("crt", crtOn); sfx(); };
+document.addEventListener("click", e => {
+  const t = e.target.closest(".nav button"); if (t) return sfx("tab");
+  if (e.target.closest(".chip, .toggle:not(#sfx), .seg button, .hole, .iconbtn, .datepick button, summary, tr.clickable, .yt")) sfx();
+});
+
+/* ---------- wiring ---------- */
+const sel = $("date");
+sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${A.s.iso} · ${A.keys.reduce((n,k)=>n+A.clubs[k].n,0)} shots${A.meta.curated?" · best":""}</option>`).reverse().join("");
+function render(){
+  if (!ALL.length) return;
+  sel.value = state.i;
+  $("prev").disabled = state.i<=0; $("next").disabled = state.i>=ALL.length-1;
+  document.querySelectorAll("main").forEach(m=>m.hidden = m.id !== "tab-"+state.tab);
+  document.querySelectorAll(".nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
+  ({session:renderSession, trend:renderTrend, bag:renderBag, course:renderCourse, drills:renderDrills})[state.tab]();
+  history.replaceState(null, "", `#${ALL[state.i].s.date}/${state.tab}${state.club?"/"+state.club:""}`);
+}
+const [hd, ht, hc] = location.hash.slice(1).split("/");
+const hi = ALL.findIndex(A=>A.s.date===hd); if (hi>=0) state.i = hi;
+if (["session","trend","bag","course","drills"].includes(ht)) state.tab = ht;
+if (hc) state.club = hc;
+sel.onchange = () => { state.i = +sel.value; render(); };
+$("prev").onclick = () => { state.i--; render(); };
+$("next").onclick = () => { state.i++; render(); };
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();window.scrollTo({top:0});});
+
+// glossary tooltips
+const tipEl = $("tip");
+document.addEventListener("mouseover", e=>{ const t=e.target.closest("[data-tip]"); if(!t||!t.dataset.tip){tipEl.hidden=true;return;}
+  tipEl.textContent=t.dataset.tip; tipEl.hidden=false; const r=t.getBoundingClientRect();
+  const x=Math.min(window.innerWidth-tipEl.offsetWidth-8, Math.max(8, r.left)); const y=r.bottom+8+tipEl.offsetHeight>window.innerHeight ? r.top-tipEl.offsetHeight-8 : r.bottom+8;
+  tipEl.style.left=x+"px"; tipEl.style.top=y+"px"; });
+window.addEventListener("scroll", ()=>tipEl.hidden=true, {passive:true});
+
+$("foot").textContent = `Built ${DATA.built} from ${ALL.length} session folder(s) · Benchmarks: TrackMan PGA/LPGA Tour averages, Shot Scope 25-handicap averages · Rebuild: python3 -I scripts/build_dashboard.py`;
+if (ALL.length) render(); else $("tab-session").innerHTML = `<section class="card empty">No sessions found.</section>`;
+</script>
+</body>
+</html>

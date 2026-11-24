@@ -1,0 +1,8 @@
+{
+  "curated": true,
+  "curatedNote": "Shanks and mishits were removed before export, so these averages are a best case. Expect on-course carry to be shorter and dispersion wider.",
+  "caveats": {
+    "7i": "Possible outlier: carried only ~2 yd more than the 8-iron. Retest next session."
+  },
+  "nextSession": "Hit 7-iron through driver (7i, 6i, 7W, 3H, 3W, Driver) to retest the 7-iron and measure the long clubs."
+}
