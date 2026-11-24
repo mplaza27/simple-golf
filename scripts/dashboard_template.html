@@ -137,29 +137,6 @@
   [data-tip]{text-decoration:underline dotted var(--faint);text-underline-offset:3px;cursor:help}
   #tip{position:fixed;z-index:200;max-width:280px;background:#0b130e;color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45;pointer-events:none}
 
-  /* course planner */
-  .scorecard{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
-  .hb{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;transition:background .15s,border-color .15s;min-width:0}
-  .hb:hover{border-color:var(--green2)}
-  .hb[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#132016}
-  .hb .h{font-size:11px;font-weight:700;opacity:.75}
-  .hb .y{font-family:var(--mono);font-size:14px;font-weight:700;margin-top:3px}
-  .hb .p{font-size:11px;opacity:.75}
-  .hb .k{font-size:11.5px;font-weight:700;margin-top:2px;color:var(--sand)}
-  .hb[aria-pressed="true"] .k{color:#132016}
-  .nine{font-size:12px;color:var(--muted);margin:10px 0 6px}
-  .planner{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:28px;margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
-  .map{background:#0d1610;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-  .map svg{display:block;width:100%;height:auto}
-  .hole-title{font-family:var(--mono);font-size:26px;color:var(--cream);line-height:1.2}
-  .hole-title small{font-size:14px;color:var(--muted);margin-left:8px;font-family:var(--sans)}
-  .facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
-  .fact{background:var(--panel2);border-radius:8px;padding:10px 12px}
-  .fact .l{color:var(--muted);font-size:12.5px} .fact .v{font-family:var(--mono);font-size:18px;color:var(--ink)}
-  .meter{height:6px;background:var(--panel3);border-radius:3px;margin-top:6px;overflow:hidden} .meter i{display:block;height:100%;background:var(--green);border-radius:3px}
-  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
-  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
-
   /* viewer */
   .viewer{position:fixed;inset:0;z-index:150;background:rgba(6,10,8,.8);display:flex;align-items:center;justify-content:center;padding:16px}
   .vbox{background:var(--panel);border:1px solid var(--line2);border-radius:14px;width:min(1040px,100%);max-height:100%;overflow:auto;padding:22px}
@@ -230,7 +207,6 @@
       </div>
       <nav class="tabs" role="tablist">
         <button class="btn" role="tab" data-tab="session">Session</button>
-        <button class="btn" role="tab" data-tab="course">Course</button>
         <button class="btn" role="tab" data-tab="trend">Progress</button>
         <button class="btn" role="tab" data-tab="bag">Bag</button>
         <button class="btn" role="tab" data-tab="drills">Drills</button>
@@ -240,7 +216,6 @@
 
   <section class="overview" id="overview"></section>
   <main id="tab-session" class="stack"></main>
-  <main id="tab-course" class="stack" hidden></main>
   <main id="tab-trend" class="stack" hidden></main>
   <main id="tab-bag" class="stack" hidden></main>
   <main id="tab-drills" class="stack" hidden></main>
@@ -308,9 +283,6 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const tip = (k,label) => GLOSS[k] ? `<span data-tip="${esc(GLOSS[k])}">${label}</span>` : label;
 const $ = id => document.getElementById(id);
 const sw = k => `<span class="sw" style="background:${colorOf(k)}"></span>`;
-const erf = x => { const t=1/(1+0.3275911*Math.abs(x)); const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x); return x>=0?y:-y; };
-const Phi = z => 0.5*(1+erf(z/Math.SQRT2));
-const pBetween = (lo,hi,m,s) => s>0 ? Phi((hi-m)/s)-Phi((lo-m)/s) : (m>=lo&&m<=hi?1:0);
 const store = { get(k,d){ try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;} }, set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch{} } };
 
 Chart.defaults.color = "#93a796";
@@ -359,8 +331,15 @@ function findings(A){
   }
   const low = keys.filter(k=>!clubs[k].partial && BENCH.pga[k]?.smash && clubs[k].smash < BENCH.pga[k].smash-0.06);
   if (low.length) F.push({sev:low.length>1?"bad":"warn", t:"Off-centre strikes", b:low.map(k=>`${nameOf(k)} ${f(clubs[k].smash,2)} vs Tour ${BENCH.pga[k].smash}`).join(", ")+"."});
-  const clean = full.filter(r=>!r.suspect), r = corr(clean.map(x=>x.clubSpeed), clean.map(x=>x.smash));
-  if (r!=null && r < -0.3) F.push({sev:"bad", t:"Contact breaks down when you swing harder", b:`Speed vs. smash r = ${f(r,2)}. Groove the path at 70–80% speed first.`});
+  // Within-club comparison: wedges naturally have lower smash, so pooling clubs raw would be misleading.
+  const zs = [];
+  for (const k of keys.filter(k=>!clubs[k].partial)){
+    const sh = clubs[k].shots.filter(r=>!r.suspect && r.clubSpeed!=null && r.smash!=null); if (sh.length<4) continue;
+    const ms=mean(sh.map(r=>r.clubSpeed)), ss=sd(sh.map(r=>r.clubSpeed)), mm=mean(sh.map(r=>r.smash)), sm=sd(sh.map(r=>r.smash));
+    if (ss && sm) sh.forEach(r=>zs.push([(r.clubSpeed-ms)/ss,(r.smash-mm)/sm]));
+  }
+  const r = zs.length>=15 ? corr(zs.map(z=>z[0]), zs.map(z=>z[1])) : null;
+  if (r!=null && r < -0.3) F.push({sev:"warn", t:"Contact tends to slip on your faster swings", b:`Comparing each club only with itself, faster swings had lower smash (r = ${f(r,2)} over ${zs.length} shots, so treat it as a hint, not proof). Groove the path at 70–80% speed first.`});
   const ir = keys.filter(k=>IRON(k) && !clubs[k].partial);
   if (ir.length){ const ratio = mean(ir.map(k=>clubs[k].launch/loftOf(k))); const ex = ir.includes("8i")?"8i":ir[0];
     if (ratio > 0.7) F.push({sev:"warn", t:"Launching high for the loft", b:`${f(clubs[ex].launch)}° launch with a ${loftOf(ex)}° ${nameOf(ex)}. You're adding loft at impact (early extension, linked to S-posture).`}); }
@@ -384,8 +363,7 @@ const sDate = A => new Date(A.s.iso+"T12:00:00").toLocaleDateString(undefined,{m
 
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
-const state = { i:ALL.length-1, tab:"session", club:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1],
-  course:(DATA.courses||[])[0]?.id, tee:{}, hole:0, teeClub:null, aim:true };
+const state = { i:ALL.length-1, tab:"session", club:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
 
 /* ================= SESSION ================= */
 function renderSession(){
@@ -504,7 +482,7 @@ function mainChart(A){
     const diag = {id:"diag",afterDatasetsDraw(ch){const {ctx,scales:{x,y},chartArea:a}=ch;ctx.save();ctx.beginPath();ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top);ctx.clip();ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(233,229,211,.25)";ctx.beginPath();ctx.moveTo(x.getPixelForValue(lo),y.getPixelForValue(lo));ctx.lineTo(x.getPixelForValue(hi),y.getPixelForValue(hi));ctx.stroke();ctx.restore();}};
     draw("cMain",{type:"scatter",plugins:[pathBand,diag],data:{datasets:scatter(r=>r.face)},options:{...base,scales:{x:{min:lo,max:hi,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{min:lo,max:hi,grid,title:{display:true,text:"Face to target (°)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
   } else if (v==="strike"){
-    note("Higher is a more centred strike. Notice how strike quality drops as the path gets more out-to-in.");
+    note("Higher is a more centred strike. Each dot is one shot, placed by its club path.");
     const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2);
     draw("cMain",{type:"scatter",plugins:[pathBand],data:{datasets:scatter(r=>r.smash)},options:{...base,scales:{x:{min:lo,max:4,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{grid,title:{display:true,text:"Smash factor"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
   } else {
@@ -519,7 +497,7 @@ function mainChart(A){
   }
 }
 
-/* ================= club model (measured or estimated) for course planning ================= */
+/* ================= club model (measured or estimated) ================= */
 function latestFor(k){
   for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:sName(i)}; }
   for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:sName(i)}; }
@@ -541,106 +519,6 @@ function clubModel(k){
   if (WEST[k]!=null && LA && !LA.c.partial){ const a=LA.c, carry=a.carry-WEST[k];
     return {key:k, carry, total:carry*1.03, carrySd:a.carrySd||5, totalSd:a.carrySd||5, side:a.side||0, sideSd:a.sideSd||4, shots:[], est:true}; }
   return null;
-}
-
-/* ================= COURSE ================= */
-function courseBag(course){
-  const set = DATA.bag.sets.find(s=>s.name===course.bag) || DATA.bag.sets[0];
-  return set.clubs.filter(c=>(c.key||c.equiv)!=="Putter").map(c=>{ const k=c.key||c.equiv, m=clubModel(k);
-    return m ? {...m, label:c.label, short:c.key?nameOf(k):c.label.replace(" Iron","i").replace(" Wood","W").replace("Pitching Wedge","PW")} : null; })
-    .filter(Boolean).sort((a,b)=>b.carry-a.carry);
-}
-const fitScore = (carry, yds) => carry>=yds ? carry-yds : (yds-carry)*1.5;
-function plan(course, par, yds, bag, pick){
-  const fw = (course.fairway||32)/2, greenR = 13;
-  const offset = m => state.aim ? -m.side : 0;   // aim correction shifts the pattern back to centre
-  const evalClub = m => {
-    if (par===3){
-      const p = pBetween(-greenR,greenR,m.side+offset(m),m.sideSd) * pBetween(yds-greenR,yds+greenR,m.carry,m.carrySd);
-      return {m, land:m.carry, p, plabel:"On the green", score:-fitScore(m.carry,yds)};
-    }
-    const p = pBetween(-fw,fw,m.side+offset(m),m.sideSd), left = yds - m.total;
-    return {m, land:m.total, p, plabel:"In the fairway", score: (left<40 ? -999 : m.total*(0.6+0.4*p))};
-  };
-  const evals = bag.filter(m=>par===3 || !CLUB[m.key] || loftOf(m.key)<=36).map(evalClub);
-  const best = evals.slice().sort((a,b)=>b.score-a.score)[0];
-  const chosen = evals.find(e=>e.m.key===pick) || best;
-  let next = null;
-  if (par>3 && chosen){
-    const R = yds - chosen.land, approach = bag.filter(m=>m.key!=="Dr");
-    const maxC = approach[0]?.carry || 0;
-    if (R > maxC + 15){ const lay = approach.find(m=>R - m.total >= 60) || approach[0]; const R2 = R - lay.total;
-      const a2 = approach.slice().sort((a,b)=>fitScore(a.carry,R2)-fitScore(b.carry,R2))[0];
-      next = `Lay up with the ${lay.label} (~${f(lay.total,0)} yd), then ~${f(R2,0)} yd in with the ${a2.label}.`; }
-    else { const a = approach.slice().sort((a,b)=>fitScore(a.carry,R)-fitScore(b.carry,R))[0]; next = `~${f(R,0)} yd in with the ${a.label}.`; }
-  }
-  return {best, chosen, evals, next, fw, greenR};
-}
-function holeSVG(par, yds, P){
-  const m = P.chosen.m, W = 300, H = 520, pad = 26, spanX = 60;
-  const sdY = par===3 ? m.carrySd : m.totalSd;
-  const maxD = Math.max(yds, P.chosen.land + 2*sdY) + 25;
-  const X = x => W/2 + x/spanX*(W/2-10), Y = d => H - pad - d/maxD*(H-2*pad);
-  const aimX = state.aim ? -m.side : 0, cx = m.side + aimX, cy = P.chosen.land;
-  let g = `<rect width="${W}" height="${H}" fill="#0d1610"/>`;
-  for (let d=50; d<maxD; d+=50) g += `<line x1="0" x2="${W}" y1="${Y(d)}" y2="${Y(d)}" stroke="rgba(233,229,211,.06)"/><text x="6" y="${Y(d)-4}" fill="#617566" font-size="10" font-family="Space Mono, monospace">${d}</text>`;
-  if (par>3) g += `<rect x="${X(-P.fw)}" y="${Y(yds-15)}" width="${X(P.fw)-X(-P.fw)}" height="${Y(Math.min(140,yds*.35))-Y(yds-15)}" rx="14" fill="rgba(111,174,90,.2)"/>`;
-  g += `<ellipse cx="${X(0)}" cy="${Y(yds)}" rx="${X(P.greenR)-X(0)}" ry="${Math.abs(Y(yds+P.greenR)-Y(yds))}" fill="rgba(159,208,124,.42)" stroke="#9fd07c"/>`;
-  g += `<line x1="${X(0)}" x2="${X(0)}" y1="${Y(yds)}" y2="${Y(yds)-24}" stroke="#f1ead0" stroke-width="1.5"/><path d="M${X(0)} ${Y(yds)-24} l11 5 l-11 5z" fill="#e58a76"/>`;
-  g += `<rect x="${X(-6)}" y="${Y(0)-3}" width="${X(6)-X(-6)}" height="8" rx="2" fill="#36503f"/>`;
-  g += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(aimX)}" y2="${Y(cy)}" stroke="rgba(227,201,122,.5)" stroke-dasharray="4 4"/>`;
-  const col = colorOf(m.key);
-  g += `<ellipse cx="${X(cx)}" cy="${Y(cy)}" rx="${X(2*m.sideSd)-X(0)}" ry="${Math.abs(Y(cy+2*sdY)-Y(cy))}" fill="${alpha(col,.1)}" stroke="${alpha(col,.45)}" ${m.est?'stroke-dasharray="4 4"':""}/>`;
-  g += `<ellipse cx="${X(cx)}" cy="${Y(cy)}" rx="${X(m.sideSd)-X(0)}" ry="${Math.abs(Y(cy+sdY)-Y(cy))}" fill="${alpha(col,.22)}" stroke="${alpha(col,.8)}" ${m.est?'stroke-dasharray="4 4"':""}/>`;
-  (m.shots||[]).forEach(r=>{ const d = par===3 ? r.carry : r.total; g += `<circle cx="${X(r.side+aimX)}" cy="${Y(d)}" r="3.5" fill="#f1ead0" stroke="#101a14"><title>${nameOf(r.key)} #${r.n}: ${f(d,0)} yd, ${lr(r.side)}</title></circle>`; });
-  g += `<circle cx="${X(aimX)}" cy="${Y(cy)}" r="4.5" fill="none" stroke="#e3c97a" stroke-width="1.5"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Hole map with shot dispersion">${g}</svg>`;
-}
-function renderCourse(){
-  const courses = DATA.courses || [], course = courses.find(c=>c.id===state.course) || courses[0];
-  if (!course){ $("tab-course").innerHTML = `<section class="card empty">No courses in courses.json.</section>`; return; }
-  const tee = state.tee[course.id] || course.defaultTee || Object.keys(course.tees)[0];
-  const yards = course.tees[tee], n = yards.length; if (state.hole >= n) state.hole = 0;
-  const bag = courseBag(course);
-  const plans = yards.map((y,i)=>plan(course, course.par[i], y, bag, null));
-  const h = state.hole, par = course.par[h], yds = yards[h], P = plan(course, par, yds, bag, state.teeClub);
-  const total = yards.reduce((a,b)=>a+b,0), parT = course.par.reduce((a,b)=>a+b,0);
-  const hb = i => `<button class="hb" data-hole="${i}" aria-pressed="${i===h}"><div class="h">${i+1}</div><div class="y">${yards[i]}</div><div class="p">par ${course.par[i]}</div><div class="k">${plans[i].best?.m.short||""}</div></button>`;
-  const c = P.chosen, m = c?.m;
-  $("tab-course").innerHTML = `
-    <section class="card">
-      <div class="head">
-        <div class="row-btns">${courses.map(x=>`<button class="btn" data-course="${x.id}" aria-pressed="${x.id===course.id}">${esc(x.name)}</button>`).join("")}</div>
-        <div class="row-btns">${Object.keys(course.tees).map(t=>`<button class="btn sm" data-tee="${esc(t)}" aria-pressed="${t===tee}">${esc(t)}</button>`).join("")}</div>
-      </div>
-      <p class="sub" style="margin:0 0 14px">${esc(course.location)} · ${esc(tee)} tees ${total.toLocaleString()} yd · par ${parT}. Under each hole: the suggested tee club.</p>
-      ${n>9?`<div class="nine">Front nine</div>`:""}<div class="scorecard">${yards.slice(0,9).map((_,i)=>hb(i)).join("")}</div>
-      ${n>9?`<div class="nine">Back nine</div><div class="scorecard">${yards.slice(9).map((_,i)=>hb(i+9)).join("")}</div>`:""}
-      ${m ? `<div class="planner">
-        <div><div class="map">${holeSVG(par, yds, P)}</div>
-          <div class="legend"><span><i style="background:${alpha(colorOf(m.key),.6)}"></i>68% / 95% of shots</span>${m.shots?.length?`<span><i style="background:#f1ead0"></i>your shots</span>`:""}<span><i style="background:#e3c97a"></i>aim point</span></div>
-          <p class="muted small" style="margin:6px 0 0">Width is exaggerated so the spread is easy to see.</p></div>
-        <div>
-          <div class="hole-title">Hole ${h+1}<small>par ${par} · ${yds} yd</small></div>
-          <p class="muted small" style="margin:12px 0 8px">${par===3?"Club":"Tee club"} · ★ suggested</p>
-          <div class="row-btns">${P.evals.slice().sort((a,b)=>b.m.carry-a.m.carry).map(e=>`<button class="btn sm" data-tc="${e.m.key}" aria-pressed="${e.m.key===m.key}">${sw(e.m.key)}${esc(e.m.short)}${e===P.best?" ★":""}</button>`).join("")}</div>
-          <div class="facts">
-            <div class="fact"><div class="l">${par===3?"Carry":"Lands (with roll)"}</div><div class="v">${f(c.land,0)} yd ${m.est?'<span class="tag">est</span>':""}</div></div>
-            <div class="fact"><div class="l">Spread (68% of shots)</div><div class="v">±${f(par===3?m.carrySd:m.totalSd,0)} long · ±${f(m.sideSd,0)} wide</div></div>
-            <div class="fact"><div class="l">${c.plabel}</div><div class="v">${Math.round(c.p*100)}%</div><div class="meter"><i style="width:${(c.p*100).toFixed(0)}%"></i></div></div>
-            <div class="fact"><div class="l">Aim</div><div class="v">${Math.abs(m.side)<2?"Centre":`${f(Math.abs(m.side),0)} yd ${m.side>0?"left":"right"}`}</div></div>
-          </div>
-          ${P.next?`<p style="margin:0 0 14px"><b>Next:</b> <span class="muted">${P.next}</span></p>`:""}
-          <button class="btn sm" id="aim" aria-pressed="${state.aim}">${state.aim?"✓ ":""}Aim to offset my curve</button>
-          ${m.est?`<p class="muted small" style="margin:14px 0 0">The ${esc(m.label)} hasn't been measured yet, so its distance and spread are estimated.${m.caveat?" "+esc(m.caveat):""}</p>`:""}
-          <p class="muted small" style="margin:8px 0 0">${esc(course.note||"")}</p>
-        </div></div>` : `<p class="empty">No yardages yet.</p>`}
-    </section>`;
-  document.querySelectorAll("#tab-course [data-course]").forEach(b=>b.onclick=()=>{state.course=b.dataset.course;state.hole=0;state.teeClub=null;render();});
-  document.querySelectorAll("#tab-course [data-tee]").forEach(b=>b.onclick=()=>{state.tee[course.id]=b.dataset.tee;state.teeClub=null;render();});
-  document.querySelectorAll("#tab-course [data-hole]").forEach(b=>b.onclick=()=>{state.hole=+b.dataset.hole;state.teeClub=null;render();});
-  document.querySelectorAll("#tab-course [data-tc]").forEach(b=>b.onclick=()=>{state.teeClub=b.dataset.tc;render();});
-  $("aim") && ($("aim").onclick=()=>{state.aim=!state.aim;render();});
 }
 
 /* ================= PROGRESS ================= */
@@ -768,7 +646,7 @@ function renderOverview(){
 /* ================= wiring ================= */
 const sel = $("date");
 sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${sName(i)} · ${sDate(A)}</option>`).reverse().join("");
-const TABS = {session:renderSession, course:renderCourse, trend:renderTrend, bag:renderBag, drills:renderDrills};
+const TABS = {session:renderSession, trend:renderTrend, bag:renderBag, drills:renderDrills};
 function render(){
   if (!ALL.length) return;
   sel.value = state.i; $("prev").disabled = state.i<=0; $("next").disabled = state.i>=ALL.length-1;

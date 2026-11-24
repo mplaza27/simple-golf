@@ -5,9 +5,15 @@
       "id": "setup",
       "level": 1,
       "title": "Neutral pelvis setup",
-      "fixes": ["S-posture", "Lower back pain"],
+      "fixes": [
+        "S-posture",
+        "Lower back pain"
+      ],
       "color": "#ff5fa2",
-      "source": {"name": "Titleist Performance Institute (TPI)", "url": "https://www.mytpi.com"},
+      "source": {
+        "name": "Titleist Performance Institute (TPI)",
+        "url": "https://www.mytpi.com"
+      },
       "why": "S-posture (an over-arched lower back) switches off your core, loads the lower back, and makes you stand up through the ball. That throws your hands out toward the heel.",
       "steps": [
         "Lay a club along your spine. It should touch the back of your head, upper back and tailbone.",
@@ -17,8 +23,14 @@
       ],
       "target": "Gap at the lower back no bigger than your hand's thickness.",
       "videos": [
-        {"id": "3yBHKdlGEbE", "title": "TPI Big 12: S-Posture fix"},
-        {"id": "uLDVRu--w4M", "title": "S Posture: TPI core activation"}
+        {
+          "id": "3yBHKdlGEbE",
+          "title": "TPI Big 12: S-Posture fix"
+        },
+        {
+          "id": "uLDVRu--w4M",
+          "title": "S Posture: TPI core activation"
+        }
       ],
       "search": "TPI S-posture golf fix"
     },
@@ -26,9 +38,15 @@
       "id": "wall",
       "level": 1,
       "title": "Wall / chair drill",
-      "fixes": ["Early extension", "Heel strikes"],
+      "fixes": [
+        "Early extension",
+        "Heel strikes"
+      ],
       "color": "#ffd23f",
-      "source": {"name": "Titleist Performance Institute (TPI)", "url": "https://www.mytpi.com"},
+      "source": {
+        "name": "Titleist Performance Institute (TPI)",
+        "url": "https://www.mytpi.com"
+      },
       "why": "When your hips push toward the ball (early extension), your hands get pushed out and you strike the heel. You also add loft, which explains your 22° launch with a 27.5° 7-iron.",
       "steps": [
         "Set up with your backside lightly touching a wall or a chair back.",
@@ -38,8 +56,14 @@
       ],
       "target": "8-iron launch under 20° and smash 1.28+.",
       "videos": [
-        {"id": "RCJB3YRX4Rg", "title": "Chair drill for early extension"},
-        {"id": "bpW52FNMzBE", "title": "How to stop early extension and heel strikes"}
+        {
+          "id": "RCJB3YRX4Rg",
+          "title": "Chair drill for early extension"
+        },
+        {
+          "id": "bpW52FNMzBE",
+          "title": "How to stop early extension and heel strikes"
+        }
       ],
       "search": "TPI early extension wall drill"
     },
@@ -47,9 +71,15 @@
       "id": "path",
       "level": 2,
       "title": "Headcover path gate",
-      "fixes": ["Out-to-in path", "Slice"],
+      "fixes": [
+        "Out-to-in path",
+        "Slice"
+      ],
       "color": "#3ef0c8",
-      "source": {"name": "Common TrackMan / PGA teaching drill", "url": "https://www.youtube.com/results?search_query=headcover+drill+over+the+top+golf"},
+      "source": {
+        "name": "Common TrackMan / PGA teaching drill",
+        "url": "https://www.youtube.com/results?search_query=headcover+drill+over+the+top+golf"
+      },
       "why": "Your path averages −9° out-to-in. The face is nearly square to the target, so fixing the path alone will shrink the slice.",
       "steps": [
         "Put a headcover 2 in. outside the ball and 4–6 in. behind it.",
@@ -59,8 +89,14 @@
       ],
       "target": "Path −5° (week 2), then −3° (week 4).",
       "videos": [
-        {"id": "6MhbH1xZVtM", "title": "3 drills to fix an over-the-top swing"},
-        {"id": "SR2Il6ecpDc", "title": "Fix your out-to-in swing path"}
+        {
+          "id": "6MhbH1xZVtM",
+          "title": "3 drills to fix an over-the-top swing"
+        },
+        {
+          "id": "SR2Il6ecpDc",
+          "title": "Fix your out-to-in swing path"
+        }
       ],
       "search": "headcover drill over the top golf"
     },
@@ -68,9 +104,15 @@
       "id": "strike",
       "level": 3,
       "title": "Heel-gate two-ball drill",
-      "fixes": ["Heel strikes", "Low smash"],
+      "fixes": [
+        "Heel strikes",
+        "Low smash"
+      ],
       "color": "#5ab0ff",
-      "source": {"name": "Common teaching drill", "url": "https://www.youtube.com/results?search_query=stop+hitting+heel+irons+drill"},
+      "source": {
+        "name": "Common teaching drill",
+        "url": "https://www.youtube.com/results?search_query=stop+hitting+heel+irons+drill"
+      },
       "why": "Your smash drops as you swing harder, which means centre contact breaks down under speed. This drill punishes heel strikes immediately.",
       "steps": [
         "Spray the clubface with foot powder spray so every strike leaves a mark.",
@@ -80,8 +122,14 @@
       ],
       "target": "8-iron median smash 1.28+, then 1.30+.",
       "videos": [
-        {"id": "9yykU3qvRLs", "title": "Stop hitting the ball off the heel"},
-        {"id": "sRrua3d0yYA", "title": "How to stop hitting heel shots"}
+        {
+          "id": "9yykU3qvRLs",
+          "title": "Stop hitting the ball off the heel"
+        },
+        {
+          "id": "sRrua3d0yYA",
+          "title": "How to stop hitting heel shots"
+        }
       ],
       "search": "stop hitting heel irons drill two ball"
     },
@@ -89,31 +137,84 @@
       "id": "decade",
       "level": 4,
       "title": "Play the shot you have (DECADE)",
-      "fixes": ["Course strategy"],
+      "fixes": [
+        "Course strategy"
+      ],
       "color": "#ff8c42",
-      "source": {"name": "DECADE Golf (Scott Fawcett)", "url": "https://decade.golf"},
+      "source": {
+        "name": "DECADE Golf (Scott Fawcett)",
+        "url": "https://decade.golf"
+      },
       "why": "DECADE is course management, not a swing fix, but it saves strokes right now. Aim for your real dispersion instead of the flag.",
       "steps": [
         "Until the path fix holds, aim left of target and let the fade work back.",
-        "Use the Course tab's \"Aim\" pills: they come from your average finish with each club.",
+        "Aim off your average finish with each club (the Finish column on the Session tab), e.g. if your 8-iron finishes 18 yd right, aim about 18 yd left.",
         "On long par 3s, play to the fat side of the green, not at the pin."
       ],
       "target": "More greens hit, fewer short-sided misses.",
       "videos": [
-        {"id": "lhhWst0Y-2Y", "title": "Mastering golf strategy with DECADE: Scott Fawcett"}
+        {
+          "id": "lhhWst0Y-2Y",
+          "title": "Mastering golf strategy with DECADE: Scott Fawcett"
+        }
       ],
       "search": "Scott Fawcett DECADE golf strategy"
     }
   ],
   "plan": [
-    {"level": 1, "name": "Setup + wall drill", "tasks": ["Spine-club posture check before every block", "10 slow wall-drill reps", "Half swings with the 8-iron at 60%", "Log a session: 8-iron launch under 22°"]},
-    {"level": 2, "name": "Path gate", "tasks": ["Headcover gate, 20 balls", "Closed-stance swings, hips first", "Log a session: path −5° or better"]},
-    {"level": 3, "name": "Strike", "tasks": ["Foot-spray face check", "Two-ball heel gate, 20 balls", "Log a session: 8-iron smash 1.28+"]},
-    {"level": 4, "name": "Retest", "tasks": ["7-iron through driver: 10 shots each", "Settle 6-iron vs. 7-wood", "Targets: path −3°, F2P under +3°, 7i–8i gap 8 yd+"]}
+    {
+      "level": 1,
+      "name": "Setup + wall drill",
+      "tasks": [
+        "Spine-club posture check before every block",
+        "10 slow wall-drill reps",
+        "Half swings with the 8-iron at 60%",
+        "Log a session: 8-iron launch under 22°"
+      ]
+    },
+    {
+      "level": 2,
+      "name": "Path gate",
+      "tasks": [
+        "Headcover gate, 20 balls",
+        "Closed-stance swings, hips first",
+        "Log a session: path −5° or better"
+      ]
+    },
+    {
+      "level": 3,
+      "name": "Strike",
+      "tasks": [
+        "Foot-spray face check",
+        "Two-ball heel gate, 20 balls",
+        "Log a session: 8-iron smash 1.28+"
+      ]
+    },
+    {
+      "level": 4,
+      "name": "Retest",
+      "tasks": [
+        "7-iron through driver: 10 shots each",
+        "Settle 6-iron vs. 7-wood",
+        "Targets: path −3°, F2P under +3°, 7i–8i gap 8 yd+"
+      ]
+    }
   ],
   "resources": [
-    {"name": "Titleist Performance Institute", "url": "https://www.mytpi.com", "desc": "Body–swing connection: S-posture, early extension, over the top."},
-    {"name": "DECADE Golf", "url": "https://decade.golf", "desc": "Scott Fawcett's course management system."},
-    {"name": "DECADE on YouTube", "url": "https://www.youtube.com/channel/UCeVCpvV8BfIqcLahWaJEATQ/videos", "desc": "Strategy videos from the DECADE channel."}
+    {
+      "name": "Titleist Performance Institute",
+      "url": "https://www.mytpi.com",
+      "desc": "Body–swing connection: S-posture, early extension, over the top."
+    },
+    {
+      "name": "DECADE Golf",
+      "url": "https://decade.golf",
+      "desc": "Scott Fawcett's course management system."
+    },
+    {
+      "name": "DECADE on YouTube",
+      "url": "https://www.youtube.com/channel/UCeVCpvV8BfIqcLahWaJEATQ/videos",
+      "desc": "Strategy videos from the DECADE channel."
+    }
   ]
 }
