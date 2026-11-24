@@ -1,5 +1,9 @@
 {
   "_comment": "key = club folder name used in each MM-DD-YY session folder. equiv = main-bag club whose yardage the par-3 bag club uses.",
+  "player": {
+    "handicap": 25,
+    "note": "Used to weight grades: a C means you're playing to this handicap."
+  },
   "sets": [
     {
       "name": "Main bag",
