@@ -119,6 +119,33 @@
   .bar .val{text-align:right;font-family:var(--mono);font-size:13px;color:var(--ink)}
   .caveat{font-size:13.5px;color:var(--sand);margin:0 0 10px}
 
+  /* swing */
+  .sw-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+  .sw-grid svg{display:block;width:100%;height:auto}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .tile{background:var(--panel2);border-radius:8px;padding:10px 12px}
+  .tile .l{color:var(--muted);font-size:12.5px} .tile .v{font-size:19px;color:var(--cream)} .tile .c{font-size:12px;color:var(--faint)}
+  .crops{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  .crop{background:var(--panel);border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--line);position:relative}
+  .crop:hover{border-color:var(--green2)}
+  .crop canvas,.crop img{display:block;width:100%;height:auto;aspect-ratio:10/7;object-fit:cover}
+  .crop .cap{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--ink2);padding:6px 8px;background:var(--panel)}
+  .crop .fr{position:absolute;left:6px;top:6px;font-size:11px;background:rgba(0,0,0,.6);color:#fff;padding:1px 7px;border-radius:999px}
+  .scrub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+  .scrub input[type=range]{flex:1;min-width:160px;accent-color:var(--green)}
+  .swlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .swlegend i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px}
+
+  /* tour */
+  .tour{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;width:min(440px,calc(100% - 32px));background:var(--panel2);border:1px solid var(--green2);border-radius:14px;padding:18px 20px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  .tour .step{font-size:12px;color:var(--green);letter-spacing:.08em;text-transform:uppercase}
+  .tour h3{margin:4px 0 8px;font-size:17px;color:var(--cream)}
+  .tour p{margin:0;color:var(--ink2);font-size:13.5px;line-height:1.65}
+  .tour p b{color:var(--sand);font-weight:700}
+  .tour .acts{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px}
+  .tour .dots{display:flex;gap:5px} .tour .dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)} .tour .dots i.on{background:var(--green)}
+  .tabs .btn.tour-hl{box-shadow:0 0 0 2px var(--sand);color:var(--ink)}
+
   /* rounds */
   .mix{display:grid;grid-template-columns:70px 1fr;gap:8px 12px;align-items:center;font-size:13px;margin-top:14px}
   .mixbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--panel3)}
@@ -205,6 +232,7 @@
   footer{color:var(--faint);font-size:12.5px;margin-top:36px}
 
   @media (max-width:860px){
+    .sw-grid{grid-template-columns:1fr}
     .misses{grid-template-columns:1fr}
     .overview{grid-template-columns:1fr 1fr}
     .stats{grid-template-columns:1fr}
@@ -222,23 +250,20 @@
   <div class="top"><div class="top-in">
     <div class="brand">⛳ SIMPLE <span>GOLF</span></div>
     <div class="right">
-      <div class="date">
-        <button class="btn icon" id="prev" aria-label="Previous session">‹</button>
-        <select id="date" aria-label="Session date"></select>
-        <button class="btn icon" id="next" aria-label="Next session">›</button>
-      </div>
       <nav class="tabs" role="tablist">
         <button class="btn" role="tab" data-tab="session">Session</button>
+        <button class="btn" role="tab" data-tab="swing">Swing</button>
         <button class="btn" role="tab" data-tab="rounds">Rounds</button>
         <button class="btn" role="tab" data-tab="trend">Progress</button>
         <button class="btn" role="tab" data-tab="bag">Bag</button>
         <button class="btn" role="tab" data-tab="drills">Drills</button>
       </nav>
+      <button class="btn sm" id="tourBtn" title="Quick tour of the site">Tour</button>
     </div>
   </div></div>
 
-  <section class="overview" id="overview"></section>
   <main id="tab-session" class="stack"></main>
+  <main id="tab-swing" class="stack" hidden></main>
   <main id="tab-rounds" class="stack" hidden></main>
   <main id="tab-trend" class="stack" hidden></main>
   <main id="tab-bag" class="stack" hidden></main>
@@ -247,6 +272,7 @@
 </div>
 <div id="tip" hidden></div>
 <div id="viewer" class="viewer" hidden></div>
+<div id="tour" class="tour" role="dialog" aria-modal="false" aria-labelledby="tourTitle" hidden></div>
 
 <script>
 const DATA = __DATA__;
@@ -472,7 +498,7 @@ const sDate = A => new Date(A.s.month+"-15T12:00:00").toLocaleDateString(undefin
 
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
-const state = { i:ALL.length-1, tab:"session", club:null, cmp:null, rview:"score", rcourse:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
+const state = { i:ALL.length-1, tab:"session", club:null, cmp:null, swing:null, swFrame:null, rview:"score", rcourse:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
 
 /* ================= SESSION ================= */
 function renderSession(){
@@ -488,9 +514,10 @@ function renderSession(){
   const views = [["distance","Distance"],["gapping","Gapping"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"]];
   $("tab-session").innerHTML = `
     <div class="head" style="margin:0">
-      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs</p></div>
-      ${meta.curated?`<span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:""}
+      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs${meta.curated?` · <span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:""}</p></div>
+      ${pickerHTML()}
     </div>
+    ${overviewHTML()}
     <section class="stats">
       ${stat("Club speed","club",LR.speed?`${f(LR.speed.you,0)} mph`:"—", `${nameOf(state.cmp)}${LR.speed?.tour.lpga?` · LPGA ${LR.speed.tour.lpga}`:""}${plays(LR.speed)}`, LR.speed?.grade)}
       ${stat("Strike (smash)","smash",LR.smash?f(LR.smash.you,2):"—", `${nameOf(state.cmp)}${LR.smash?.tour.pga?` · PGA ${LR.smash.tour.pga.toFixed(2)}`:""}${plays(LR.smash)}`, LR.smash?.grade)}
@@ -535,6 +562,7 @@ function renderSession(){
     <details class="card" style="margin:0"><summary>All club numbers</summary><div class="tablewrap" style="margin-top:12px"><table id="tbl"></table></div></details>`;
   document.querySelectorAll("#tab-session [data-club]").forEach(b=>{ if (b.tagName==="BUTTON") b.onclick=()=>{state.club=b.dataset.club||null;render();}; });
   document.querySelectorAll("#tab-session [data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render();});
+  wirePicker($("tab-session"));
   document.querySelectorAll("#tab-session [data-cmp]").forEach(b=>b.onclick=()=>{state.cmp=b.dataset.cmp;render();});
   $("metric") && ($("metric").onchange = e => { state.metric = e.target.value; render(); });
   document.querySelectorAll("#tab-session tr[data-shot]").forEach(tr=>tr.onclick=()=>openShot(state.i, tr.dataset.club, +tr.dataset.shot));
@@ -612,16 +640,7 @@ function mainChart(A){
     const line = {id:"line",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{y}}=ch;ctx.save();ctx.strokeStyle="rgba(233,229,211,.35)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.left,y.getPixelForValue(0));ctx.lineTo(a.right,y.getPixelForValue(0));ctx.stroke();ctx.restore();}};
     // Group outline per club (like Uneekor's Group view): an ellipse tilted along the pattern (covariance of the dots
     // in screen space), scaled so the farthest shot sits on its edge, plus a little padding.
-    const groups = {id:"groups",afterDatasetsDraw(ch){const {ctx,chartArea:a}=ch; ctx.save(); ctx.beginPath(); ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top); ctx.clip();
-      ch.data.datasets.forEach((d,i)=>{ if(!ch.isDatasetVisible(i)) return; const P=ch.getDatasetMeta(i).data.map(e=>[e.x,e.y]); if(P.length<2) return;
-        const mx=mean(P.map(p=>p[0])), mY=mean(P.map(p=>p[1]));
-        let sxx=0,syy=0,sxy=0; P.forEach(([x,y])=>{sxx+=(x-mx)**2; syy+=(y-mY)**2; sxy+=(x-mx)*(y-mY);}); sxx/=P.length; syy/=P.length; sxy/=P.length;
-        const tr=(sxx+syy)/2, det=Math.sqrt(Math.max(0,((sxx-syy)/2)**2+sxy*sxy)), l1=Math.max(tr+det,1), l2=Math.max(tr-det,1), th=0.5*Math.atan2(2*sxy, sxx-syy);
-        const c=Math.cos(th), s_=Math.sin(th);
-        const k = Math.max(1, ...P.map(([x,y])=>{ const u=(x-mx)*c+(y-mY)*s_, w=-(x-mx)*s_+(y-mY)*c; return Math.sqrt(u*u/l1 + w*w/l2); }));
-        const pad = 9, r1 = k*Math.sqrt(l1)+pad, r2 = Math.max(k*Math.sqrt(l2)+pad, 12);
-        ctx.beginPath(); ctx.ellipse(mx,mY,r1,r2,th,0,2*Math.PI); ctx.lineWidth=2; ctx.strokeStyle=alpha(colorOf(d.key), on(d.key)?.9:.15); ctx.stroke(); });
-      ctx.restore();}};
+    const groups = groupsPlugin(on);
     draw("cMain",{type:"scatter",plugins:[line,groups],data:{datasets:keys.map(k=>({key:k,label:nameOf(k)+(clubs[k].partial?"*":""),data:clubs[k].shots.filter(r=>r.carry!=null&&r.side!=null).map(r=>({x:r.carry,y:-r.side,r})),backgroundColor:pc(k),pointRadius:on(k)?5.5:4,pointHoverRadius:8}))},
       options:{...base,scales:{x:{min:x0,max:x1,grid,title:{display:true,text:"Carry (yd)"}},
         y:{min:-my,max:my,grid,title:{display:true,text:"↑ left · right ↓ (yd)"},ticks:{stepSize:10,callback:v=>v===0?"0":`${Math.abs(v)} ${v>0?"L":"R"}`}}},
@@ -651,8 +670,8 @@ function mainChart(A){
 
 /* ================= club model (measured or estimated) ================= */
 function latestFor(k){
-  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:sName(i)}; }
-  for (let i=state.i;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:sName(i)}; }
+  for (let i=ALL.length-1;i>=0;i--){ const c=ALL[i].clubs[k]; if (c && !c.partial) return {c, date:sName(i)}; }
+  for (let i=ALL.length-1;i>=0;i--){ const c=ALL[i].clubs[k]; if (c) return {c, date:sName(i)}; }
   return null;
 }
 // Clubs not measured yet are estimated from the latest full 7-iron (carry ratio, roll %), or from the AW for wedges.
@@ -675,7 +694,7 @@ function clubModel(k){
 
 /* ================= PROGRESS ================= */
 function renderTrend(){
-  const list = ALL.slice(0,state.i+1), dates = list.map((A,i)=>sName(i)), multi = list.length>1;
+  const list = ALL, dates = list.map((A,i)=>sName(i)), multi = list.length>1;
   const P = A => ({path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)), smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash)),
     carry:mean(A.keys.filter(k=>IRON(k)&&!A.clubs[k].partial).map(k=>A.clubs[k].carry))});
   const pts = list.map(P), a = pts[0], z = pts[pts.length-1];
@@ -919,38 +938,233 @@ function renderRounds(){
   }
 }
 
-/* ================= OVERVIEW (all sessions) ================= */
-function renderOverview(){
+/* ================= SWING (per club, per session) ================= */
+// Shot shape name from start direction (≈ face) and curve (face-to-path).
+const shapeName = (face, f2p) => {
+  const start = face < -2 ? "Pull" : face > 2 ? "Push" : "Straight";
+  const curve = f2p > 5 ? "slice" : f2p > 2 ? "fade" : f2p < -5 ? "hook" : f2p < -2 ? "draw" : "";
+  return start==="Straight" ? (curve ? curve[0].toUpperCase()+curve.slice(1) : "Straight") : (curve ? `${start}-${curve}` : start);
+};
+// Group outline (Uneekor "Group" style): ellipse fitted to a dataset's dots in screen space, scaled so the farthest dot sits on its edge.
+const groupsPlugin = isOn => ({id:"groups",afterDatasetsDraw(ch){const {ctx,chartArea:a}=ch; ctx.save(); ctx.beginPath(); ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top); ctx.clip();
+  ch.data.datasets.forEach((d,i)=>{ if(!d.key || !ch.isDatasetVisible(i)) return; const P=ch.getDatasetMeta(i).data.map(e=>[e.x,e.y]); if(P.length<2) return;
+    const mx=mean(P.map(p=>p[0])), mY=mean(P.map(p=>p[1]));
+    let sxx=0,syy=0,sxy=0; P.forEach(([x,y])=>{sxx+=(x-mx)**2; syy+=(y-mY)**2; sxy+=(x-mx)*(y-mY);}); sxx/=P.length; syy/=P.length; sxy/=P.length;
+    const tr=(sxx+syy)/2, det=Math.sqrt(Math.max(0,((sxx-syy)/2)**2+sxy*sxy)), l1=Math.max(tr+det,1), l2=Math.max(tr-det,1), th=0.5*Math.atan2(2*sxy, sxx-syy);
+    const c=Math.cos(th), s_=Math.sin(th);
+    const k = Math.max(1, ...P.map(([x,y])=>{ const u=(x-mx)*c+(y-mY)*s_, w=-(x-mx)*s_+(y-mY)*c; return Math.sqrt(u*u/l1 + w*w/l2); }));
+    ctx.beginPath(); ctx.ellipse(mx,mY,k*Math.sqrt(l1)+9,Math.max(k*Math.sqrt(l2)+9,12),th,0,2*Math.PI); ctx.lineWidth=2; ctx.strokeStyle=alpha(colorOf(d.key), isOn(d.key)?.9:.15); ctx.stroke(); });
+  ctx.restore();}});
+
+// Top-down path/face picture. Angles are drawn 3x so a few degrees are visible.
+function pathSVG(k, shots){
+  const W=380, H=330, bx=W/2, by=H-92, X=3, col=colorOf(k), rad=d=>d*Math.PI/180*X;
+  const ok = shots.filter(r=>r.path!=null && r.face!=null);
+  const mp = mean(ok.map(r=>r.path)), mf = mean(ok.map(r=>r.face)), ms = mean(ok.map(r=>r.side)), mc = mean(ok.map(r=>r.carry));
+  const seg = (ang, len) => [bx + Math.sin(rad(ang))*len, by - Math.cos(rad(ang))*len];
+  const club = (ang, w, op) => { const [x1,y1]=seg(ang,-34), [x2,y2]=seg(ang,46);
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${alpha(col,op)}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  // ball flight: starts ~ along the face (irons ≈ 75% face, 25% path), finishes at the average side, scaled to the box
+  const start = 0.75*mf + 0.25*mp, topY = 40, sideX = bx + Math.max(-170, Math.min(170, (ms||0)*4));
+  const [cx1,cy1] = seg(start, (by-topY)*0.55);
+  const [fx1,fy1] = seg(mf, 26), [fx2,fy2] = seg(mf, -26); // face normal endpoints; the face itself is perpendicular
+  const nx = Math.cos(rad(mf))*24, ny = Math.sin(rad(mf))*24;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Club path and face at impact, seen from above">
+    <rect width="${W}" height="${H}" rx="10" fill="#0d1610"/>
+    <line x1="${bx}" y1="${by+30}" x2="${bx}" y2="16" stroke="rgba(233,229,211,.25)" stroke-dasharray="5 5"/>
+    <text x="${bx+6}" y="24" fill="#617566" font-size="11" font-family="Space Mono, monospace">target</text>
+    ${ok.map(r=>club(r.path,1.5,.28)).join("")}
+    ${club(mp,4,.95)}
+    <path d="M${bx} ${by} Q${cx1} ${cy1} ${sideX} ${topY}" fill="none" stroke="#e3c97a" stroke-width="2.5" stroke-dasharray="6 5"/>
+    <circle cx="${sideX}" cy="${topY}" r="5" fill="#e3c97a"/>
+    <line x1="${bx-nx}" y1="${by-6-ny}" x2="${bx+nx}" y2="${by-6+ny}" stroke="#f1ead0" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="${bx}" cy="${by}" r="7" fill="#f1ead0" stroke="#101a14"/>
+    <text x="14" y="${H-34}" fill="#c9c6b4" font-size="12" font-family="Space Mono, monospace">path ${sg(mp)}° · face ${sg(mf)}°</text>
+    <text x="14" y="${H-16}" fill="#93a796" font-size="12" font-family="Space Mono, monospace">face ${sg(mf-mp)}° to path → ${(mf-mp)>2?"curves right":(mf-mp)<-2?"curves left":"straight-ish"}</text>
+    <text x="${W-14}" y="${H-16}" text-anchor="end" fill="#617566" font-size="11" font-family="Space Mono, monospace">angles ×3</text></svg>`;
+}
+
+// Side-on flight: a smooth arc per shot through launch angle, apex and landing angle (shape only, height exaggerated).
+function flightSVG(k, shots){
+  const W=380, H=330, L=44, R=14, T=20, B=46, col=colorOf(k);
+  const ok = shots.filter(r=>r.carry && r.apex && r.launch && r.descent);
+  if (!ok.length) return `<p class="empty">No flight data.</p>`;
+  const maxC = Math.ceil((Math.max(...ok.map(r=>r.carry))+10)/20)*20, maxH = Math.ceil((Math.max(...ok.map(r=>r.apex))+4)/10)*10;
+  const X = d => L + d/maxC*(W-L-R), Y = h => H-B - h/maxH*(H-T-B);
+  const arc = r => { const c=r.carry, a=c*0.42, b=c*0.30, la=r.launch*Math.PI/180, de=r.descent*Math.PI/180;
+    const P=[[0,0],[a,a*Math.tan(la)],[c-b,b*Math.tan(de)],[c,0]], pts=[];
+    for (let t=0;t<=1.0001;t+=0.04){ const u=1-t; pts.push([0,1].map(j=>u*u*u*P[0][j]+3*u*u*t*P[1][j]+3*u*t*t*P[2][j]+t*t*t*P[3][j])); }
+    const top = Math.max(...pts.map(p=>p[1])) || 1; return pts.map(([x,y])=>[x, y/top*r.apex]); };
+  const avg = {carry:mean(ok.map(r=>r.carry)), apex:mean(ok.map(r=>r.apex)), launch:mean(ok.map(r=>r.launch)), descent:mean(ok.map(r=>r.descent))};
+  const path = (r,w,op) => `<polyline points="${arc(r).map(([x,y])=>`${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ")}" fill="none" stroke="${alpha(col,op)}" stroke-width="${w}"/>`;
+  let g = `<rect width="${W}" height="${H}" rx="10" fill="#0d1610"/>`;
+  for (let d=0; d<=maxC; d+=20) g += `<line x1="${X(d)}" x2="${X(d)}" y1="${T}" y2="${H-B}" stroke="rgba(233,229,211,.06)"/><text x="${X(d)}" y="${H-B+16}" text-anchor="middle" fill="#617566" font-size="10" font-family="Space Mono, monospace">${d}</text>`;
+  for (let h=10; h<=maxH; h+=10) g += `<line x1="${L}" x2="${W-R}" y1="${Y(h)}" y2="${Y(h)}" stroke="rgba(233,229,211,.06)"/><text x="${L-6}" y="${Y(h)+3}" text-anchor="end" fill="#617566" font-size="10" font-family="Space Mono, monospace">${h}</text>`;
+  g += `<line x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(233,229,211,.3)"/>`;
+  g += ok.map(r=>path(r,1.5,.35)).join("") + path(avg,3.5,.95);
+  g += `<text x="${(L+W-R)/2}" y="${H-12}" text-anchor="middle" fill="#93a796" font-size="11" font-family="Space Mono, monospace">carry (yd) · height (yd)</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ball flight from the side">${g}</svg>`;
+}
+
+// Impact close-ups: find each shot's contact frame (last frame before the ball moves) and crop around the ball.
+const impactCache = {};
+const loadImg = src => new Promise((ok,no)=>{ const im=new Image(); im.onload=()=>ok(im); im.onerror=no; im.src=src; });
+async function contactInfo(r){
+  const key = r.img?.frames?.[0]; if (!key) return null; if (impactCache[key]) return impactCache[key];
+  const info = {frame:8, ball:null};
+  try {
+    const cv = document.createElement("canvas"), cx = cv.getContext("2d", {willReadFrequently:true}), pos=[];
+    for (const src of r.img.frames){
+      const im = await loadImg(src); cv.width = im.width>>1; cv.height = im.height>>1; cx.drawImage(im,0,0,cv.width,cv.height);
+      const d = cx.getImageData(0,0,cv.width,cv.height).data; let sx=0, sy=0, n=0;
+      for (let y=0;y<cv.height;y++) for (let x=0;x<cv.width;x++){ const i=(y*cv.width+x)*4; if (d[i]+d[i+1]+d[i+2] > 630){ sx+=x; sy+=y; n++; } }
+      pos.push(n>15 ? [sx/n*2, sy/n*2] : null);
+    }
+    const p0 = pos.find(Boolean);
+    if (p0){ const m = pos.findIndex(p=>p && Math.hypot(p[0]-p0[0], p[1]-p0[1]) > 8); info.frame = m>0 ? m-1 : 8; info.ball = p0; }
+  } catch(e) { /* opened from file:// — pixels can't be read; fall back to a typical contact frame */ }
+  return impactCache[key] = info;
+}
+async function drawCrops(k, shots){
+  for (const r of shots){
+    const cell = document.querySelector(`#crops [data-crop="${k}-${r.n}"]`); if (!cell) continue;
+    const info = await contactInfo(r), fi = state.swFrame==null ? info?.frame ?? 8 : state.swFrame;
+    const src = r.img?.frames?.[fi]; if (!src) continue;
+    const im = await loadImg(src), cv = cell.querySelector("canvas"), cx = cv.getContext("2d");
+    const cw = 220, ch = 154, bx = info?.ball ? info.ball[0] : im.width/2, byy = info?.ball ? info.ball[1] : im.height/2;
+    cv.width = cw; cv.height = ch;
+    const sx = Math.max(0, Math.min(im.width-cw, bx-cw*0.55)), sy = Math.max(0, Math.min(im.height-ch, byy-ch/2));
+    cx.drawImage(im, sx, sy, cw, ch, 0, 0, cw, ch);
+    cell.querySelector(".fr").textContent = state.swFrame==null ? `contact · frame ${fi+1}` : `frame ${fi+1}`;
+  }
+}
+
+function renderSwing(){
+  const A = ALL[state.i], {keys, clubs} = A;
+  if (!clubs[state.swing]) state.swing = keys.includes("7i") ? "7i" : keys[0];
+  const k = state.swing, c = clubs[k], sh = c.shots, clean = sh.filter(r=>!r.suspect);
+  const tile = (l,key,v,cap) => `<div class="tile"><div class="l">${key?tip(key,l):l}</div><div class="v">${v}</div>${cap?`<div class="c">${cap}</div>`:""}</div>`;
+  const frames = Math.max(...sh.map(r=>r.img?.frames?.length||0));
+  $("tab-swing").innerHTML = `
+    <div class="head" style="margin:0"><div><h2>Swing · ${esc(CLUB[k]?.label||nameOf(k))}</h2><p class="sub">${sName(state.i)} · ${sDate(A)} · ${sh.length} shots${c.partial?" · partial swings":""}${c.caveat?` · <span class="warn">⚑ ${esc(c.caveat)}</span>`:""}</p></div>${pickerHTML()}</div>
+    <section class="card">
+      <div class="row-btns">${keys.map(x=>`<button class="btn sm" data-swing="${x}" aria-pressed="${x===k}">${sw(x)}${nameOf(x)}</button>`).join("")}</div>
+      <div class="tiles" style="margin-top:16px">
+        ${tile("Shot shape","",shapeName(c.face??0, c.f2p??0),"from face and face-to-path")}
+        ${tile("Club path","path",sg(c.path)+"°",c.path<-2?"out-to-in":c.path>2?"in-to-out":"neutral")}
+        ${tile("Face to target","face",sg(c.face)+"°","")}
+        ${tile("Face to path","f2p",sg(c.f2p)+"°",c.f2p>2?"curves right":c.f2p<-2?"curves left":"")}
+        ${tile("Launch","launch",f(c.launch)+"°",CLUB[k]?.loft?`${CLUB[k].loft}° loft`:"")}
+        ${tile("Smash","smash",f(median(clean.map(r=>r.smash)),2),"misreads removed")}
+      </div>
+    </section>
+    <section class="sw-grid">
+      <div class="card"><div class="head"><h2>Path &amp; face</h2></div>${pathSVG(k, sh)}
+        <div class="swlegend"><span><i style="background:${colorOf(k)}"></i>club path (each shot + average)</span><span><i style="background:#f1ead0"></i>face at impact</span><span><i style="background:#e3c97a"></i>ball: start → average finish</span></div></div>
+      <div class="card"><div class="head"><h2>Ball flight</h2></div>${flightSVG(k, sh)}
+        <p class="muted small" style="margin:8px 0 0">Side view of each shot from its launch angle, apex and landing angle (shape is approximate; height is stretched). Avg apex ${f(c.apex)} yd, land ${f(c.descent)}°.</p></div>
+    </section>
+    <section class="card">
+      <div class="head"><h2>Impact</h2><span class="muted small">Tap a shot for all 24 frames</span></div>
+      <div class="scrub">
+        <button class="btn sm" id="swContact" aria-pressed="${state.swFrame==null}">At contact</button>
+        <input type="range" id="swRange" min="0" max="${Math.max(0,frames-1)}" value="${state.swFrame??8}" aria-label="Frame for every shot">
+        <span class="muted small" id="swLabel">${state.swFrame==null?"each shot at its own contact frame":`frame ${state.swFrame+1} for every shot`}</span>
+      </div>
+      <div class="crops" id="crops">${sh.map(r=>`<div class="crop" data-crop="${k}-${r.n}" data-shot="${r.n}"><span class="fr">…</span><canvas width="220" height="154" aria-label="Shot ${r.n} at impact"></canvas>
+        <div class="cap"><span>#${r.n}${r.suspect?' <span class="warn">?</span>':""}</span><span>smash ${f(r.smash,2)} · ${f(r.carry,0)} yd</span></div></div>`).join("")}</div>
+      <p class="muted small" style="margin:12px 0 0">Top-down camera, cropped on the ball. The hosel/shaft is toward the top of each image, so a ball nearer the top is closer to the heel. This session has no measured face-contact location (that needs Uneekor's Optix), so judge it from the frames.</p>
+    </section>
+    <section class="card"><div class="head"><h2>Dispersion</h2><span class="muted small">${nameOf(k)} · outline wraps every shot</span></div><div class="chart" style="height:300px"><canvas id="swDisp"></canvas></div></section>`;
+
+  wirePicker($("tab-swing"));
+  document.querySelectorAll("#tab-swing [data-swing]").forEach(b=>b.onclick=()=>{state.swing=b.dataset.swing;render();});
+  document.querySelectorAll("#tab-swing [data-crop]").forEach(el=>el.onclick=()=>openShot(state.i,k,+el.dataset.shot));
+  $("swContact").onclick = () => { state.swFrame = null; render(); };
+  $("swRange").oninput = e => { state.swFrame = +e.target.value; $("swContact").setAttribute("aria-pressed","false"); $("swLabel").textContent = `frame ${state.swFrame+1} for every shot`; drawCrops(k, sh); };
+  drawCrops(k, sh);
+
+  const pts = sh.filter(r=>r.carry!=null && r.side!=null), my = Math.ceil((Math.max(10,...pts.map(r=>Math.abs(r.side)))+10)/10)*10;
+  const x0 = Math.max(0, Math.floor((Math.min(...pts.map(r=>r.carry))-15)/10)*10), x1 = Math.ceil((Math.max(...pts.map(r=>r.carry))+15)/10)*10;
+  const line = {id:"tline",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{y}}=ch;ctx.save();ctx.strokeStyle="rgba(233,229,211,.35)";ctx.beginPath();ctx.moveTo(a.left,y.getPixelForValue(0));ctx.lineTo(a.right,y.getPixelForValue(0));ctx.stroke();ctx.restore();}};
+  draw("swDisp",{type:"scatter",plugins:[line,groupsPlugin(()=>true)],data:{datasets:[
+      {key:k,label:nameOf(k),data:pts.map(r=>({x:r.carry,y:-r.side,r})),backgroundColor:alpha(colorOf(k),.9),pointRadius:6,pointHoverRadius:8},
+      {label:"Average",data:[{x:mean(pts.map(r=>r.carry)),y:-mean(pts.map(r=>r.side))}],pointStyle:"crossRot",pointRadius:9,borderWidth:2.5,borderColor:"#f1ead0",backgroundColor:"#f1ead0"}]},
+    options:{maintainAspectRatio:false,interaction:{mode:"nearest",intersect:true},
+      onClick:(e,els)=>{const el=els.find(x=>x.datasetIndex===0); if(el) openShot(state.i,k,pts[el.index].n);},
+      scales:{x:{min:x0,max:x1,grid,title:{display:true,text:"Carry (yd)"}},y:{min:-my,max:my,grid,ticks:{stepSize:10,callback:v=>v===0?"0":`${Math.abs(v)} ${v>0?"L":"R"}`},title:{display:true,text:"↑ left · right ↓ (yd)"}}},
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:it=>it[0].raw.r?`${nameOf(k)} · shot ${it[0].raw.r.n}`:"Average",label:c=>c.raw.r?`carry ${f(c.raw.r.carry)} yd · ${lr(c.raw.r.side)}`:`carry ${f(c.raw.x)} yd · ${lr(-c.raw.y)}`}}}}});
+}
+
+/* ================= session picker + summary (Session and Swing tabs only) ================= */
+const pickerHTML = () => `<div class="date">
+    <button class="btn icon" data-pick="-1" aria-label="Previous session" ${state.i<=0?"disabled":""}>‹</button>
+    <select data-pick-sel aria-label="Session">${ALL.map((A,i)=>`<option value="${i}" ${i===state.i?"selected":""}>${sName(i)} · ${sDate(A)}</option>`).reverse().join("")}</select>
+    <button class="btn icon" data-pick="1" aria-label="Next session" ${state.i>=ALL.length-1?"disabled":""}>›</button></div>`;
+function wirePicker(root){
+  root.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ state.i=Math.max(0,Math.min(ALL.length-1,state.i+ +b.dataset.pick)); render(); });
+  root.querySelectorAll("[data-pick-sel]").forEach(el=>el.onchange=()=>{ state.i=+el.value; render(); });
+}
+function overviewHTML(){
   const balls = A => A.keys.reduce((n,k)=>n+A.clubs[k].n,0);
   const total = ALL.reduce((n,A)=>n+balls(A),0);
   const measured = new Set(ALL.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)));
   const bagN = MAIN.filter(c=>c.key!=="Putter").length;
   const curated = ALL.some(A=>A.meta.curated);
   const A = ALL[state.i];
-  $("overview").innerHTML = `
-    <div class="ov"><div class="l">Sessions</div><div class="v">${ALL.length}</div><div class="c">${sDate(ALL[0])}${ALL.length>1?" → "+sDate(ALL[ALL.length-1]):""}</div></div>
-    <div class="ov"><div class="l">Balls hit</div><div class="v">${total.toLocaleString()}</div><div class="c">${curated?"recorded (mishits removed)":"all sessions"}</div></div>
-    <div class="ov"><div class="l">Clubs measured</div><div class="v">${measured.size} / ${bagN}</div><div class="c">${bagN-measured.size} still estimated</div></div>
-    <div class="ov now"><div class="l">Viewing ${sName(state.i)}</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>`;
+  return `<section class="overview">
+    <div class="ov now"><div class="l">This session</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>
+    <div class="ov"><div class="l">All sessions</div><div class="v">${ALL.length}</div><div class="c">${sDate(ALL[0])}${ALL.length>1?" → "+sDate(ALL[ALL.length-1]):""}</div></div>
+    <div class="ov"><div class="l">Balls hit, all sessions</div><div class="v">${total.toLocaleString()}</div><div class="c">${curated?"recorded (mishits removed)":"recorded"}</div></div>
+    <div class="ov"><div class="l">Clubs measured</div><div class="v">${measured.size} / ${bagN}</div><div class="c">${bagN-measured.size} still estimated</div></div></section>`;
 }
 
+/* ================= quick tour ================= */
+// One step per tab: what it is, why it helps, one thing to try (a sentence each).
+const TOUR = [
+  {tab:"session", title:"Session", what:"Your simulator session in one place: headline numbers, what to work on, and charts you can switch between.", why:"It boils every shot down to the few things worth fixing first.", try:"Tap a club chip, then flip between Distance, Gapping and Dispersion."},
+  {tab:"swing", title:"Swing", what:"One club at a time: path and face, ball flight, and the camera frames at impact.", why:"It shows how each shot was struck, not just where it went.", try:"Pick a club and drag the slider to scrub every shot through impact together."},
+  {tab:"rounds", title:"Rounds", what:"Your 18Birdies rounds: score trend, where you miss greens, and what distance costs on the course.", why:"It links your practice numbers to real scores.", try:"Switch the chart to Handicap, then pick a course to see your hardest holes."},
+  {tab:"trend", title:"Progress", what:"How your swing numbers move from session to session.", why:"It tells you whether the practice is working.", try:"Change the metric in the By club chart."},
+  {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
+  {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
+];
+let tourStep = -1;
+const tourEl = $("tour");
+function showTour(i){
+  tourStep = i; const t = TOUR[i];
+  state.tab = t.tab; render(); scrollTo({top:0});
+  document.querySelectorAll(".tabs .btn").forEach(b=>b.classList.toggle("tour-hl", b.dataset.tab===t.tab));
+  document.querySelector(`.tabs .btn[data-tab="${t.tab}"]`)?.scrollIntoView({block:"nearest",inline:"center"});
+  tourEl.innerHTML = `<div class="step">Quick tour · ${i+1} of ${TOUR.length}</div><h3 id="tourTitle">${t.title}</h3>
+    <p><b>What:</b> ${t.what} <b>Why:</b> ${t.why} <b>Try:</b> ${t.try}</p>
+    <div class="acts"><button class="btn sm" data-t="skip">Skip</button><div class="dots">${TOUR.map((_,j)=>`<i class="${j===i?"on":""}"></i>`).join("")}</div>
+      <div class="row-btns">${i>0?`<button class="btn sm" data-t="back">Back</button>`:""}<button class="btn sm" data-t="next" aria-pressed="true">${i<TOUR.length-1?"Next":"Done"}</button></div></div>`;
+  tourEl.hidden = false;
+  tourEl.querySelector('[data-t="next"]').focus({preventScroll:true});
+}
+function endTour(){
+  tourEl.hidden = true; tourStep = -1; store.set("golf-tour-v1", true);
+  document.querySelectorAll(".tabs .btn").forEach(b=>b.classList.remove("tour-hl"));
+  state.tab = "session"; render(); scrollTo({top:0});
+}
+tourEl.addEventListener("click", e => { const a = e.target.closest("[data-t]")?.dataset.t; if (!a) return;
+  if (a==="skip") endTour(); else if (a==="back") showTour(tourStep-1); else if (tourStep < TOUR.length-1) showTour(tourStep+1); else endTour(); });
+document.addEventListener("keydown", e => { if (tourEl.hidden || !vEl.hidden) return;
+  if (e.key==="Escape") endTour(); else if (e.key==="ArrowRight") tourEl.querySelector('[data-t="next"]').click(); else if (e.key==="ArrowLeft" && tourStep>0) showTour(tourStep-1); });
+$("tourBtn").onclick = () => showTour(0);
+
 /* ================= wiring ================= */
-const sel = $("date");
-sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${sName(i)} · ${sDate(A)}</option>`).reverse().join("");
-const TABS = {session:renderSession, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills};
+const TABS = {session:renderSession, swing:renderSwing, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills};
 function render(){
   if (!ALL.length) return;
-  sel.value = state.i; $("prev").disabled = state.i<=0; $("next").disabled = state.i>=ALL.length-1;
   document.querySelectorAll("main").forEach(m=>m.hidden = m.id!=="tab-"+state.tab);
   document.querySelectorAll(".tabs .btn").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
   TABS[state.tab]();
   history.replaceState(null,"",`#s${state.i+1}/${state.tab}`);
-  renderOverview();
 }
 const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hn ? +hn[1]-1 : -1;
 if (hi>=0 && hi<ALL.length) state.i = hi; if (TABS[ht]) state.tab = ht;
-sel.onchange = () => { state.i=+sel.value; render(); };
-$("prev").onclick = () => { state.i--; render(); }; $("next").onclick = () => { state.i++; render(); };
 document.querySelectorAll(".tabs .btn").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();scrollTo({top:0});});
 const tipEl = $("tip");
 document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");if(!t){tipEl.hidden=true;return;}tipEl.textContent=t.dataset.tip;tipEl.hidden=false;const r=t.getBoundingClientRect();
@@ -958,6 +1172,7 @@ document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]")
 addEventListener("scroll",()=>tipEl.hidden=true,{passive:true});
 $("foot").textContent = `Built ${DATA.built} · Benchmarks: TrackMan Tour averages, Shot Scope 25-handicap`;
 if (ALL.length) render(); else $("tab-session").innerHTML = `<section class="card empty">No sessions yet.</section>`;
+if (ALL.length && !store.get("golf-tour-v1", false)) showTour(0);   // first visit only; the Tour button replays it
 </script>
 </body>
 </html>
