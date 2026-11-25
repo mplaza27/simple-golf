@@ -485,7 +485,7 @@ function renderSession(){
   const CC = cmpClubs(A); if (!CC.includes(state.cmp)) state.cmp = CC.includes("7i") ? "7i" : CC[0];
   const LV = levelRows(A, state.cmp), LR = {speed:LV.find(r=>r.key==="club"), smash:LV.find(r=>r.key==="smash")};
   const plays = r => r?.eq!=null ? ` · plays like ~${r.eq<=0?"scratch":Math.round(r.eq)}` : "";
-  const views = [["distance","Distance"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"],["gapping","Gapping"]];
+  const views = [["distance","Distance"],["gapping","Gapping"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"]];
   $("tab-session").innerHTML = `
     <div class="head" style="margin:0">
       <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs</p></div>
@@ -603,19 +603,26 @@ function mainChart(A){
     draw("cMain",{type:"bar",data:{labels,datasets:ds},plugins:[zero],options:{...base,scales:{x:{grid:{display:false}},xs:{type:"linear",display:false,offset:false,bounds:"data",min:-0.5,max:keys.length-0.5},y:{grid,beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k),title:{display:true,text:m.label+(m.unit?` (${m.unit})`:"")}}},
       plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.raw?.r?shotTip(c.raw.r):c.dataset.type==="scatter"?`${c.dataset.label}: ${fm(m,c.raw.y)}`:`You: ${fm(m,c.raw)}`}}}}});
   } else if (v==="dispersion"){
-    note("Each dot is a shot seen from above: left/right of the target vs. carry. Ovals cover about two-thirds of each club's shots. Tap a dot to open it.");
-    const dk = state.club ? keys : fk, mx = Math.ceil((Math.max(15, ...dk.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0))))+3)/5)*5;
-    const line = {id:"line",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;ctx.save();ctx.strokeStyle="rgba(233,229,211,.2)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x.getPixelForValue(0),a.top);ctx.lineTo(x.getPixelForValue(0),a.bottom);ctx.stroke();ctx.restore();}};
-    // 68% oval per club: centred on the average finish, 1 standard deviation wide and long
-    const ovals = {id:"ovals",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x,y}}=ch; ctx.save(); ctx.beginPath(); ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top); ctx.clip();
-      ch.data.datasets.forEach((d,i)=>{ if(!ch.isDatasetVisible(i)) return; const k=d.key, sh=clubs[k].shots.filter(r=>r.side!=null&&r.carry!=null); if(sh.length<3) return;
-        const mx=mean(sh.map(r=>r.side)), my=mean(sh.map(r=>r.carry)), sx=sd(sh.map(r=>r.side)), sy=sd(sh.map(r=>r.carry));
-        const cx=x.getPixelForValue(mx), cy=y.getPixelForValue(my), rx=Math.abs(x.getPixelForValue(mx+sx)-cx), ry=Math.abs(y.getPixelForValue(my+sy)-cy);
-        ctx.beginPath(); ctx.ellipse(cx,cy,Math.max(rx,3),Math.max(ry,3),0,0,2*Math.PI); ctx.fillStyle=alpha(colorOf(k),on(k)?.14:.04); ctx.strokeStyle=alpha(colorOf(k),on(k)?.55:.12); ctx.fill(); ctx.stroke();
-        if (on(k)){ ctx.fillStyle=alpha(colorOf(k),.95); ctx.font="12px Space Mono, monospace"; ctx.textAlign="center"; ctx.fillText(nameOf(k), cx, cy-Math.max(ry,3)-5); } });
+    note("Each dot is a shot, seen from above: distance down the range, left/right of the target line. Each outline wraps a club's shots and follows the shape of its pattern. Tap a dot to open it.");
+    const sides = keys.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0))), carries = keys.flatMap(k=>clubs[k].shots.map(r=>r.carry)).filter(x=>x!=null);
+    const my = Math.ceil((Math.max(15,...sides)+12)/10)*10, x0 = Math.max(0,Math.floor((Math.min(...carries)-10)/10)*10), x1 = Math.ceil((Math.max(...carries)+10)/10)*10;
+    const line = {id:"line",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{y}}=ch;ctx.save();ctx.strokeStyle="rgba(233,229,211,.35)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.left,y.getPixelForValue(0));ctx.lineTo(a.right,y.getPixelForValue(0));ctx.stroke();ctx.restore();}};
+    // Group outline per club (like Uneekor's Group view): an ellipse tilted along the pattern (covariance of the dots
+    // in screen space), scaled so the farthest shot sits on its edge, plus a little padding.
+    const groups = {id:"groups",afterDatasetsDraw(ch){const {ctx,chartArea:a}=ch; ctx.save(); ctx.beginPath(); ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top); ctx.clip();
+      ch.data.datasets.forEach((d,i)=>{ if(!ch.isDatasetVisible(i)) return; const P=ch.getDatasetMeta(i).data.map(e=>[e.x,e.y]); if(P.length<2) return;
+        const mx=mean(P.map(p=>p[0])), mY=mean(P.map(p=>p[1]));
+        let sxx=0,syy=0,sxy=0; P.forEach(([x,y])=>{sxx+=(x-mx)**2; syy+=(y-mY)**2; sxy+=(x-mx)*(y-mY);}); sxx/=P.length; syy/=P.length; sxy/=P.length;
+        const tr=(sxx+syy)/2, det=Math.sqrt(Math.max(0,((sxx-syy)/2)**2+sxy*sxy)), l1=Math.max(tr+det,1), l2=Math.max(tr-det,1), th=0.5*Math.atan2(2*sxy, sxx-syy);
+        const c=Math.cos(th), s_=Math.sin(th);
+        const k = Math.max(1, ...P.map(([x,y])=>{ const u=(x-mx)*c+(y-mY)*s_, w=-(x-mx)*s_+(y-mY)*c; return Math.sqrt(u*u/l1 + w*w/l2); }));
+        const pad = 9, r1 = k*Math.sqrt(l1)+pad, r2 = Math.max(k*Math.sqrt(l2)+pad, 12);
+        ctx.beginPath(); ctx.ellipse(mx,mY,r1,r2,th,0,2*Math.PI); ctx.lineWidth=2; ctx.strokeStyle=alpha(colorOf(d.key), on(d.key)?.9:.15); ctx.stroke(); });
       ctx.restore();}};
-    draw("cMain",{type:"scatter",plugins:[line,ovals],data:{datasets:dk.map(k=>({key:k,label:nameOf(k),data:clubs[k].shots.map(r=>({x:r.side,y:r.carry,r})),backgroundColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8}))},
-      options:{...base,scales:{x:{min:-Math.ceil(mx),max:Math.ceil(mx),grid,title:{display:true,text:"← left   ·   yards   ·   right →"}},y:{grid,title:{display:true,text:"Carry (yd)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+    draw("cMain",{type:"scatter",plugins:[line,groups],data:{datasets:keys.map(k=>({key:k,label:nameOf(k)+(clubs[k].partial?"*":""),data:clubs[k].shots.filter(r=>r.carry!=null&&r.side!=null).map(r=>({x:r.carry,y:-r.side,r})),backgroundColor:pc(k),pointRadius:on(k)?5.5:4,pointHoverRadius:8}))},
+      options:{...base,scales:{x:{min:x0,max:x1,grid,title:{display:true,text:"Carry (yd)"}},
+        y:{min:-my,max:my,grid,title:{display:true,text:"↑ left · right ↓ (yd)"},ticks:{stepSize:10,callback:v=>v===0?"0":`${Math.abs(v)} ${v>0?"L":"R"}`}}},
+        plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
   } else if (v==="curve"){
     note("Dots above the dashed line had the face open to the path, so the ball curved right. The green band is a neutral path.");
     const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2), hi=4;
