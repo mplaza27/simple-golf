@@ -18,7 +18,7 @@ data/
     session.json         optional: curated, per-club caveats, nextSession
     review.md            optional: coach notes for that session
   birdies/MM-DD-YY/      raw 18Birdies exports (git-ignored: they hold your email, phone and friends)
-  birdies/rounds.json    sanitized rounds made by extract_birdies.py (safe to publish)
+  birdies/rounds.json    sanitized rounds with exact dates (git-ignored; the site only gets the month)
 scripts/
   download_shots.py      download a session and rebuild the site
   build_dashboard.py     rebuild index.html from data/ + config/ + coaching/
@@ -36,7 +36,7 @@ scripts/
 To rebuild the site on its own: `python3 -I scripts/build_dashboard.py`.
 
 ## New 18Birdies export
-Save it as `data/birdies/MM-DD-YY/18Birdies_archive.json`, then run `python3 -I scripts/extract_birdies.py`. Only round data is kept (date, course, per-hole strokes, handicap, fairway/green stats); the script refuses to write if anything that looks like an email, phone number or friend's name gets through.
+Save it as `data/birdies/MM-DD-YY/18Birdies_archive.json`, then run `python3 -I scripts/extract_birdies.py`. Only round data is kept (date, course, per-hole strokes, handicap, fairway/green stats); the script refuses to write if anything that looks like an email, phone number or friend's name gets through. `rounds.json` stays on your machine with exact dates; `build_dashboard.py` publishes each round's month only.
 
 ## Notes
 - `CLUB_NAMES` in `scripts/download_shots.py` maps Uneekor club names to folder names. The wood, hybrid and 6-iron names are guesses; check them after your first session with those clubs.

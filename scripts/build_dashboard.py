@@ -114,6 +114,21 @@ def load_session(folder):
     }
 
 
+ROUNDS_FILE = GOLF_DIR / "data" / "birdies" / "rounds.json"
+ROUND_FIELDS = ["course", "holes", "complete", "holeStrokes", "strokes", "toPar", "roundHandicap", "stats"]
+
+
+def public_rounds():
+    """18Birdies rounds for the site: month only (no day, no time). The local rounds.json keeps full dates."""
+    if not ROUNDS_FILE.exists():
+        return []
+    rounds = sorted(json.loads(ROUNDS_FILE.read_text())["rounds"], key=lambda r: r["date"])
+    out = [{"month": r["date"][:7], **{k: r[k] for k in ROUND_FIELDS if k in r}} for r in rounds]
+    for r in out:  # guard: nothing day-level may reach the public page
+        assert re.fullmatch(r"\d{4}-\d{2}", r["month"]) and "date" not in r, r
+    return out
+
+
 def build():
     folders = sorted((p for p in DATA_DIR.iterdir() if p.is_dir() and folder_date(p)), key=folder_date) if DATA_DIR.exists() else []
     sessions = [s for s in (load_session(f) for f in folders) if s["clubs"]]
@@ -127,6 +142,7 @@ def build():
         "sessions": sessions,
         "bag": bag,
         "courses": courses,
+        "rounds": public_rounds(),
         "drills": drills,
         "overallReview": md_to_html(overall.read_text()) if overall.exists() else "",
         "built": datetime.now().strftime("%Y-%m-%d %H:%M"),

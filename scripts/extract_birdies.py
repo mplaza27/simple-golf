@@ -6,6 +6,7 @@ data/birdies/rounds.json with ONLY the round-level fields listed in KEEP_STATS /
 Everything else is dropped: account details (email, phone, birth year, user id), friends, feed,
 subscription, and internal ids. Newer exports win when the same round appears twice.
 The script refuses to write if the output looks like it contains contact details or a friend's name.
+rounds.json keeps exact dates and stays local (git-ignored); build_dashboard.py publishes month only.
 """
 import json
 import re

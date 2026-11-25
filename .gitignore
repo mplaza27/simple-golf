@@ -9,3 +9,5 @@ __pycache__/
 # Only the sanitized data/birdies/rounds.json (made by scripts/extract_birdies.py) is safe to publish.
 data/birdies/**/*archive*.json
 data/birdies/*/
+# rounds.json keeps exact dates for local analysis; the site only gets month (see build_dashboard.py)
+data/birdies/rounds.json
