@@ -34,6 +34,7 @@
   .top-in{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
   .brand{display:flex;align-items:center;gap:10px;font-family:var(--pixel);font-size:15px;color:var(--cream);letter-spacing:.04em;text-shadow:2px 2px 0 #0a120d}
   .brand span{color:var(--green)}
+  .brand{order:0} .right{order:1} #tourBtn{order:2}
   .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;max-width:100%}
   .date{display:flex;align-items:center;gap:6px}
 
@@ -154,9 +155,15 @@
   .tour.at-top{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 76px)}
   #vclose.tour-target{z-index:3}
   .tour-show{box-shadow:0 0 0 2px var(--sand),0 0 0 8px rgba(227,201,122,.12);border-color:var(--sand)}
-  .tour-target{position:relative;z-index:2;box-shadow:0 0 0 3px var(--sand);animation:tourPulse 1.2s ease-in-out infinite}
-  @keyframes tourPulse{0%,100%{box-shadow:0 0 0 3px var(--sand),0 0 0 0 rgba(227,201,122,.55)}50%{box-shadow:0 0 0 3px var(--sand),0 0 0 9px rgba(227,201,122,0)}}
-  @media (prefers-reduced-motion:reduce){.tour-target{animation:none}}
+  .tour-target{position:relative;z-index:2;outline:3px solid var(--sand);outline-offset:3px;animation:tourPulse 1.1s ease-in-out infinite}
+  @keyframes tourPulse{0%,100%{box-shadow:0 0 0 4px rgba(227,201,122,.55),0 0 0 0 rgba(227,201,122,.45);transform:scale(1)}
+                       50%{box-shadow:0 0 0 4px rgba(227,201,122,.55),0 0 0 22px rgba(227,201,122,0);transform:scale(1.07)}}
+  #tourPoint{position:fixed;z-index:160;pointer-events:none;background:var(--sand);color:#132016;font-weight:700;font-size:13px;padding:5px 11px;border-radius:999px;
+    box-shadow:0 6px 18px rgba(0,0,0,.45);white-space:nowrap;animation:tourBounce 1s ease-in-out infinite;transition:left .25s,top .25s}
+  #tourPoint::after{content:"";position:absolute;left:50%;transform:translateX(-50%);border:7px solid transparent}
+  #tourPoint.below::after{bottom:100%;border-bottom-color:var(--sand)} #tourPoint.above::after{top:100%;border-top-color:var(--sand)}
+  @keyframes tourBounce{0%,100%{translate:0 0}50%{translate:0 -6px}}
+  @media (prefers-reduced-motion:reduce){.tour-target,#tourPoint{animation:none}}
 
   /* rounds */
   .mix{display:grid;grid-template-columns:70px 1fr;gap:8px 12px;align-items:center;font-size:13px;margin-top:14px}
@@ -201,6 +208,7 @@
   .viewer{position:fixed;inset:0;z-index:150;background:rgba(6,10,8,.8);display:flex;align-items:center;justify-content:center;padding:16px}
   .vbox{background:var(--panel);border:1px solid var(--line2);border-radius:14px;width:min(1040px,100%);max-height:100%;overflow:auto;padding:22px}
   .vgrid{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.45fr);gap:16px}
+  .vgrid > *,.detail > *,.sw-grid > *,.drill > *{min-width:0}   /* long filmstrips/tables must not widen their column */
   .frame{background:#000;border-radius:8px;overflow:hidden;position:relative}
   .frame img{width:100%;height:auto;display:block}
   .frame .cap{position:absolute;left:8px;top:8px;font-size:11.5px;color:#fff;background:rgba(0,0,0,.6);padding:2px 8px;border-radius:999px}
@@ -248,13 +256,46 @@
     .misses{grid-template-columns:1fr}
     .overview{grid-template-columns:1fr 1fr}
     .stats{grid-template-columns:1fr}
-    .detail,.planner,.vgrid,.drill,.proj{grid-template-columns:1fr}
+    .detail,.planner,.vgrid,.drill,.proj{grid-template-columns:minmax(0,1fr)}
     .levels{grid-template-columns:1fr 1fr}
     .scorecard{grid-template-columns:repeat(9,minmax(34px,1fr));overflow-x:auto}
     .chart{height:300px}
     .planner .map{max-width:340px}
   }
-  @media (max-width:520px){ .levels{grid-template-columns:1fr} .stat .v{font-size:26px} .hb .k{display:none} }
+  @media (max-width:560px){
+    body{font-size:13px}
+    .page{padding-inline:12px}
+    .top{margin:0 -12px 16px;padding:8px 12px}
+    .top-in{gap:8px}
+    .brand{font-size:12px;flex:1} .right{width:100%;order:2} #tourBtn{order:1}
+    .tabs{width:100%} .tabs .btn{padding:6px 11px;font-size:13px}
+    .stack{gap:16px}
+    .card{padding:14px}
+    h2{font-size:12px}
+    .sub{font-size:13px}
+    .head{margin-bottom:10px}
+    .overview{margin-bottom:16px}
+    .ov{padding:10px 12px} .ov .v{font-size:17px} .ov .l,.ov .c{font-size:11.5px}
+    .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .stat{padding:10px;flex-direction:column;gap:6px;position:relative}
+    .stat .l{font-size:11.5px;padding-right:26px}
+    .stat .v{font-size:18px;margin:2px 0}
+    .stat .c{font-size:11px;line-height:1.35}
+    .grade{position:absolute;top:8px;right:8px;width:24px;height:24px;font-size:12px;border-radius:6px}
+    .focus li{grid-template-columns:26px 1fr;gap:10px} .focus .i{width:26px;height:26px;font-size:12px} .focus span{font-size:13px}
+    .chart{height:260px}
+    .btn{padding:6px 11px;font-size:13px} .btn.sm{padding:4px 9px;font-size:12px}
+    .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .tile .v{font-size:16px}
+    .crops{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .crop .cap{font-size:11px;padding:4px 6px}
+    .levels{grid-template-columns:1fr} .hb .k{display:none}
+    .tour{padding:12px 14px;bottom:10px;width:calc(100% - 20px)}
+    .tour h3{font-size:15px;margin:2px 0 6px} .tour p{font-size:12.5px;line-height:1.5} .tour p + p{margin-top:4px}
+    .tour .acts{margin-top:10px}
+    .tour.at-top{top:calc(env(safe-area-inset-top,0px) + 96px)}
+    .viewer{padding:8px} .vbox{padding:14px}
+    .vgrid > div:first-child .frame{max-width:200px;margin:0 auto}
+    .vstats{grid-template-columns:repeat(3,minmax(0,1fr))} .vstat{padding:6px 8px} .vstat .v{font-size:14px} .vstat .b{display:none}
+  }
 </style>
 </head>
 <body>
@@ -270,8 +311,8 @@
         <button class="btn" role="tab" data-tab="bag">Bag</button>
         <button class="btn" role="tab" data-tab="drills">Drills</button>
       </nav>
-      <button class="btn sm" id="tourBtn" title="Quick tour of the site">Tour</button>
     </div>
+    <button class="btn sm" id="tourBtn" title="Quick tour of the site">Tour</button>
   </div></div>
 
   <main id="tab-session" class="stack"></main>
@@ -284,6 +325,7 @@
 </div>
 <div id="tip" hidden></div>
 <div id="viewer" class="viewer" hidden></div>
+<div id="tourPoint" hidden></div>
 <div id="tour" class="tour" role="dialog" aria-modal="false" aria-labelledby="tourTitle" hidden></div>
 
 <script>
@@ -780,7 +822,8 @@ function closeShot(){ stopPlay(); vEl.hidden=true; document.body.style.overflow=
 function stepShot(d){ const L=sessionShots(V.i), j=L.findIndex(r=>r.key===V.key&&r.n===V.n), r=L[j+d]; if(r){const p=!!V.timer;stopPlay();V.key=r.key;V.n=r.n;V.frame=0;renderViewer();if(p)startPlay();} }
 function setFrame(fi){ const fr=curShot()?.img?.frames||[]; if(!fr.length) return; V.frame=(fi+fr.length)%fr.length;
   $("vf").src=fr[V.frame]; $("vr").value=V.frame; $("vfc").textContent=`${V.frame+1}/${fr.length}`;
-  document.querySelectorAll("#vstrip img").forEach((im,j)=>im.classList.toggle("on",j===V.frame)); document.querySelector("#vstrip img.on")?.scrollIntoView({block:"nearest",inline:"nearest"}); }
+  document.querySelectorAll("#vstrip img").forEach((im,j)=>im.classList.toggle("on",j===V.frame)); const on=document.querySelector("#vstrip img.on"), strip=$("vstrip");
+  if (on && strip) strip.scrollLeft = on.offsetLeft - strip.clientWidth/2 + on.clientWidth/2; }   // sideways only: never scroll the page/viewer
 function startPlay(){ const fr=curShot()?.img?.frames||[]; if(fr.length<2) return; stopPlay(); V.timer=setInterval(()=>setFrame(V.frame+1),110/V.speed); $("vplay")&&($("vplay").textContent="Pause"); }
 function stopPlay(){ if(V.timer){clearInterval(V.timer);V.timer=null;} $("vplay")&&($("vplay").textContent="Play"); }
 function renderViewer(){
@@ -1120,7 +1163,9 @@ function wirePicker(root){
 function overviewHTML(){
   const balls = A => A.keys.reduce((n,k)=>n+A.clubs[k].n,0);
   const total = ALL.reduce((n,A)=>n+balls(A),0);
-  const measured = new Set(ALL.flatMap(A=>A.keys.filter(k=>!A.clubs[k].partial)));
+  const hit = new Set(ALL.flatMap(A=>A.keys.filter(k=>CLUB[k])));
+  const fullSw = new Set(ALL.flatMap(A=>A.keys.filter(k=>CLUB[k] && !A.clubs[k].partial)));
+  const partialOnly = [...hit].filter(k=>!fullSw.has(k)).sort((a,b)=>loftOf(a)-loftOf(b));
   const bagN = MAIN.filter(c=>c.key!=="Putter").length;
   const curated = ALL.some(A=>A.meta.curated);
   const A = ALL[state.i];
@@ -1128,7 +1173,7 @@ function overviewHTML(){
     <div class="ov now"><div class="l">This session</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>
     <div class="ov"><div class="l">All sessions</div><div class="v">${ALL.length}</div><div class="c">${sDate(ALL[0])}${ALL.length>1?" → "+sDate(ALL[ALL.length-1]):""}</div></div>
     <div class="ov"><div class="l">Balls hit, all sessions</div><div class="v">${total.toLocaleString()}</div><div class="c">${curated?"recorded (mishits removed)":"recorded"}</div></div>
-    <div class="ov"><div class="l">Clubs measured</div><div class="v">${measured.size} / ${bagN}</div><div class="c">${bagN-measured.size} still estimated</div></div></section>`;
+    <div class="ov"><div class="l">Clubs hit</div><div class="v">${hit.size} / ${bagN}</div><div class="c">${partialOnly.length?`${partialOnly.map(nameOf).join(", ")} partial swings only`:`all full swings`}</div></div></section>`;
 }
 
 /* ================= quick tour ================= */
@@ -1145,7 +1190,37 @@ const TOUR = [
   {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
   {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
 ];
-let tourStep = -1, tourTapped = false, tourWasDone = false;
+let tourStep = -1, tourTapped = false, tourWasDone = false, tourScrollId = 0;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Scroll gently so the element sits in the space above the tour card (eased, ~1s; instant if reduced motion is on).
+function slowScrollTo(el, dur=1000){
+  if (!el) return Promise.resolve();
+  const header = document.querySelector(".top").getBoundingClientRect().bottom;
+  const card = tourEl.hidden ? 0 : tourEl.getBoundingClientRect().height + 20;
+  const r = el.getBoundingClientRect(), room = innerHeight - header - card;
+  const want = scrollY + r.top - header - Math.max(12, (room - r.height)/2);
+  const to = Math.max(0, Math.min(want, document.documentElement.scrollHeight - innerHeight)), from = scrollY, id = ++tourScrollId;
+  if (reduceMotion || Math.abs(to-from) < 4){ scrollTo(0,to); return Promise.resolve(); }
+  return new Promise(res => { const t0 = performance.now();
+    const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    const step = now => { if (id!==tourScrollId) return res(); const t = Math.min(1,(now-t0)/dur); scrollTo(0, from+(to-from)*ease(t)); placePoint(); t<1 ? requestAnimationFrame(step) : res(); };
+    requestAnimationFrame(step); });
+}
+// Bouncing "Click here" / "Tap here" label next to whatever is pulsing.
+const pointEl = $("tourPoint"), touch = matchMedia("(pointer: coarse)").matches;
+function placePoint(){
+  const tgt = document.querySelector(".tour-target");
+  if (!tgt || tourStep<0){ pointEl.hidden = true; return; }
+  const r = tgt.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > innerHeight){ pointEl.hidden = true; return; }
+  pointEl.textContent = `${touch?"Tap":"Click"} here`; pointEl.hidden = false;
+  const w = pointEl.offsetWidth, h = pointEl.offsetHeight, above = r.top > h + 90;
+  pointEl.className = above ? "above" : "below";
+  pointEl.style.left = Math.max(8, Math.min(innerWidth-w-8, r.left + r.width/2 - w/2)) + "px";
+  pointEl.style.top = (above ? r.top - h - 14 : r.bottom + 14) + "px";
+}
+addEventListener("scroll", ()=>{ if (tourStep>=0) requestAnimationFrame(placePoint); }, {passive:true});
+addEventListener("resize", ()=>{ if (tourStep>=0) placePoint(); });
 // Spotlight the step's area and pulse the thing to click; re-applied after every render (tabs rebuild their HTML).
 function applyTour(){
   document.querySelectorAll(".tour-show,.tour-target").forEach(e=>e.classList.remove("tour-show","tour-target"));
@@ -1158,10 +1233,10 @@ function applyTour(){
   tourEl.classList.toggle("mini", done);   // once done, shrink to a slim bar so it doesn't cover the result
   if (done && !tourWasDone){
     const look = t.look && document.querySelector(t.look)?.closest(".card");
-    if (look) look.scrollIntoView({block:"center", behavior:"smooth"});
-    setTimeout(placeTour, 450);
+    if (look) slowScrollTo(look, 800).then(placeTour); else placeTour();
   }
   tourWasDone = done;
+  placePoint();
 }
 // Put the card at the bottom unless that would cover what the step points at; then use the top.
 function placeTour(){
@@ -1185,11 +1260,12 @@ function showTour(i){
   tourEl.hidden = false;
   applyTour();
   const focus = document.querySelector(t.scroll || t.show || t.target);
-  if (focus) setTimeout(()=>focus.scrollIntoView({block:"center", behavior:"smooth"}), 60);
+  const card = focus && (focus.closest(".card") || focus);
+  if (card) setTimeout(()=>slowScrollTo(card, 1100).then(placePoint), 450);
   tourEl.querySelector('[data-t="next"]').focus({preventScroll:true});
 }
 function endTour(){
-  tourEl.hidden = true; tourStep = -1; store.set("golf-tour-v1", true); applyTour(); tourEl.classList.remove("mini","at-top");
+  tourEl.hidden = true; tourStep = -1; tourScrollId++; store.set("golf-tour-v1", true); applyTour(); tourEl.classList.remove("mini","at-top"); pointEl.hidden = true;
   document.querySelectorAll(".tabs .btn").forEach(b=>b.classList.remove("tour-hl"));
   state.tab = "session"; render(); scrollTo({top:0});
 }
