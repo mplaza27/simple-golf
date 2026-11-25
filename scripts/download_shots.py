@@ -52,9 +52,13 @@ def download(report_url, out):
     rid, key = q["id"][0], q["key"][0]
     dist, speed = q.get("distance", ["yard"])[0], q.get("speed", ["mph"])[0]
     sessions = json.loads(get(f"{API}/{rid}/{key}"))
+    # A report can contain several blocks for the same club (e.g. two separate 7-iron sets).
+    # Pool them per club and number in time order, so shot numbers never collide.
+    by_club = {}
     for s in sessions:
-        club = CLUB_NAMES.get(s["club_name"], s["club_name"])
-        shots = sorted(s["shots"], key=lambda x: int(x["client_shot_id"]))  # oldest first
+        by_club.setdefault(CLUB_NAMES.get(s["club_name"], s["club_name"]), []).extend(s["shots"])
+    for club, pool in by_club.items():
+        shots = sorted(pool, key=lambda x: int(x["client_shot_id"]))  # oldest first
         for n, shot in enumerate(shots, 1):
             dest = out / club / f"{club}_{n}"
             if dest.is_dir() and any(dest.iterdir()):

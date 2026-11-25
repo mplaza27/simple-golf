@@ -435,17 +435,22 @@ function analyze(s){
   const ironSpeed = mean(keys.filter(IRON).flatMap(k=>s.clubs[k].map(r=>r.clubSpeed)));
   const meta = s.meta || {}, clubs = {};
   for (const k of keys){
+    // Mishit = topped/skulled (launch under 8°) or carried under 60% of that club's median: a contact miss, not a sensor error.
+    // Club numbers use good-contact shots; mishits are counted separately (sessions exported with mishits left in).
+    const medC = median(s.clubs[k].map(r=>r.carry));
     const shots = s.clubs[k].map(r=>({...r, key:k, f2p:(r.face!=null&&r.path!=null)?+(r.face-r.path).toFixed(1):null,
+      mishit: s.clubs[k].length>=3 && ((r.launch!=null && r.launch<8) || (r.carry!=null && medC && r.carry<0.6*medC)),
       suspect:(loftOf(k)>=24 && r.smash>1.38) || (loftOf(k)>=27 && loftOf(k)<=41 && r.backSpin<2500)}));
-    const g = p => shots.map(r=>r[p]);
+    const good = shots.filter(r=>!r.mishit);
+    const g = p => good.map(r=>r[p]);
     const cs = mean(g("clubSpeed"));
-    clubs[k] = { key:k, shots, n:shots.length, partial: WEDGE(k) && ironSpeed!=null && cs < 0.9*ironSpeed, caveat: meta.caveats?.[k] || null,
-      carry:mean(g("carry")), total:mean(g("total")), roll:mean(shots.map(r=>r.total-r.carry)), carrySd:sd(g("carry")), totalSd:sd(g("total")),
+    clubs[k] = { key:k, shots, good, n:shots.length, mishits:shots.length-good.length, partial: WEDGE(k) && ironSpeed!=null && cs < 0.9*ironSpeed, caveat: meta.caveats?.[k] || null,
+      carry:mean(g("carry")), total:mean(g("total")), roll:mean(good.map(r=>r.total-r.carry)), carrySd:sd(g("carry")), totalSd:sd(g("total")),
       cmin:Math.min(...vals(g("carry"))), cmax:Math.max(...vals(g("carry"))), sideSd:sd(g("side")),
       smash:median(g("smash")), ball:mean(g("ballSpeed")), club:cs, spin:mean(g("backSpin")), launch:mean(g("launch")),
       apex:mean(g("apex")), descent:mean(g("descent")), path:mean(g("path")), face:mean(g("face")), f2p:mean(g("f2p")), side:mean(g("side")) };
   }
-  const full = keys.filter(k=>!clubs[k].partial).flatMap(k=>clubs[k].shots);
+  const full = keys.filter(k=>!clubs[k].partial).flatMap(k=>clubs[k].good);
   return { s, meta, keys, clubs, full };
 }
 // Per iron: average club speed (likely misreads removed), ball speed, carry, and the carry a realistic smash would give at that speed
@@ -454,7 +459,7 @@ function analyze(s){
 const SMASH_GOAL = 1.30;
 function distanceModel(A){
   const rows = A.keys.filter(k=>IRON(k) && !A.clubs[k].partial).map(k=>{
-    const c = A.clubs[k], clean = c.shots.filter(r=>!r.suspect);
+    const c = A.clubs[k], clean = c.good.filter(r=>!r.suspect);
     if (clean.length < 3) return null;
     const cs = mean(clean.map(r=>r.clubSpeed)), ball = mean(clean.map(r=>r.ballSpeed)), carry = mean(clean.map(r=>r.carry));
     const goal = Math.min(SMASH_GOAL, BENCH.lpga[k]?.smash ?? SMASH_GOAL);   // shorter irons top out lower (Tour PW ≈ 1.23)
@@ -475,7 +480,7 @@ const hasBench = k => !!(BENCH.pga[k] || BENCH.lpga[k] || AMATEUR.avg[k] || AMAT
 const cmpClubs = A => A.keys.filter(k=>!A.clubs[k].partial && hasBench(k));
 function levelRows(A, k){
   const c = A.clubs[k]; if (!c) return [];
-  const clean = c.shots.filter(r=>!r.suspect), cl = clean.length >= 3 ? clean : c.shots;   // speeds/smash/spin skip likely misreads
+  const clean = c.good.filter(r=>!r.suspect), cl = clean.length >= 3 ? clean : c.good;   // speeds/smash/spin skip mishits and likely misreads
   const cs = mean(cl.map(r=>r.clubSpeed)), ball = mean(cl.map(r=>r.ballSpeed));
   const P = BENCH.pga[k]||{}, L = BENCH.lpga[k]||{}, AV = AMATEUR.avg[k]||{};
   const row = (label, key, unit, dp, you, tour, avg, ladder, judged=true, note="") => ({label, key, unit, dp, you, tour, avg, ladder, judged, note});
@@ -535,7 +540,17 @@ function findings(A){
     if (ratio > 0.7) F.push({sev:"bad", t:"Adding loft at impact (costs ball speed)", b:`${f(clubs[ex].launch)}° launch with a ${loftOf(ex)}° ${nameOf(ex)}; Tour players launch at about half their loft. Extra loft at impact turns speed into height instead of ball speed. Ball-first contact with hands ahead is the fix.`}); }
   const fk = keys.filter(k=>!clubs[k].partial && CLUB[k]);
   for (let i=0;i<fk.length-1;i++){ const a=fk[i], b=fk[i+1], gap=clubs[a].carry-clubs[b].carry, cav=clubs[a].caveat||clubs[b].caveat;
-    if (gap < 6) F.push({sev:cav?"warn":"bad", t:`${nameOf(a)} and ${nameOf(b)} overlap`, b:`Only ${f(gap)} yd apart.`+(cav?" Flagged as a possible outlier, so retest first.":"")}); }
+    if (gap < 0) F.push({sev:"bad", t:`${nameOf(a)} went shorter than the ${nameOf(b)}`, b:`${nameOf(a)} carried ${f(clubs[a].carry,0)} yd vs ${f(clubs[b].carry,0)} for the ${nameOf(b)} (good contact only), so the ${nameOf(a)} isn't adding distance right now.`});
+    else if (gap > 20) F.push({sev:"warn", t:`${f(gap,0)} yd hole between the ${nameOf(a)} and ${nameOf(b)}`, b:`${nameOf(a)} ${f(clubs[a].carry,0)} yd, ${nameOf(b)} ${f(clubs[b].carry,0)} yd carry. A club in between would fill it.`});
+    else if (gap >= 6 && gap < 10) F.push({sev:"warn", t:`${nameOf(a)} and ${nameOf(b)} are close together`, b:`Only ${f(gap)} yd apart (aim for 10–15 yd between clubs).`});
+    else if (gap < 6) F.push({sev:cav?"warn":"bad", t:`${nameOf(a)} and ${nameOf(b)} overlap`, b:`Only ${f(gap)} yd apart.`+(cav?" Flagged as a possible outlier, so retest first.":"")}); }
+  const allShots = keys.flatMap(k=>clubs[k].shots), mh = allShots.filter(r=>r.mishit);
+  if (mh.length){
+    const grp = ks => { const sh = ks.flatMap(k=>clubs[k].shots); return sh.length ? `${sh.filter(r=>r.mishit).length} of ${sh.length}` : null; };
+    const woods = keys.filter(k=>loftOf(k)<24), irons = keys.filter(k=>loftOf(k)>=24 && !clubs[k].partial);
+    F.push({sev: mh.length/allShots.length > 0.1 ? "warn" : "info", t:`${mh.length} mishit${mh.length===1?"":"s"} (topped, skulled or thin)`,
+      b:`Irons ${grp(irons)||"—"}, woods and hybrid ${grp(woods)||"—"}. Club numbers use good-contact shots only; mishits show as hollow dots: ${mh.map(r=>`${nameOf(r.key)} #${r.n}`).join(", ")}.`});
+  }
   const sus = full.filter(x=>x.suspect).map(x=>`${nameOf(x.key)} #${x.n}`);
   if (sus.length) F.push({sev:"info", t:"Possible sensor misreads", b:sus.join(", ")+". Medians limit their effect."});
   const order={bad:0,warn:1,info:2,good:3};
@@ -568,7 +583,7 @@ function renderSession(){
   const views = [["distance","Distance"],["gapping","Gapping"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"]];
   $("tab-session").innerHTML = `
     <div class="head" style="margin:0">
-      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs${meta.curated?` · <span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:""}</p></div>
+      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs${meta.curated?` · <span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:meta.curated===false?` · <span class="note" data-tip="${esc(meta.curatedNote||"Every shot was exported, mishits included.")}">All shots</span>`:""}</p></div>
       ${pickerHTML()}
     </div>
     ${overviewHTML()}
@@ -601,7 +616,7 @@ function renderSession(){
       <div class="head"><h2>Clubs</h2><span class="muted small">Tap a club to focus</span></div>
       <div class="row-btns">
         <button class="btn sm" data-club="" aria-pressed="${!state.club}">All</button>
-        ${keys.map(k=>`<button class="btn sm" data-club="${k}" aria-pressed="${state.club===k}">${sw(k)}${nameOf(k)} <span class="n">${f(clubs[k].carry,0)}</span>${clubs[k].caveat?" ⚑":""}</button>`).join("")}
+        ${keys.map(k=>`<button class="btn sm" data-club="${k}" aria-pressed="${state.club===k}" ${clubs[k].mishits?`title="${clubs[k].mishits} mishit(s) left out of the average"`:""}>${sw(k)}${nameOf(k)} <span class="n">${f(clubs[k].carry,0)}</span>${clubs[k].caveat?" ⚑":""}</button>`).join("")}
       </div>
       ${state.club ? clubDetail(A, state.club) : ""}
     </section>
@@ -635,7 +650,7 @@ function clubDetail(A,k){
       ${bench.length>1&&!m.zero?`<div class="muted small">${m.label} vs. benchmarks</div><div class="bars">${bench.map(([l,v,col])=>`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${(Math.abs(v)/mx*100).toFixed(0)}%;background:${col}"></div></div><span class="val">${fm(m,v)}</span></div>`).join("")}</div>`:""}
     </div>
     <div class="tablewrap"><table><thead><tr><th></th><th>#</th><th>Carry</th><th>Finish</th><th>Ball</th><th>Smash</th><th>Path</th><th>F2P</th></tr></thead><tbody>
-      ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot"><td>${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td><td>${r.n}${r.suspect?' <span class="tag warn">?</span>':""}</td><td>${f(r.carry)}</td><td>${lr(r.side)}</td><td>${f(r.ballSpeed)}</td><td>${f(r.smash,2)}</td><td>${sg(r.path)}</td><td>${sg(r.f2p)}</td></tr>`).join("")}
+      ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot"><td>${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td><td>${r.n}${r.mishit?' <span class="tag warn">mishit</span>':r.suspect?' <span class="tag warn">?</span>':""}</td><td>${f(r.carry)}</td><td>${lr(r.side)}</td><td>${f(r.ballSpeed)}</td><td>${f(r.smash,2)}</td><td>${sg(r.path)}</td><td>${sg(r.f2p)}</td></tr>`).join("")}
     </tbody></table><p class="muted small" style="margin:8px 0 0">Tap a shot to see its impact photo and swing frames.</p></div>
   </div>`;
 }
@@ -655,7 +670,7 @@ function renderTable(A){
 function mainChart(A){
   const {keys, clubs, full} = A, fk = keys.filter(k=>!clubs[k].partial);
   const on = k => !state.club || state.club===k, pc = (k,a=.9) => alpha(colorOf(k), on(k)?a:.12);
-  const shotTip = r => [`carry ${f(r.carry)} yd · ${lr(r.side)}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
+  const shotTip = r => [`carry ${f(r.carry)} yd · ${lr(r.side)}${r.mishit?" · mishit":""}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
   // Tooltip title comes from the point itself. Chart.js's default uses the x-axis label at the same index,
   // which for the "Shots" layer is the wrong club (shot #3 overall sat under the 9i column).
   const tipTitle = items => { const raw = items[0]?.raw; return raw?.r ? `${nameOf(raw.r.key)} · shot ${raw.r.n}` : raw?.k ? nameOf(raw.k) : (items[0]?.label ?? ""); };
@@ -667,7 +682,7 @@ function mainChart(A){
   const note = t => $("viewNote").textContent = t;
   const base = {maintainAspectRatio:false, onClick:click, onHover:hover, interaction:{mode:"nearest", intersect:true}};
   const pathBand = {id:"band",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;ctx.save();ctx.fillStyle="rgba(159,208,124,.08)";ctx.fillRect(x.getPixelForValue(-2),a.top,x.getPixelForValue(2)-x.getPixelForValue(-2),a.bottom-a.top);ctx.restore();}};
-  const scatter = fn => fk.map(k=>({label:nameOf(k),data:clubs[k].shots.filter(r=>r.path!=null).map(r=>({x:r.path,y:fn(r),r})),backgroundColor:pc(k),pointRadius:on(k)?5:3.5,pointHoverRadius:7}));
+  const scatter = fn => fk.map(k=>({label:nameOf(k),data:clubs[k].shots.filter(r=>r.path!=null).map(r=>({x:r.path,y:fn(r),r})),backgroundColor:c=>c.raw?.r?.mishit?"rgba(0,0,0,0)":pc(k),borderColor:pc(k),borderWidth:c=>c.raw?.r?.mishit?2:0,pointRadius:on(k)?5:3.5,pointHoverRadius:7}));
   const v = state.view;
   if (v==="distance"){
     const m = MET[state.metric], labels = keys.map(k=>nameOf(k)+(clubs[k].partial?"*":""));
@@ -679,7 +694,7 @@ function mainChart(A){
     if (bench("pga").some(x=>x!=null)) ds.push(tick("PGA","pga","#84bcd9"));
     // Shots sit on a hidden linear axis aligned with the bars, spread slightly side to side so no two dots overlap exactly.
     ds.push({type:"scatter",label:"Shots",order:0,xAxisID:"xs",data:keys.flatMap((k,i)=>{ const sh=clubs[k].shots.filter(r=>r[m.shot]!=null);
-      return sh.map((r,j)=>({x:i+(j-(sh.length-1)/2)*0.07,y:r[m.shot],r})); }),backgroundColor:c=>c.raw?.r&&on(c.raw.r.key)?"rgba(241,234,208,.9)":"rgba(241,234,208,.15)",pointRadius:3,pointHoverRadius:6});
+      return sh.map((r,j)=>({x:i+(j-(sh.length-1)/2)*0.07,y:r[m.shot],r})); }),backgroundColor:c=>c.raw?.r?.mishit?"rgba(0,0,0,0)":c.raw?.r&&on(c.raw.r.key)?"rgba(241,234,208,.9)":"rgba(241,234,208,.15)",borderColor:c=>c.raw?.r&&on(c.raw.r.key)?"rgba(241,234,208,.9)":"rgba(241,234,208,.15)",borderWidth:c=>c.raw?.r?.mishit?1.5:0,pointRadius:3,pointHoverRadius:6});
     const pct = src => { const ks=keys.filter(k=>!clubs[k].partial&&BENCH[src][k]?.[m.k]!=null&&clubs[k][m.k]!=null); return ks.length?Math.round(mean(ks.map(k=>clubs[k][m.k]/BENCH[src][k][m.k]))*100):null; };
     const pP=pct("pga"), pL=pct("lpga");
     const star = keys.some(k=>clubs[k].partial) ? " * = partial swings (no benchmark)." : "";
@@ -695,7 +710,7 @@ function mainChart(A){
     // Group outline per club (like Uneekor's Group view): an ellipse tilted along the pattern (covariance of the dots
     // in screen space), scaled so the farthest shot sits on its edge, plus a little padding.
     const groups = groupsPlugin(on);
-    draw("cMain",{type:"scatter",plugins:[line,groups],data:{datasets:keys.map(k=>({key:k,label:nameOf(k)+(clubs[k].partial?"*":""),data:clubs[k].shots.filter(r=>r.carry!=null&&r.side!=null).map(r=>({x:r.carry,y:-r.side,r})),backgroundColor:pc(k),pointRadius:on(k)?5.5:4,pointHoverRadius:8}))},
+    draw("cMain",{type:"scatter",plugins:[line,groups],data:{datasets:keys.map(k=>({key:k,label:nameOf(k)+(clubs[k].partial?"*":""),data:clubs[k].shots.filter(r=>r.carry!=null&&r.side!=null).map(r=>({x:r.carry,y:-r.side,r})),backgroundColor:c=>c.raw?.r?.mishit?"rgba(0,0,0,0)":pc(k),borderColor:pc(k),borderWidth:c=>c.raw?.r?.mishit?2:0,pointRadius:on(k)?5.5:4,pointHoverRadius:8}))},
       options:{...base,scales:{x:{min:x0,max:x1,grid,title:{display:true,text:"Carry (yd)"}},
         y:{min:-my,max:my,grid,title:{display:true,text:"↑ left · right ↓ (yd)"},ticks:{stepSize:10,callback:v=>v===0?"0":`${Math.abs(v)} ${v>0?"L":"R"}`}}},
         plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:tipTitle,label:c=>shotTip(c.raw.r)}}}}});
@@ -749,15 +764,21 @@ function clubModel(k){
 /* ================= PROGRESS ================= */
 function renderTrend(){
   const list = ALL, dates = list.map((A,i)=>sName(i)), multi = list.length>1;
-  const P = A => ({path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)), smash:median(A.full.filter(r=>IRON(r.key)).map(r=>r.smash)),
-    carry:mean(A.keys.filter(k=>IRON(k)&&!A.clubs[k].partial).map(k=>A.clubs[k].carry))});
+  // Compare like with like: only irons hit with full swings in both the first and the latest session.
+  const fullIrons = A => A.keys.filter(k=>IRON(k)&&!A.clubs[k].partial);
+  const common = fullIrons(list[0]).filter(k=>fullIrons(list[list.length-1]).includes(k));
+  const P = A => ({path:mean(A.full.map(r=>r.path)), f2p:mean(A.full.map(r=>r.f2p)),
+    smash:median(A.full.filter(r=>common.includes(r.key)).map(r=>r.smash)),
+    carry:mean(common.filter(k=>A.clubs[k]).map(k=>A.clubs[k].carry))});
   const pts = list.map(P), a = pts[0], z = pts[pts.length-1];
+  const mixed = new Set(list.map(A=>A.meta.curated===true)).size > 1;
   const ch = (label,key,now,d,better,unit,dp,g) => `<div class="stat"><div><div class="l">${tip(key,label)}</div><div class="v">${unit==="°"?sg(now,dp):f(now,dp)}${unit}</div><div class="c">${multi?`${sg(d,dp)}${unit} since ${dates[0]} · <span class="${better?"good":"bad"}">${better?"better":"worse"}</span>`:"baseline · next session adds a trend"}</div></div>${g?`<div class="grade g${g}">${g}</div>`:""}</div>`;
   $("tab-trend").innerHTML = `
-    <div class="head" style="margin:0"><div><h2>Progress</h2><p class="sub">${list.length} session${multi?"s":""} · ${sDate(list[0])}${multi?" → "+sDate(list[list.length-1]):""}</p></div></div>
+    <div class="head" style="margin:0"><div><h2>Progress</h2><p class="sub">${list.length} session${multi?"s":""} · ${sDate(list[0])}${multi?" → "+sDate(list[list.length-1]):""}${common.length?` · iron numbers use ${common.map(nameOf).join(", ")} (hit in both)`:""}</p></div></div>
+    ${mixed?`<p class="note" style="margin:0;border-radius:10px;padding:8px 12px">Heads up: ${list.filter(A=>A.meta.curated).map(A=>sName(ALL.indexOf(A))).join(", ")} ${list.filter(A=>A.meta.curated).length===1?"was":"were"} best shots only; the others include every shot. Mishits are left out of averages, but best-shots-only sessions will still look a little better.</p>`:""}
     <section class="stats">
-      ${ch("Iron strike (median)","smash",z.smash,z.smash-a.smash,z.smash>a.smash,"",2,"")}
-      ${ch("Avg iron carry","carry",z.carry,z.carry-a.carry,z.carry>a.carry," yd",1,"")}
+      ${ch(`${common.length===1?nameOf(common[0]):"Iron"} strike (median)`,"smash",z.smash,z.smash-a.smash,z.smash>a.smash,"",2,"")}
+      ${ch(`${common.length===1?nameOf(common[0]):"Avg iron"} carry`,"carry",z.carry,z.carry-a.carry,z.carry>a.carry," yd",1,"")}
       ${ch("Club path","path",z.path,z.path-a.path,Math.abs(z.path)<Math.abs(a.path),"°",1,"")}
     </section>
     <section class="card"><div class="head"><h2>Swing trend</h2></div><div class="chart" style="height:280px"><canvas id="tPath"></canvas></div></section>
@@ -779,7 +800,8 @@ function renderBag(){
   const L7 = clubModel("7i"), L6 = clubModel("6i"), LW = clubModel("7W");
   const card = (t, rows, sub) => `<div><b>${t}</b>${rows.map(([a,b])=>`<div class="r"><span>${a}</span><span>${b}</span></div>`).join("")}<div class="muted small" style="margin-top:6px">${sub}</div></div>`;
   const verdict = L6 && LW && L7 && !L6.est && !LW.est
-    ? (L6.carry-L7.carry<6 ? `Measured: the 6-iron overlaps the 7-iron (${f(L6.carry-L7.carry)} yd). Keep the 7-wood and drop the 6-iron.` : `Measured gaps: 7i→6i ${f(L6.carry-L7.carry)} yd, 6i→7W ${f(LW.carry-L6.carry)} yd.`)
+    ? (L6.carry < L7.carry ? `Measured: the 6-iron carried ${f(L7.carry-L6.carry,0)} yd shorter than the 7-iron (good contact only), while the 7-wood carried ${f(LW.carry-L7.carry,0)} yd past the 7-iron. Keep the 7-wood; the 6-iron isn't adding distance.`
+      : L6.carry-L7.carry<6 ? `Measured: the 6-iron overlaps the 7-iron (${f(L6.carry-L7.carry)} yd). Keep the 7-wood and drop the 6-iron.` : `Measured gaps: 7i→6i ${f(L6.carry-L7.carry)} yd, 6i→7W ${f(LW.carry-L6.carry)} yd.`)
     : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
   const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
     return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
@@ -1002,7 +1024,7 @@ const shapeName = (face, f2p) => {
 };
 // Group outline (Uneekor "Group" style): ellipse fitted to a dataset's dots in screen space, scaled so the farthest dot sits on its edge.
 const groupsPlugin = isOn => ({id:"groups",afterDatasetsDraw(ch){const {ctx,chartArea:a}=ch; ctx.save(); ctx.beginPath(); ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top); ctx.clip();
-  ch.data.datasets.forEach((d,i)=>{ if(!d.key || !ch.isDatasetVisible(i)) return; const P=ch.getDatasetMeta(i).data.map(e=>[e.x,e.y]); if(P.length<2) return;
+  ch.data.datasets.forEach((d,i)=>{ if(!d.key || !ch.isDatasetVisible(i)) return; const P=ch.getDatasetMeta(i).data.map((e,j)=>[e.x,e.y,d.data[j]?.r?.mishit]).filter(p=>!p[2]); if(P.length<2) return;
     const mx=mean(P.map(p=>p[0])), mY=mean(P.map(p=>p[1]));
     let sxx=0,syy=0,sxy=0; P.forEach(([x,y])=>{sxx+=(x-mx)**2; syy+=(y-mY)**2; sxy+=(x-mx)*(y-mY);}); sxx/=P.length; syy/=P.length; sxy/=P.length;
     const tr=(sxx+syy)/2, det=Math.sqrt(Math.max(0,((sxx-syy)/2)**2+sxy*sxy)), l1=Math.max(tr+det,1), l2=Math.max(tr-det,1), th=0.5*Math.atan2(2*sxy, sxx-syy);
@@ -1127,7 +1149,7 @@ function renderSwing(){
         <span class="muted small" id="swLabel">${state.swFrame==null?"each shot at its own contact frame":`frame ${state.swFrame+1} for every shot`}</span>
       </div>
       <div class="crops" id="crops">${sh.map(r=>`<div class="crop" data-crop="${k}-${r.n}" data-shot="${r.n}"><span class="fr">…</span><canvas width="220" height="154" aria-label="Shot ${r.n} at impact"></canvas>
-        <div class="cap"><span>#${r.n}${r.suspect?' <span class="warn">?</span>':""}</span><span>smash ${f(r.smash,2)} · ${f(r.carry,0)} yd</span></div></div>`).join("")}</div>
+        <div class="cap"><span>#${r.n}${r.mishit?' <span class="warn">mishit</span>':r.suspect?' <span class="warn">?</span>':""}</span><span>smash ${f(r.smash,2)} · ${f(r.carry,0)} yd</span></div></div>`).join("")}</div>
       <p class="muted small" style="margin:12px 0 0">Top-down camera, cropped on the ball. The hosel/shaft is toward the top of each image, so a ball nearer the top is closer to the heel. This session has no measured face-contact location (that needs Uneekor's Optix), so judge it from the frames.</p>
     </section>
     <section class="card"><div class="head"><h2>Dispersion</h2><span class="muted small">${nameOf(k)} · outline wraps every shot</span></div><div class="chart" style="height:300px"><canvas id="swDisp"></canvas></div></section>`;
@@ -1167,12 +1189,12 @@ function overviewHTML(){
   const fullSw = new Set(ALL.flatMap(A=>A.keys.filter(k=>CLUB[k] && !A.clubs[k].partial)));
   const partialOnly = [...hit].filter(k=>!fullSw.has(k)).sort((a,b)=>loftOf(a)-loftOf(b));
   const bagN = MAIN.filter(c=>c.key!=="Putter").length;
-  const curated = ALL.some(A=>A.meta.curated);
+  const nCur = ALL.filter(A=>A.meta.curated).length;
   const A = ALL[state.i];
   return `<section class="overview">
     <div class="ov now"><div class="l">This session</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>
     <div class="ov"><div class="l">All sessions</div><div class="v">${ALL.length}</div><div class="c">${sDate(ALL[0])}${ALL.length>1?" → "+sDate(ALL[ALL.length-1]):""}</div></div>
-    <div class="ov"><div class="l">Balls hit, all sessions</div><div class="v">${total.toLocaleString()}</div><div class="c">${curated?"recorded (mishits removed)":"recorded"}</div></div>
+    <div class="ov"><div class="l">Balls hit, all sessions</div><div class="v">${total.toLocaleString()}</div><div class="c">${nCur===ALL.length?"recorded (mishits removed)":nCur?`${nCur} of ${ALL.length} sessions best shots only`:"every shot recorded"}</div></div>
     <div class="ov"><div class="l">Clubs hit</div><div class="v">${hit.size} / ${bagN}</div><div class="c">${partialOnly.length?`${partialOnly.map(nameOf).join(", ")} partial swings only`:`all full swings`}</div></div></section>`;
 }
 
