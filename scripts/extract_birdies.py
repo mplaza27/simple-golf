@@ -10,12 +10,15 @@ The script refuses to write if the output looks like it contains contact details
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 GOLF_DIR = Path(__file__).resolve().parent.parent
 BIRDIES_DIR = GOLF_DIR / "data" / "birdies"
 OUT = BIRDIES_DIR / "rounds.json"
+# Dates are calendar days where you played (all courses so far are US Eastern). Time of day is never kept.
+LOCAL_TZ = ZoneInfo("America/New_York")
 
 # Allow-list of per-round stats to keep. Putting and strokes-gained are left out: the export
 # never records putts, and strokes-gained is a constant placeholder (100).
@@ -45,7 +48,7 @@ def sanitize(export_path):
         hcp = r.get("roundHandicap")
         rounds.append({
             "key": r["id"],  # used only to de-duplicate across exports; removed before writing
-            "date": datetime.fromtimestamp(r["timestamp"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d"),
+            "date": datetime.fromtimestamp(r["timestamp"] / 1000, tz=LOCAL_TZ).strftime("%Y-%m-%d"),
             "course": courses.get(club_id, "Unknown course"),
             "holes": len(holes),
             "complete": bool(holes) and all(h > 0 for h in holes),  # some rounds were only partly entered
