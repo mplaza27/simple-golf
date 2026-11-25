@@ -145,6 +145,11 @@
   .tour .acts{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px}
   .tour .dots{display:flex;gap:5px} .tour .dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)} .tour .dots i.on{background:var(--green)}
   .tabs .btn.tour-hl{box-shadow:0 0 0 2px var(--sand);color:var(--ink)}
+  .tour p + p{margin-top:6px}
+  .tour-show{box-shadow:0 0 0 2px var(--sand),0 0 0 8px rgba(227,201,122,.12);border-color:var(--sand)}
+  .tour-target{position:relative;z-index:2;box-shadow:0 0 0 3px var(--sand);animation:tourPulse 1.2s ease-in-out infinite}
+  @keyframes tourPulse{0%,100%{box-shadow:0 0 0 3px var(--sand),0 0 0 0 rgba(227,201,122,.55)}50%{box-shadow:0 0 0 3px var(--sand),0 0 0 9px rgba(227,201,122,0)}}
+  @media (prefers-reduced-motion:reduce){.tour-target{animation:none}}
 
   /* rounds */
   .mix{display:grid;grid-template-columns:70px 1fr;gap:8px 12px;align-items:center;font-size:13px;margin-top:14px}
@@ -1026,17 +1031,17 @@ async function contactInfo(r){
   return impactCache[key] = info;
 }
 async function drawCrops(k, shots){
-  for (const r of shots){
-    const cell = document.querySelector(`#crops [data-crop="${k}-${r.n}"]`); if (!cell) continue;
+  await Promise.all(shots.map(async r => {   // all shots in parallel so the close-ups appear quickly
+    const cell = document.querySelector(`#crops [data-crop="${k}-${r.n}"]`); if (!cell) return;
     const info = await contactInfo(r), fi = state.swFrame==null ? info?.frame ?? 8 : state.swFrame;
-    const src = r.img?.frames?.[fi]; if (!src) continue;
+    const src = r.img?.frames?.[fi]; if (!src) return;
     const im = await loadImg(src), cv = cell.querySelector("canvas"), cx = cv.getContext("2d");
     const cw = 220, ch = 154, bx = info?.ball ? info.ball[0] : im.width/2, byy = info?.ball ? info.ball[1] : im.height/2;
     cv.width = cw; cv.height = ch;
     const sx = Math.max(0, Math.min(im.width-cw, bx-cw*0.55)), sy = Math.max(0, Math.min(im.height-ch, byy-ch/2));
     cx.drawImage(im, sx, sy, cw, ch, 0, 0, cw, ch);
     cell.querySelector(".fr").textContent = state.swFrame==null ? `contact · frame ${fi+1}` : `frame ${fi+1}`;
-  }
+  }));
 }
 
 function renderSwing(){
@@ -1122,37 +1127,56 @@ function overviewHTML(){
 /* ================= quick tour ================= */
 // One step per tab: what it is, why it helps, one thing to try (a sentence each).
 const TOUR = [
-  {tab:"session", title:"Session", what:"Your simulator session in one place: headline numbers, what to work on, and charts you can switch between.", why:"It boils every shot down to the few things worth fixing first.", try:"Tap a club chip, then flip between Distance, Gapping and Dispersion."},
-  {tab:"swing", title:"Swing", what:"One club at a time: path and face, ball flight, and the camera frames at impact.", why:"It shows how each shot was struck, not just where it went.", try:"Pick a club and drag the slider to scrub every shot through impact together."},
-  {tab:"rounds", title:"Rounds", what:"Your 18Birdies rounds: score trend, where you miss greens, and what distance costs on the course.", why:"It links your practice numbers to real scores.", try:"Switch the chart to Handicap, then pick a course to see your hardest holes."},
+  // show = area to spotlight, target = what to click, done = true once they've done it
+  {tab:"session", title:"Session", what:"Your simulator session in one place: headline numbers, what to work on, and charts you can switch between.", why:"It boils every shot down to the few things worth fixing first.", try:"This is your distance per club; click Dispersion to see where those shots landed.",
+   prep:()=>{state.view="distance";}, show:"#cMain", target:'[data-view="dispersion"]', done:()=>state.view==="dispersion"},
+  {tab:"swing", title:"Swing", what:"One club at a time: path and face, ball flight, and the camera frames at impact.", why:"It shows how each shot was struck, not just where it went.", try:"Tap a shot to watch it through impact, frame by frame.",
+   target:"#crops .crop", scroll:"#crops", done:()=>tourTapped},
+  {tab:"rounds", title:"Rounds", what:"Your 18Birdies rounds: score trend, where you miss greens, and what distance costs on the course.", why:"It links your practice numbers to real scores.", try:"Click Handicap to see how your handicap has moved.",
+   prep:()=>{state.rview="score";}, target:'[data-rview="hcp"]', done:()=>state.rview==="hcp"},
   {tab:"trend", title:"Progress", what:"How your swing numbers move from session to session.", why:"It tells you whether the practice is working.", try:"Change the metric in the By club chart."},
   {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
   {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
 ];
-let tourStep = -1;
+let tourStep = -1, tourTapped = false;
+// Spotlight the step's area and pulse the thing to click; re-applied after every render (tabs rebuild their HTML).
+function applyTour(){
+  document.querySelectorAll(".tour-show,.tour-target").forEach(e=>e.classList.remove("tour-show","tour-target"));
+  const t = TOUR[tourStep]; if (!t) return;
+  const show = t.show && document.querySelector(t.show)?.closest(".card");
+  show?.classList.add("tour-show");
+  const tgt = t.target && document.querySelector(t.target);
+  if (tgt && !(t.done && t.done())) tgt.classList.add("tour-target");
+  const tryEl = tourEl.querySelector(".try");
+  if (tryEl && t.done && t.done() && !tryEl.querySelector(".good")) tryEl.insertAdjacentHTML("beforeend",' <span class="good">✓ nice</span>');
+}
 const tourEl = $("tour");
 function showTour(i){
-  tourStep = i; const t = TOUR[i];
+  tourStep = i; const t = TOUR[i]; tourTapped = false; t.prep?.();
   state.tab = t.tab; render(); scrollTo({top:0});
   document.querySelectorAll(".tabs .btn").forEach(b=>b.classList.toggle("tour-hl", b.dataset.tab===t.tab));
   document.querySelector(`.tabs .btn[data-tab="${t.tab}"]`)?.scrollIntoView({block:"nearest",inline:"center"});
   tourEl.innerHTML = `<div class="step">Quick tour · ${i+1} of ${TOUR.length}</div><h3 id="tourTitle">${t.title}</h3>
-    <p><b>What:</b> ${t.what} <b>Why:</b> ${t.why} <b>Try:</b> ${t.try}</p>
+    <p><b>What:</b> ${t.what}</p><p><b>Why:</b> ${t.why}</p><p class="try"><b>Try:</b> ${t.try}${t.done&&t.done()?' <span class="good">✓ nice</span>':""}</p>
     <div class="acts"><button class="btn sm" data-t="skip">Skip</button><div class="dots">${TOUR.map((_,j)=>`<i class="${j===i?"on":""}"></i>`).join("")}</div>
       <div class="row-btns">${i>0?`<button class="btn sm" data-t="back">Back</button>`:""}<button class="btn sm" data-t="next" aria-pressed="true">${i<TOUR.length-1?"Next":"Done"}</button></div></div>`;
   tourEl.hidden = false;
+  applyTour();
+  const focus = document.querySelector(t.scroll || t.show || t.target);
+  if (focus) setTimeout(()=>focus.scrollIntoView({block:"center", behavior:"smooth"}), 60);
   tourEl.querySelector('[data-t="next"]').focus({preventScroll:true});
 }
 function endTour(){
-  tourEl.hidden = true; tourStep = -1; store.set("golf-tour-v1", true);
+  tourEl.hidden = true; tourStep = -1; store.set("golf-tour-v1", true); applyTour();
   document.querySelectorAll(".tabs .btn").forEach(b=>b.classList.remove("tour-hl"));
   state.tab = "session"; render(); scrollTo({top:0});
 }
 tourEl.addEventListener("click", e => { const a = e.target.closest("[data-t]")?.dataset.t; if (!a) return;
   if (a==="skip") endTour(); else if (a==="back") showTour(tourStep-1); else if (tourStep < TOUR.length-1) showTour(tourStep+1); else endTour(); });
 document.addEventListener("keydown", e => { if (tourEl.hidden || !vEl.hidden) return;
-  if (e.key==="Escape") endTour(); else if (e.key==="ArrowRight") tourEl.querySelector('[data-t="next"]').click(); else if (e.key==="ArrowLeft" && tourStep>0) showTour(tourStep-1); });
+  if (e.key==="Escape") endTour(); else if (e.key==="ArrowRight") tourEl.querySelector('[data-t="next"]').click(); else if (e.key==="ArrowLeft" && tourStep>0) showTour(tourStep-1); }, true);  // capture: runs before the shot viewer handles Esc
 $("tourBtn").onclick = () => showTour(0);
+document.addEventListener("click", e => { if (tourStep>=0 && TOUR[tourStep].tab==="swing" && e.target.closest("#crops .crop")){ tourTapped = true; applyTour(); } }, true);
 
 /* ================= wiring ================= */
 const TABS = {session:renderSession, swing:renderSwing, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills};
@@ -1162,6 +1186,7 @@ function render(){
   document.querySelectorAll(".tabs .btn").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
   TABS[state.tab]();
   history.replaceState(null,"",`#s${state.i+1}/${state.tab}`);
+  if (typeof applyTour==="function" && tourStep>=0) applyTour();
 }
 const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hn ? +hn[1]-1 : -1;
 if (hi>=0 && hi<ALL.length) state.i = hi; if (TABS[ht]) state.tab = ht;
