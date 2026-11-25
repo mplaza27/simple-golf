@@ -114,7 +114,7 @@ def load_session(folder):
 
 
 ROUNDS_FILE = GOLF_DIR / "data" / "birdies" / "rounds.json"
-ROUND_FIELDS = ["course", "holes", "complete", "holeStrokes", "strokes", "toPar", "roundHandicap", "stats"]
+ROUND_FIELDS = ["course", "tee", "holes", "complete", "holeStrokes", "strokes", "toPar", "roundHandicap", "stats"]
 
 
 def public_rounds():

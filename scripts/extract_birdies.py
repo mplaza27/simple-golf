@@ -18,6 +18,7 @@ from pathlib import Path
 GOLF_DIR = Path(__file__).resolve().parent.parent
 BIRDIES_DIR = GOLF_DIR / "data" / "birdies"
 OUT = BIRDIES_DIR / "rounds.json"
+TEES = BIRDIES_DIR / "tees.json"   # optional, local: {"tees": {"YYYY-MM-DD | course | n": "White"}}
 # Dates are calendar days where you played (all courses so far are US Eastern). Time of day is never kept.
 LOCAL_TZ = ZoneInfo("America/New_York")
 
@@ -93,8 +94,16 @@ def main():
         for r in rounds:
             by_key[r["key"]] = r
     rounds = sorted(by_key.values(), key=lambda r: r["date"])
-    for r in rounds:
+    tees = json.loads(TEES.read_text())["tees"] if TEES.exists() else {}
+    seen = {}
+    for r in rounds:  # rounds are in time order; n counts repeat rounds at the same course on the same day
         del r["key"]
+        base = f"{r['date']} | {r['course']}"
+        seen[base] = seen.get(base, 0) + 1
+        r["tee"] = tees.get(f"{base} | {seen[base]}")
+    missing = sum(r["tee"] is None for r in rounds)
+    if tees and missing:
+        print(f"note: {missing} round(s) have no tee in {TEES.name}")
     out = {"source": "18Birdies export (sanitized by scripts/extract_birdies.py)", "rounds": rounds}
     text = json.dumps(out, indent=1, ensure_ascii=False)
     problems = sorted({p for raw in raws for p in leak_check(text, raw)})

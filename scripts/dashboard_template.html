@@ -34,7 +34,7 @@
   .top-in{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
   .brand{display:flex;align-items:center;gap:10px;font-family:var(--pixel);font-size:15px;color:var(--cream);letter-spacing:.04em;text-shadow:2px 2px 0 #0a120d}
   .brand span{color:var(--green)}
-  .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;max-width:100%}
   .date{display:flex;align-items:center;gap:6px}
 
   /* buttons: one calm style everywhere */
@@ -47,7 +47,9 @@
   .btn.icon{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%}
   .btn .sw{width:9px;height:9px;border-radius:50%}
   .btn .n{font-family:var(--mono);font-size:12.5px;opacity:.75}
-  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px}
+  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs .btn{flex:none}
   .tabs .btn{border:0;background:none;padding:6px 14px}
   .tabs .btn[aria-selected="true"]{background:var(--green);color:#132016}
   select{background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:999px;padding:6px 14px;font:400 13.5px var(--sans);height:34px;cursor:pointer}
@@ -116,6 +118,21 @@
   .bar .fill{height:100%;border-radius:4px}
   .bar .val{text-align:right;font-family:var(--mono);font-size:13px;color:var(--ink)}
   .caveat{font-size:13.5px;color:var(--sand);margin:0 0 10px}
+
+  /* rounds */
+  .mix{display:grid;grid-template-columns:70px 1fr;gap:8px 12px;align-items:center;font-size:13px;margin-top:14px}
+  .mixbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--panel3)}
+  .mixbar i{display:block;height:100%}
+  .mixkey{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .mixkey i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .misses{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+  .misses svg{display:block;width:100%;max-width:420px;height:auto;margin:0 auto}
+  .fwbar{display:flex;height:34px;border-radius:8px;overflow:hidden;margin:10px 0 6px;font-size:12.5px}
+  .fwbar div{display:grid;place-items:center;color:#132016;font-weight:700;min-width:0}
+  .heat{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px}
+  .hc{border-radius:8px;padding:6px 4px;text-align:center;color:#132016}
+  .hc .h{font-size:11px;font-weight:700;opacity:.8} .hc .v{font-size:15px;font-weight:700} .hc .y{font-size:11px;opacity:.8}
+  .bins td,.bins th{text-align:right} .bins td:first-child,.bins th:first-child{text-align:left}
 
   /* level table */
   .levels-t td.hit{color:var(--green);font-weight:700}
@@ -188,6 +205,7 @@
   footer{color:var(--faint);font-size:12.5px;margin-top:36px}
 
   @media (max-width:860px){
+    .misses{grid-template-columns:1fr}
     .overview{grid-template-columns:1fr 1fr}
     .stats{grid-template-columns:1fr}
     .detail,.planner,.vgrid,.drill,.proj{grid-template-columns:1fr}
@@ -211,6 +229,7 @@
       </div>
       <nav class="tabs" role="tablist">
         <button class="btn" role="tab" data-tab="session">Session</button>
+        <button class="btn" role="tab" data-tab="rounds">Rounds</button>
         <button class="btn" role="tab" data-tab="trend">Progress</button>
         <button class="btn" role="tab" data-tab="bag">Bag</button>
         <button class="btn" role="tab" data-tab="drills">Drills</button>
@@ -220,6 +239,7 @@
 
   <section class="overview" id="overview"></section>
   <main id="tab-session" class="stack"></main>
+  <main id="tab-rounds" class="stack" hidden></main>
   <main id="tab-trend" class="stack" hidden></main>
   <main id="tab-bag" class="stack" hidden></main>
   <main id="tab-drills" class="stack" hidden></main>
@@ -452,7 +472,7 @@ const sDate = A => new Date(A.s.month+"-15T12:00:00").toLocaleDateString(undefin
 
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
-const state = { i:ALL.length-1, tab:"session", club:null, cmp:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
+const state = { i:ALL.length-1, tab:"session", club:null, cmp:null, rview:"score", rcourse:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
 
 /* ================= SESSION ================= */
 function renderSession(){
@@ -735,6 +755,144 @@ document.addEventListener("keydown",e=>{ if(vEl.hidden) return;
   if(e.key==="Escape")closeShot(); else if(e.key==="ArrowRight"){e.preventDefault();stopPlay();setFrame(V.frame+1);} else if(e.key==="ArrowLeft"){e.preventDefault();stopPlay();setFrame(V.frame-1);}
   else if(e.key==="ArrowDown"){e.preventDefault();stepShot(1);} else if(e.key==="ArrowUp"){e.preventDefault();stepShot(-1);} else if(e.key===" "){e.preventDefault();V.timer?stopPlay():startPlay();} });
 
+/* ================= ROUNDS (18Birdies) ================= */
+// Rounds arrive month-only and in order (seq). Scorecards in courses.json are linked by birdiesName.
+const ROUNDS = (DATA.rounds || []).slice().sort((a,b)=>a.seq-b.seq);
+const RCOURSE = Object.fromEntries((DATA.courses||[]).filter(c=>c.birdiesName).map(c=>[c.birdiesName,c]));
+const mLabel = m => new Date(m+"-15T12:00:00").toLocaleDateString(undefined,{month:"short",year:"2-digit"});
+const per18 = r => r.toPar/r.holes*18;
+const pct = x => x==null ? "—" : `${Math.round(x*100)}%`;
+const sum = (rs,k) => rs.reduce((n,r)=>n+(r.stats?.[k]||0),0);
+const trailing = (arr,n,fn) => arr.map((_,i)=>{ const w=arr.slice(Math.max(0,i-n+1),i+1); return w.length>=Math.min(n,3)?fn(w):null; });
+// WHS-style: average of the best 8 of the last 20 round handicaps (fewer rounds: best ~40%).
+const whs = H => { const h=H.filter(x=>x!=null).slice(-20); if (h.length<3) return null; const n=h.length>=20?8:Math.max(1,Math.round(h.length*.4)); return mean(h.slice().sort((a,b)=>a-b).slice(0,n)); };
+// Hole scores where par + yardage are known (scorecard course, tee played, full-length round).
+function knownHoles(){
+  const pts = [];
+  for (const r of ROUNDS){ const c = RCOURSE[r.course];
+    if (!r.complete || !c || !c.tees[r.tee] || r.holes!==c.par.length) continue;
+    r.holeStrokes.forEach((st,i)=>pts.push({cid:c.id, i, par:c.par[i], yd:c.tees[r.tee][i], over:st-c.par[i]})); }
+  return pts;
+}
+// Strokes per yard, comparing holes only with holes of the same par.
+function yardSlope(pts){ let num=0, den=0;
+  for (const p of [3,4,5]){ const g=pts.filter(q=>q.par===p); if (g.length<5) continue;
+    const mx=mean(g.map(q=>q.yd)), my=mean(g.map(q=>q.over)); g.forEach(q=>{num+=(q.yd-mx)*(q.over-my); den+=(q.yd-mx)**2;}); }
+  return den ? num/den : null; }
+
+function renderRounds(){
+  const full = ROUNDS.filter(r=>r.complete);
+  if (!full.length){ $("tab-rounds").innerHTML = `<section class="card empty">No 18Birdies rounds yet: save an export in data/birdies/ and run scripts/extract_birdies.py.</section>`; return; }
+  const p = full.map(per18), n10 = Math.min(10, Math.floor(full.length/2));
+  const first = mean(p.slice(0,n10)), last = mean(p.slice(-n10)), idx = whs(full.map(r=>r.roundHandicap));
+  const holes = rs => rs.reduce((n,r)=>n+r.holes,0);
+  const dbl = sum(full,"doubleBogeyOrWorse")/holes(full), recent = full.slice(-n10), dbl10 = sum(recent,"doubleBogeyOrWorse")/holes(recent);
+  const months = [...new Set(ROUNDS.map(r=>r.month))];
+  const card = (l,key,v,c) => `<div class="stat"><div><div class="l">${key?tip(key,l):l}</div><div class="v">${v}</div><div class="c">${c}</div></div></div>`;
+
+  // misses: denominators are the holes where a direction was actually recorded
+  const fw = {L:sum(full,"fairwayLefts"), M:sum(full,"fairwayMiddles"), R:sum(full,"fairwayRights"), S:sum(full,"fairwayShorts"), Lo:sum(full,"fairwayLongs")};
+  const fwN = fw.L+fw.M+fw.R+fw.S+fw.Lo;
+  const g = {hit:sum(full,"gir"), L:sum(full,"girLefts"), R:sum(full,"girRights"), S:sum(full,"girShorts"), Lo:sum(full,"girLongs"), N:sum(full,"girNoChances")};
+  const gN = g.hit+g.L+g.R+g.S+g.Lo+g.N, gMiss = g.L+g.R+g.S+g.Lo;
+  const big = [["short",g.S],["right",g.R],["long",g.Lo],["left",g.L]].sort((a,b)=>b[1]-a[1])[0];
+
+  // distance tax
+  const KH = knownHoles(), slope = yardSlope(KH);
+  const simGain = ALL.length ? distanceModel(ALL[ALL.length-1]).avgGain : null;
+  const tax = slope!=null && simGain!=null ? slope*simGain*18 : null;
+  const p3 = KH.filter(q=>q.par===3), bins = [[0,120],[120,150],[150,999]].map(([lo,hi])=>{ const b=p3.filter(q=>q.yd>=lo&&q.yd<hi); return {lo,hi,n:b.length, over:mean(b.map(q=>q.over)), dbl:b.length?b.filter(q=>q.over>=2).length/b.length:null}; }).filter(b=>b.n);
+
+  // courses
+  const byCourse = {}; for (const r of full){ (byCourse[r.course] ||= []).push(r); }
+  const courseRows = Object.entries(byCourse).sort((a,b)=>b[1].length-a[1].length);
+  const sc = Object.values(RCOURSE).filter(c=>full.some(r=>r.course===c.birdiesName && c.tees[r.tee] && r.holes===c.par.length));
+  if (!sc.find(c=>c.id===state.rcourse)) state.rcourse = sc[0]?.id;
+  const C = sc.find(c=>c.id===state.rcourse);
+  let heat = "";
+  if (C){ const rs = full.filter(r=>r.course===C.birdiesName && C.tees[r.tee] && r.holes===C.par.length);
+    const tee = Object.entries(rs.reduce((m,r)=>(m[r.tee]=(m[r.tee]||0)+1,m),{})).sort((a,b)=>b[1]-a[1])[0][0];
+    const avg = C.par.map((_,i)=>mean(rs.map(r=>r.holeStrokes[i])));
+    const col = o => o<=0.5?"#9fd07c":o<=1?"#c3d77c":o<=1.5?"#e3c97a":o<=2?"#e8a676":"#e58a76";
+    const cells = i => `<div class="hc" style="background:${col(avg[i]-C.par[i])}" title="Hole ${i+1}: par ${C.par[i]}, ${C.tees[tee][i]} yd (${tee}), average ${f(avg[i],2)}"><div class="h">${i+1} · P${C.par[i]}</div><div class="v">${sg(avg[i]-C.par[i],1)}</div><div class="y">${C.tees[tee][i]} yd</div></div>`;
+    const idxs = C.par.map((_,i)=>i), worst = idxs.slice().sort((a,b)=>(avg[b]-C.par[b])-(avg[a]-C.par[a])).slice(0,2);
+    heat = `<p class="sub" style="margin:0 0 12px">${rs.length} full round${rs.length===1?"":"s"} · yardage from the ${esc(tee)} tees · toughest: ${worst.map(i=>`hole ${i+1} (${C.tees[tee][i]} yd, ${sg(avg[i]-C.par[i],1)})`).join(", ")}</p>
+      <div class="heat">${idxs.slice(0,9).map(cells).join("")}</div>${C.par.length>9?`<div class="heat" style="margin-top:6px">${idxs.slice(9).map(cells).join("")}</div>`:""}`;
+  }
+
+  // green-miss target (long = up, short = down, as you'd see it from the fairway)
+  const W=420, cx=210, cy=150, R0=46;
+  const arrow = (dx,dy,n,label) => { const w = 4+14*(n/Math.max(1,gMiss)); const x2=cx+dx*(R0+70), y2=cy+dy*(R0+70);
+    return `<line x1="${cx+dx*(R0+6)}" y1="${cy+dy*(R0+6)}" x2="${x2}" y2="${y2}" stroke="#e3c97a" stroke-opacity=".75" stroke-width="${w.toFixed(1)}" stroke-linecap="round"/>
+      <text x="${cx+dx*(R0+80)}" y="${cy+dy*(R0+90)+4}" text-anchor="${dx<0?"end":dx>0?"start":"middle"}" fill="#e9e5d3" font-size="13" font-family="Space Mono, monospace">${label} ${pct(n/Math.max(1,gMiss))}</text>`; };
+  const target = `<svg viewBox="0 0 ${W} 300" role="img" aria-label="Where you miss greens">
+    <ellipse cx="${cx}" cy="${cy}" rx="${R0}" ry="${R0}" fill="rgba(159,208,124,.35)" stroke="#9fd07c"/>
+    <text x="${cx}" y="${cy-2}" text-anchor="middle" fill="#f1ead0" font-size="18" font-weight="700" font-family="Space Mono, monospace">${pct(g.hit/Math.max(1,gN))}</text>
+    <text x="${cx}" y="${cy+16}" text-anchor="middle" fill="#93a796" font-size="11" font-family="Space Mono, monospace">greens hit</text>
+    ${arrow(0,-1,g.Lo,"long")}${arrow(0,1,g.S,"short")}${arrow(-1,0,g.L,"left")}${arrow(1,0,g.R,"right")}</svg>`;
+  const fwSeg = (n,col,label) => n ? `<div style="width:${(n/fwN*100).toFixed(1)}%;background:${col}" title="${label}: ${n}">${n/fwN>=.16?`${label} ${pct(n/fwN)}`:""}</div>` : "";
+
+  // scoring mix
+  const mixOf = rs => { const h=holes(rs), b=sum(rs,"birdies")+sum(rs,"eagles")+sum(rs,"aces"); return [["Birdie+",b/h,"#84bcd9"],["Par",sum(rs,"pars")/h,"#9fd07c"],["Bogey",sum(rs,"bogeys")/h,"#e3c97a"],["Double+",sum(rs,"doubleBogeyOrWorse")/h,"#e58a76"]]; };
+  const mixBar = rs => `<div class="mixbar">${mixOf(rs).map(([l,v,c])=>`<i style="width:${(v*100).toFixed(1)}%;background:${c}" title="${l} ${pct(v)}"></i>`).join("")}</div>`;
+
+  $("tab-rounds").innerHTML = `
+    <div class="head" style="margin:0"><div><h2>Rounds</h2><p class="sub">${ROUNDS.length} rounds logged in 18Birdies · ${full.length} complete · ${mLabel(months[0])} → ${mLabel(months[months.length-1])}</p></div>
+      <span class="note" data-tip="Only the month of each round is published. Partly entered rounds are left out of the stats.">Month only</span></div>
+    <section class="stats">
+      ${card("Over par per 18","",sg(last,1), `last ${n10} rounds · first ${n10}: ${sg(first,1)} · <span class="${last<first?"good":"bad"}">${last<first?"improving":"worse"}</span>`)}
+      ${card("Handicap estimate","",f(idx,1), "best 8 of last 20 round handicaps (WHS-style)")}
+      ${card("Double bogey or worse","",pct(dbl10), `of holes, last ${n10} rounds · all rounds ${pct(dbl)}`)}
+    </section>
+    <section class="card">
+      <div class="head"><div class="row-btns">${[["score","Score"],["hcp","Handicap"]].map(([k,l])=>`<button class="btn sm" data-rview="${k}" aria-pressed="${state.rview===k}">${l}</button>`).join("")}</div>
+        <span class="muted small">▲ = 9-hole round (scaled to 18)</span></div>
+      <div class="chart" style="height:300px"><canvas id="rTrend"></canvas></div>
+      <div class="mix"><span class="muted">All</span>${mixBar(full)}<span class="muted">Last ${n10}</span>${mixBar(recent)}</div>
+      <div class="mixkey">${mixOf(full).map(([l,,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join("")}</div>
+    </section>
+    <section class="card">
+      <div class="head"><h2>Where you miss</h2></div>
+      <div class="misses">
+        <div>${target}<p class="sub" style="text-align:center;margin:4px 0 0">Green misses (${gMiss} recorded): mostly <b style="color:var(--sand)">${big[0]}</b>, ${pct(big[1]/Math.max(1,gMiss))}${g.N?` · ${g.N} no chance`:""}</p></div>
+        <div><div class="muted small">Tee shots (${fwN} recorded)</div>
+          <div class="fwbar" aria-label="Left ${fw.L}, fairway ${fw.M}, right ${fw.R}, short or long ${fw.S+fw.Lo}">${fwSeg(fw.L,"#e3c97a","Left")}${fwSeg(fw.M,"#9fd07c","Fairway")}${fwSeg(fw.R,"#e3c97a","Right")}${fwSeg(fw.S+fw.Lo,"#93a796","Short/long")}</div>
+          <p class="muted small" style="margin:0 0 8px">Left ${pct(fw.L/fwN)} · fairway ${pct(fw.M/fwN)} · right ${pct(fw.R/fwN)} · short/long ${pct((fw.S+fw.Lo)/fwN)}</p>
+          <p class="sub">Left and right misses are nearly even (${fw.L} vs ${fw.R}), so the fade isn't costing fairways. Coming up <b>short</b> is the main miss into greens, which is the distance problem showing up on the course.</p></div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="head"><h2>What distance costs you</h2></div>
+      ${slope!=null?`<p class="sub" style="margin:0 0 12px">On ${KH.length} hole scores where the yardage is known (${sc.map(c=>esc(c.name)).join(", ")}), each extra 10 yd cost about <b style="color:var(--cream)">${sg(slope*10,2)} strokes</b>, comparing holes of the same par.${tax!=null?` The simulator says solid contact is worth ~${f(simGain,0)} yd per iron, roughly <b style="color:var(--cream)">${f(tax,1)} strokes per 18</b>. Treat that as an upper-end estimate: longer holes are also harder in other ways.`:""}</p>`:`<p class="empty">Not enough hole scores with known yardage yet.</p>`}
+      ${bins.length?`<div class="tablewrap"><table class="bins"><thead><tr><th>Par 3s by length</th><th>Holes played</th><th>Avg over par</th><th>Double+</th></tr></thead><tbody>${bins.map(b=>`<tr><td>${b.hi>500?`${b.lo}+ yd`:`${b.lo}–${b.hi} yd`}</td><td>${b.n}</td><td>${sg(b.over,2)}</td><td>${pct(b.dbl)}</td></tr>`).join("")}</tbody></table></div>`:""}
+    </section>
+    <section class="card">
+      <div class="head"><h2>Courses</h2>${sc.length?`<div class="row-btns">${sc.map(c=>`<button class="btn sm" data-rcourse="${c.id}" aria-pressed="${c.id===state.rcourse}">${esc(c.name)}</button>`).join("")}</div>`:""}</div>
+      ${heat}
+      <div class="tablewrap" style="margin-top:16px"><table><thead><tr><th>Course</th><th>Rounds</th><th>Tees</th><th>Avg vs par (per 18)</th><th>Best</th></tr></thead><tbody>
+        ${courseRows.map(([name,rs])=>{ const best = rs.slice().sort((a,b)=>per18(a)-per18(b))[0];
+          return `<tr><td>${esc(name)}</td><td>${rs.length}</td><td>${esc([...new Set(rs.map(r=>r.tee).filter(Boolean))].join(", "))}</td><td>${sg(mean(rs.map(per18)),1)}</td><td>${best.strokes} <span class="muted small">(${best.holes} holes, ${sg(best.toPar,0)})</span></td></tr>`; }).join("")}
+      </tbody></table></div>
+    </section>`;
+
+  document.querySelectorAll("#tab-rounds [data-rview]").forEach(b=>b.onclick=()=>{state.rview=b.dataset.rview;render();});
+  document.querySelectorAll("#tab-rounds [data-rcourse]").forEach(b=>b.onclick=()=>{state.rcourse=b.dataset.rcourse;render();});
+  const labels = full.map(r=>mLabel(r.month)), tipR = r => [`Round ${r.seq} · ${mLabel(r.month)}`, `${r.course}${r.tee?` (${r.tee})`:""}`, `${r.holes} holes: ${r.strokes} (${sg(r.toPar,0)})`];
+  const style = full.map(r=>r.holes===9?"triangle":"circle");
+  const opts = yt => ({maintainAspectRatio:false, scales:{x:{grid:{display:false},ticks:{autoSkip:true,maxRotation:0,maxTicksLimit:10}},y:{grid,title:{display:true,text:yt}}},
+    plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:()=>"",label:c=>c.dataset.pts?tipR(full[c.dataIndex]):`${c.dataset.label}: ${f(c.raw,1)}`}}}});
+  if (state.rview==="score"){
+    draw("rTrend",{type:"line",data:{labels,datasets:[
+      {label:"Over par (per 18)",pts:true,data:p.map(x=>+x.toFixed(1)),showLine:false,pointStyle:style,pointRadius:5,backgroundColor:"rgba(241,234,208,.75)",borderColor:"rgba(241,234,208,.75)"},
+      {label:"Last 5 average",data:trailing(p,5,mean),borderColor:"#9fd07c",backgroundColor:"#9fd07c",pointRadius:0,borderWidth:2.5,tension:.3,spanGaps:true}]},options:opts("Strokes over par, per 18")});
+  } else {
+    const H = full.map(r=>r.roundHandicap);
+    draw("rTrend",{type:"line",data:{labels,datasets:[
+      {label:"Round handicap",pts:true,data:H,showLine:false,pointStyle:style,pointRadius:5,backgroundColor:"rgba(241,234,208,.75)",borderColor:"rgba(241,234,208,.75)"},
+      {label:"Index (best 8 of last 20)",data:H.map((_,i)=>whs(H.slice(0,i+1))),borderColor:"#9fd07c",backgroundColor:"#9fd07c",pointRadius:0,borderWidth:2.5,tension:.3,spanGaps:true}]},options:opts("Handicap")});
+  }
+}
+
 /* ================= OVERVIEW (all sessions) ================= */
 function renderOverview(){
   const balls = A => A.keys.reduce((n,k)=>n+A.clubs[k].n,0);
@@ -753,7 +911,7 @@ function renderOverview(){
 /* ================= wiring ================= */
 const sel = $("date");
 sel.innerHTML = ALL.map((A,i)=>`<option value="${i}">${sName(i)} · ${sDate(A)}</option>`).reverse().join("");
-const TABS = {session:renderSession, trend:renderTrend, bag:renderBag, drills:renderDrills};
+const TABS = {session:renderSession, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills};
 function render(){
   if (!ALL.length) return;
   sel.value = state.i; $("prev").disabled = state.i<=0; $("next").disabled = state.i>=ALL.length-1;
