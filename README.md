@@ -17,10 +17,12 @@ data/
     link.md              report link (git-ignored: it contains an access key)
     session.json         optional: curated, per-club caveats, nextSession
     review.md            optional: coach notes for that session
-  birdies/MM-DD-YY/      18Birdies exports (not used by the dashboard yet)
+  birdies/MM-DD-YY/      raw 18Birdies exports (git-ignored: they hold your email, phone and friends)
+  birdies/rounds.json    sanitized rounds made by extract_birdies.py (safe to publish)
 scripts/
   download_shots.py      download a session and rebuild the site
   build_dashboard.py     rebuild index.html from data/ + config/ + coaching/
+  extract_birdies.py     raw 18Birdies export → data/birdies/rounds.json (allow-listed fields only)
   dashboard_template.html
   dev/                   one-off scripts used to reverse-engineer the Uneekor page
 ```
@@ -32,6 +34,9 @@ scripts/
 4. Commit and push to update the GitHub Pages site.
 
 To rebuild the site on its own: `python3 -I scripts/build_dashboard.py`.
+
+## New 18Birdies export
+Save it as `data/birdies/MM-DD-YY/18Birdies_archive.json`, then run `python3 -I scripts/extract_birdies.py`. Only round data is kept (date, course, per-hole strokes, handicap, fairway/green stats); the script refuses to write if anything that looks like an email, phone number or friend's name gets through.
 
 ## Notes
 - `CLUB_NAMES` in `scripts/download_shots.py` maps Uneekor club names to folder names. The wood, hybrid and 6-iron names are guesses; check them after your first session with those clubs.

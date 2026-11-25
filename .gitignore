@@ -5,3 +5,7 @@ __pycache__/
 **/.claude/
 # Uneekor report links carry an access key: keep them local
 **/link.md
+# Raw 18Birdies exports contain account details (email, phone, birth year) and friends' names.
+# Only the sanitized data/birdies/rounds.json (made by scripts/extract_birdies.py) is safe to publish.
+data/birdies/**/*archive*.json
+data/birdies/*/
