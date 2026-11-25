@@ -573,7 +573,10 @@ function renderTable(A){
 function mainChart(A){
   const {keys, clubs, full} = A, fk = keys.filter(k=>!clubs[k].partial);
   const on = k => !state.club || state.club===k, pc = (k,a=.9) => alpha(colorOf(k), on(k)?a:.12);
-  const shotTip = r => [`${nameOf(r.key)} #${r.n} · carry ${f(r.carry)} yd · ${lr(r.side)}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
+  const shotTip = r => [`carry ${f(r.carry)} yd · ${lr(r.side)}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
+  // Tooltip title comes from the point itself. Chart.js's default uses the x-axis label at the same index,
+  // which for the "Shots" layer is the wrong club (shot #3 overall sat under the 9i column).
+  const tipTitle = items => { const raw = items[0]?.raw; return raw?.r ? `${nameOf(raw.r.key)} · shot ${raw.r.n}` : raw?.k ? nameOf(raw.k) : (items[0]?.label ?? ""); };
   // Several dots can sit under the cursor (overlapping shots): always take the one closest to it.
   const shotAt = x => charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r;
   const click = (e,els) => { const el = els.filter(shotAt).sort((a,b)=>Math.hypot(a.element.x-e.x,a.element.y-e.y)-Math.hypot(b.element.x-e.x,b.element.y-e.y))[0];
@@ -601,7 +604,7 @@ function mainChart(A){
     note((m.zero ? `Tour players average about 0. Your full-swing average: ${fm(m,mean(full.map(r=>r[m.shot])))}.` : pP!=null ? `Your ${m.label.toLowerCase()} is ${pP}% of the PGA average${pL!=null?` and ${pL}% of the LPGA average`:""}. Bars = your average, ticks = benchmarks, dots = each shot (tap one).` : "Bars = your average, dots = each shot (tap one).") + star);
     const zero = {id:"zero",afterDatasetsDraw(ch){if(!m.zero)return;const {ctx,chartArea:a,scales:{y}}=ch;ctx.save();ctx.strokeStyle="rgba(159,208,124,.6)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(a.left,y.getPixelForValue(0));ctx.lineTo(a.right,y.getPixelForValue(0));ctx.stroke();ctx.restore();}};
     draw("cMain",{type:"bar",data:{labels,datasets:ds},plugins:[zero],options:{...base,scales:{x:{grid:{display:false}},xs:{type:"linear",display:false,offset:false,bounds:"data",min:-0.5,max:keys.length-0.5},y:{grid,beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k),title:{display:true,text:m.label+(m.unit?` (${m.unit})`:"")}}},
-      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.raw?.r?shotTip(c.raw.r):c.dataset.type==="scatter"?`${c.dataset.label}: ${fm(m,c.raw.y)}`:`You: ${fm(m,c.raw)}`}}}}});
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:tipTitle,label:c=>c.raw?.r?shotTip(c.raw.r):c.dataset.type==="scatter"?`${c.dataset.label}: ${fm(m,c.raw.y)}`:`You: ${fm(m,c.raw)}`}}}}});
   } else if (v==="dispersion"){
     note("Each dot is a shot, seen from above: distance down the range, left/right of the target line. Each outline wraps a club's shots and follows the shape of its pattern. Tap a dot to open it.");
     const sides = keys.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0))), carries = keys.flatMap(k=>clubs[k].shots.map(r=>r.carry)).filter(x=>x!=null);
@@ -622,16 +625,16 @@ function mainChart(A){
     draw("cMain",{type:"scatter",plugins:[line,groups],data:{datasets:keys.map(k=>({key:k,label:nameOf(k)+(clubs[k].partial?"*":""),data:clubs[k].shots.filter(r=>r.carry!=null&&r.side!=null).map(r=>({x:r.carry,y:-r.side,r})),backgroundColor:pc(k),pointRadius:on(k)?5.5:4,pointHoverRadius:8}))},
       options:{...base,scales:{x:{min:x0,max:x1,grid,title:{display:true,text:"Carry (yd)"}},
         y:{min:-my,max:my,grid,title:{display:true,text:"↑ left · right ↓ (yd)"},ticks:{stepSize:10,callback:v=>v===0?"0":`${Math.abs(v)} ${v>0?"L":"R"}`}}},
-        plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+        plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:tipTitle,label:c=>shotTip(c.raw.r)}}}}});
   } else if (v==="curve"){
     note("Dots above the dashed line had the face open to the path, so the ball curved right. The green band is a neutral path.");
     const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2), hi=4;
     const diag = {id:"diag",afterDatasetsDraw(ch){const {ctx,scales:{x,y},chartArea:a}=ch;ctx.save();ctx.beginPath();ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top);ctx.clip();ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(233,229,211,.25)";ctx.beginPath();ctx.moveTo(x.getPixelForValue(lo),y.getPixelForValue(lo));ctx.lineTo(x.getPixelForValue(hi),y.getPixelForValue(hi));ctx.stroke();ctx.restore();}};
-    draw("cMain",{type:"scatter",plugins:[pathBand,diag],data:{datasets:scatter(r=>r.face)},options:{...base,scales:{x:{min:lo,max:hi,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{min:lo,max:hi,grid,title:{display:true,text:"Face to target (°)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+    draw("cMain",{type:"scatter",plugins:[pathBand,diag],data:{datasets:scatter(r=>r.face)},options:{...base,scales:{x:{min:lo,max:hi,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{min:lo,max:hi,grid,title:{display:true,text:"Face to target (°)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:tipTitle,label:c=>shotTip(c.raw.r)}}}}});
   } else if (v==="strike"){
     note("Higher is a more centred strike. Each dot is one shot, placed by its club path.");
     const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2);
-    draw("cMain",{type:"scatter",plugins:[pathBand],data:{datasets:scatter(r=>r.smash)},options:{...base,scales:{x:{min:lo,max:4,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{grid,title:{display:true,text:"Smash factor"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
+    draw("cMain",{type:"scatter",plugins:[pathBand],data:{datasets:scatter(r=>r.smash)},options:{...base,scales:{x:{min:lo,max:4,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{grid,title:{display:true,text:"Smash factor"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:tipTitle,label:c=>shotTip(c.raw.r)}}}}});
   } else {
     note("Carry by loft. Each step down in loft should add 10–12 yd; a flat stretch means two clubs overlap. Hollow points (*) are partial swings. Tap a club to focus it.");
     const lk = keys.filter(k=>CLUB[k]?.loft!=null);
@@ -642,7 +645,7 @@ function mainChart(A){
         meta.data.forEach((pt,i)=>{ const k=lk[i]; ctx.fillStyle=alpha(colorOf(k),on(k)?1:.35); ctx.fillText(nameOf(k)+(clubs[k].partial?"*":""), pt.x, pt.y-14); }); ctx.restore();}}],
       options:{maintainAspectRatio:false,parsing:false,interaction:{mode:"nearest",intersect:true},onClick:(e,els)=>{const el=els.find(x=>x.datasetIndex===0); if(el){state.club=lk[el.index];render();}},
         scales:{x:{type:"linear",grid,title:{display:true,text:"Loft (°)"},ticks:{callback:v=>v+"°"}},y:{grid,title:{display:true,text:"Yards"}}},
-        plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>`${nameOf(c.raw.k)} (${c.raw.x}°): ${c.dataset.label.toLowerCase()} ${c.raw.y} yd`}}}}});
+        plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:tipTitle,label:c=>`${nameOf(c.raw.k)} (${c.raw.x}°): ${c.dataset.label.toLowerCase()} ${c.raw.y} yd`}}}}});
   }
 }
 
