@@ -68,6 +68,39 @@
       "search": "TPI early extension wall drill"
     },
     {
+      "id": "heelgate",
+      "level": 1,
+      "title": "Heel gate for driver and woods",
+      "fixes": [
+        "Heel strikes",
+        "Lost ball speed"
+      ],
+      "color": "#e3c97a",
+      "source": {
+        "name": "Common teaching drill",
+        "url": "https://www.youtube.com/results?search_query=stop+hitting+driver+off+the+heel+drill"
+      },
+      "why": "Session 2 confirmed it: once you centred contact, driver ball speed rose 5 mph and the 3-hybrid and 7-wood carried about 13 yd further. Heel and hosel hits are your biggest leak with the long clubs.",
+      "steps": [
+        "Spray the driver face with foot powder so every strike leaves a mark.",
+        "Push a tee into the mat just inside the ball (the heel side), about a clubhead-width away.",
+        "Address the ball off the toe-side of the face, the \"clubhead closer to you\" feel that worked in Session 2.",
+        "Swing at 80% and miss the tee. Check the mark after every shot: it should sit in the middle or slightly toward the toe."
+      ],
+      "target": "Driver smash 1.40+ (now 1.36); 7-wood 1.25+ (now 1.11).",
+      "videos": [
+        {
+          "id": "kJmk2QJf71k",
+          "title": "How to stop hitting the driver out of the heel"
+        },
+        {
+          "id": "dgcBv-zvakA",
+          "title": "Why not to start with the club behind the ball"
+        }
+      ],
+      "search": "stop hitting driver off the heel drill"
+    },
+    {
       "id": "compress",
       "level": 2,
       "title": "Towel drill: ball-first compression",
@@ -81,14 +114,14 @@
         "name": "Common teaching drill",
         "url": "https://www.youtube.com/results?search_query=towel+drill+compress+irons"
       },
-      "why": "Carry follows smash almost one-to-one in your data (r = 0.72 within each club), and you launch the 7-iron at 22° with a 27.5° club. The club is arriving with extra loft, so your speed turns into height instead of ball speed.",
+      "why": "Carry follows smash closely, and in Session 2 you swung the 7-iron 9 mph harder than Session 1 but got less ball speed (smash 1.28 → 1.13). Effort is costing you contact.",
       "steps": [
         "Lay a towel flat 4–6 in. behind the ball.",
         "Swing at 70% and hit the ball without touching the towel, so the low point is ahead of the ball.",
         "Feel your hands ahead of the ball at impact: lead wrist flat, not cupped.",
-        "Check the sim after each shot: 7-iron launch heading toward 17–19° and smash toward 1.30."
+        "Speed ladder: 5 balls at 60%, 5 at 80%, 5 at 100%. Keep the effort that gives the best smash, not the most club speed."
       ],
-      "target": "7-iron launch under 20° and smash 1.28+ (≈ +5 yd), then 1.30 (≈ +6 yd 7i, +8 yd 8i).",
+      "target": "7-iron smash 1.25+ at about 80% effort, launch under 20°.",
       "videos": [
         {
           "id": "kmXA7MX6hvk",
@@ -133,6 +166,39 @@
         }
       ],
       "search": "stop hitting heel irons drill two ball"
+    },
+    {
+      "id": "driverface",
+      "level": 3,
+      "title": "Driver face control",
+      "fixes": [
+        "Driver slice",
+        "Open face"
+      ],
+      "color": "#e58a76",
+      "source": {
+        "name": "Quick Fix Golf (Screwdriver Drill)",
+        "url": "https://www.youtube.com/watch?v=ITTl0AT7tc8"
+      },
+      "why": "Your driver path is nearly neutral (−1.7°) but the face is +3.7° open to the target, so drives start right and curve further right (57 yd on average). Unlike your irons, the driver is a face problem.",
+      "steps": [
+        "Check your grip: at address you should see two to three knuckles on your lead hand.",
+        "Make slow half swings feeling the toe rotate past the heel through impact (the screwdriver turn).",
+        "Hit 5 drivers at 70% and watch face-to-target on the sim: aim for 0 to +1°.",
+        "Until it holds, aim 30–40 yd left of target on the course."
+      ],
+      "target": "Driver face-to-target under +1°, average finish within 25 yd.",
+      "videos": [
+        {
+          "id": "ITTl0AT7tc8",
+          "title": "Fix your slice with the Screwdriver Drill"
+        },
+        {
+          "id": "WwUauWv7V5g",
+          "title": "Open clubface at impact: drill to stop the slice"
+        }
+      ],
+      "search": "fix open clubface driver slice"
     },
     {
       "id": "path",
@@ -198,38 +264,38 @@
   "plan": [
     {
       "level": 1,
-      "name": "Setup + wall drill",
+      "name": "Setup + contact",
       "tasks": [
         "Spine-club posture check before every block",
         "10 slow wall-drill reps",
-        "Half swings with the 8-iron at 60%"
+        "Heel gate with the driver: 10 balls, check the face mark"
       ]
     },
     {
       "level": 2,
-      "name": "Compression",
+      "name": "Compression + effort",
       "tasks": [
         "Towel drill, 20 balls at 70%",
-        "Hands-ahead impact feel, 10 slow reps",
-        "Log a session: 7-iron launch under 20°"
+        "Speed ladder (60/80/100%) with the 7-iron",
+        "Log a session: 7-iron smash 1.25+"
       ]
     },
     {
       "level": 3,
-      "name": "Centred strike",
+      "name": "Driver face",
       "tasks": [
-        "Foot-spray face check",
-        "Two-ball heel gate, 20 balls",
-        "Log a session: 7i smash 1.28+ (≈ +5 yd)"
+        "Grip check: 2–3 knuckles on the lead hand",
+        "Screwdriver drill, 10 slow swings",
+        "Log a session: driver face under +1°"
       ]
     },
     {
       "level": 4,
-      "name": "Retest",
+      "name": "Retest + gapping",
       "tasks": [
-        "7-iron through driver: 10 shots each",
-        "Settle 6-iron vs. 7-wood",
-        "Targets: 7i smash 1.30, 7i carry 135+"
+        "7-iron and 8-iron back to back, 10 each",
+        "Demo a 5-wood vs the 3-hybrid, 10 each",
+        "Decide on the 9-wood from the 7i number"
       ]
     }
   ],

@@ -142,12 +142,14 @@ def build():
     drills_file = COACHING_DIR / "drills.json"
     drills = json.loads(drills_file.read_text()) if drills_file.exists() else {}
     overall = COACHING_DIR / "plan.md"
+    analysis = COACHING_DIR / "analysis.md"   # notes for the "All sessions" view
     data = {
         "sessions": sessions,
         "bag": bag,
         "courses": courses,
         "rounds": public_rounds(),
         "drills": drills,
+        "allReview": md_to_html(analysis.read_text()) if analysis.exists() else "",
         "overallReview": md_to_html(overall.read_text()) if overall.exists() else "",
         "built": datetime.now().strftime("%Y-%m"),  # month only, like everything else on the site
     }

@@ -10,6 +10,7 @@ config/
   courses.json           scorecards (Stoneham Oaks, Killian Greens, Redland G&CC); `birdiesName` links them to rounds
 coaching/
   plan.md                overall plan, shown on the Progress tab
+  analysis.md            analysis of all data, shown when "All sessions" is picked
   drills.json            Drills tab: practice plan, drills, YouTube video IDs, resources
 data/
   simulator/MM-DD-YY/    one Uneekor session

@@ -561,17 +561,30 @@ const gF2P   = v => v==null?"?":Math.abs(v)<=1.5?"A":Math.abs(v)<=3?"B":Math.abs
 const gSmash = v => v==null?"?":v>=1.33?"A":v>=1.28?"B":v>=1.22?"C":v>=1.15?"D":"F";
 
 /* ================= sessions are numbered in date order ================= */
-const sName = i => `Session ${i+1}`;
+const sName = i => i >= ALL.length ? "All sessions" : `Session ${i+1}`;
 // The site only knows each session's month (and its order); exact dates stay local.
-const sDate = A => new Date(A.s.month+"-15T12:00:00").toLocaleDateString(undefined,{month:"short",year:"numeric"});
+const mFmt = m => new Date(m+"-15T12:00:00").toLocaleDateString(undefined,{month:"short",year:"numeric"});
+const sDate = A => A.s.combined ? (DATA.sessions.length && DATA.sessions[0].month!==A.s.month ? `${mFmt(DATA.sessions[0].month)} → ${mFmt(A.s.month)}` : mFmt(A.s.month)) : mFmt(A.s.month);
 
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
+// "All sessions": every shot from every session pooled by club (renumbered per club; tag keeps "S1 #3").
+function combineSessions(){
+  const clubs = {};
+  DATA.sessions.forEach(s => Object.entries(s.clubs).forEach(([k,shots]) => (clubs[k] ||= []).push(...shots.map(r=>({...r, tag:`S${s.seq} #${r.n}`})))));
+  Object.values(clubs).forEach(L => L.forEach((r,i)=>{ r.n = i+1; }));
+  return analyze({combined:true, month:DATA.sessions[DATA.sessions.length-1].month, seq:0, clubs, review:DATA.allReview||"",
+    meta:{ caveats:{}, curatedNote: DATA.sessions.map(s=>`Session ${s.seq}: ${s.meta?.curated?"best shots only":"every shot"}${s.meta?.exclude?.length?` (${s.meta.exclude.length} clear mishits excluded)`:""}`).join(" · ") }});
+}
+const COMBINED = ALL.length > 1 ? combineSessions() : null;
+const VIEWS = COMBINED ? [...ALL, COMBINED] : ALL;     // picker options; the last one is "All sessions" when there are 2+
+const VIEW = () => VIEWS[state.i];
+const shotLabel = r => r.tag || `shot ${r.n}`;
 const state = { i:ALL.length-1, tab:"session", club:null, cmp:null, swing:null, swFrame:null, rview:"score", rcourse:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
 
 /* ================= SESSION ================= */
 function renderSession(){
-  const A = ALL[state.i], {s, keys, clubs, full, meta} = A;
+  const A = VIEW(), {s, keys, clubs, full, meta} = A;
   if (state.club && !clubs[state.club]) state.club = null;
   const fp = mean(full.map(r=>r.path)), ff = mean(full.map(r=>r.f2p)), sm = median(full.filter(r=>IRON(r.key)).map(r=>r.smash));
   const shots = keys.reduce((n,k)=>n+clubs[k].n,0), F = findings(A), top = F.filter(x=>x.sev==="bad"||x.sev==="warn").slice(0,3);
@@ -583,7 +596,7 @@ function renderSession(){
   const views = [["distance","Distance"],["gapping","Gapping"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"]];
   $("tab-session").innerHTML = `
     <div class="head" style="margin:0">
-      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs${meta.curated?` · <span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:meta.curated===false?` · <span class="note" data-tip="${esc(meta.curatedNote||"Every shot was exported, mishits included.")}">All shots</span>`:""}</p></div>
+      <div><h2>${sName(state.i)}</h2><p class="sub">${sDate(A)} · ${shots} balls · ${keys.length} clubs${s.combined?` · <span class="note" data-tip="${esc(meta.curatedNote)}">Every shot, pooled</span>`:meta.curated?` · <span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:meta.curated===false?` · <span class="note" data-tip="${esc(meta.curatedNote||"Every shot was exported, mishits included.")}">All shots</span>`:""}</p></div>
       ${pickerHTML()}
     </div>
     ${overviewHTML()}
@@ -650,7 +663,7 @@ function clubDetail(A,k){
       ${bench.length>1&&!m.zero?`<div class="muted small">${m.label} vs. benchmarks</div><div class="bars">${bench.map(([l,v,col])=>`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${(Math.abs(v)/mx*100).toFixed(0)}%;background:${col}"></div></div><span class="val">${fm(m,v)}</span></div>`).join("")}</div>`:""}
     </div>
     <div class="tablewrap"><table><thead><tr><th></th><th>#</th><th>Carry</th><th>Finish</th><th>Ball</th><th>Smash</th><th>Path</th><th>F2P</th></tr></thead><tbody>
-      ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot"><td>${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td><td>${r.n}${r.mishit?' <span class="tag warn">mishit</span>':r.suspect?' <span class="tag warn">?</span>':""}</td><td>${f(r.carry)}</td><td>${lr(r.side)}</td><td>${f(r.ballSpeed)}</td><td>${f(r.smash,2)}</td><td>${sg(r.path)}</td><td>${sg(r.f2p)}</td></tr>`).join("")}
+      ${c.shots.map(r=>`<tr class="clickable" data-club="${k}" data-shot="${r.n}" title="Open shot"><td>${r.img?.impact?`<img class="thumb" src="${esc(r.img.impact)}" alt="" loading="lazy">`:""}</td><td>${r.tag||r.n}${r.mishit?' <span class="tag warn">mishit</span>':r.suspect?' <span class="tag warn">?</span>':""}</td><td>${f(r.carry)}</td><td>${lr(r.side)}</td><td>${f(r.ballSpeed)}</td><td>${f(r.smash,2)}</td><td>${sg(r.path)}</td><td>${sg(r.f2p)}</td></tr>`).join("")}
     </tbody></table><p class="muted small" style="margin:8px 0 0">Tap a shot to see its impact photo and swing frames.</p></div>
   </div>`;
 }
@@ -673,7 +686,7 @@ function mainChart(A){
   const shotTip = r => [`carry ${f(r.carry)} yd · ${lr(r.side)}${r.mishit?" · mishit":""}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
   // Tooltip title comes from the point itself. Chart.js's default uses the x-axis label at the same index,
   // which for the "Shots" layer is the wrong club (shot #3 overall sat under the 9i column).
-  const tipTitle = items => { const raw = items[0]?.raw; return raw?.r ? `${nameOf(raw.r.key)} · shot ${raw.r.n}` : raw?.k ? nameOf(raw.k) : (items[0]?.label ?? ""); };
+  const tipTitle = items => { const raw = items[0]?.raw; return raw?.r ? `${nameOf(raw.r.key)} · ${shotLabel(raw.r)}` : raw?.k ? nameOf(raw.k) : (items[0]?.label ?? ""); };
   // Several dots can sit under the cursor (overlapping shots): always take the one closest to it.
   const shotAt = x => charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r;
   const click = (e,els) => { const el = els.filter(shotAt).sort((a,b)=>Math.hypot(a.element.x-e.x,a.element.y-e.y)-Math.hypot(b.element.x-e.x,b.element.y-e.y))[0];
@@ -837,8 +850,8 @@ function renderDrills(){
 
 /* ================= SHOT VIEWER ================= */
 const V = {i:0,key:null,n:null,frame:0,timer:null,speed:1}, vEl = $("viewer");
-const sessionShots = i => ALL[i].keys.flatMap(k=>ALL[i].clubs[k].shots);
-const curShot = () => ALL[V.i].clubs[V.key]?.shots.find(r=>r.n===V.n);
+const sessionShots = i => VIEWS[i].keys.flatMap(k=>VIEWS[i].clubs[k].shots);
+const curShot = () => VIEWS[V.i].clubs[V.key]?.shots.find(r=>r.n===V.n);
 function openShot(i,key,n){ V.i=i;V.key=key;V.n=n;V.frame=0;stopPlay();renderViewer();vEl.hidden=false;document.body.style.overflow="hidden";startPlay(); }
 function closeShot(){ stopPlay(); vEl.hidden=true; document.body.style.overflow=""; if (typeof tourStep!=="undefined" && tourStep>=0) applyTour(); }
 function stepShot(d){ const L=sessionShots(V.i), j=L.findIndex(r=>r.key===V.key&&r.n===V.n), r=L[j+d]; if(r){const p=!!V.timer;stopPlay();V.key=r.key;V.n=r.n;V.frame=0;renderViewer();if(p)startPlay();} }
@@ -849,13 +862,13 @@ function setFrame(fi){ const fr=curShot()?.img?.frames||[]; if(!fr.length) retur
 function startPlay(){ const fr=curShot()?.img?.frames||[]; if(fr.length<2) return; stopPlay(); V.timer=setInterval(()=>setFrame(V.frame+1),110/V.speed); $("vplay")&&($("vplay").textContent="Pause"); }
 function stopPlay(){ if(V.timer){clearInterval(V.timer);V.timer=null;} $("vplay")&&($("vplay").textContent="Play"); }
 function renderViewer(){
-  const A=ALL[V.i], r=curShot(); if(!r) return;
+  const A=VIEWS[V.i], r=curShot(); if(!r) return;
   const L=sessionShots(V.i), j=L.findIndex(x=>x.key===V.key&&x.n===V.n), fr=r.img?.frames||[];
   fr.forEach(src=>{const im=new Image();im.src=src;});
   const pb=BENCH.pga[V.key], st=(l,k,v,b)=>`<div class="vstat"><div class="l">${tip(k,l)}</div><div class="v">${v}</div>${b?`<div class="b">${b}</div>`:""}</div>`;
   const tb = k => pb?.[k]!=null ? `PGA ${fm(MET[k],pb[k])}` : "";
   vEl.innerHTML=`<div class="vbox" role="dialog" aria-modal="true" aria-label="Shot viewer">
-    <div class="head"><div><h2>${esc(CLUB[V.key]?.label||nameOf(V.key))} · shot ${r.n}</h2><p class="sub">${sName(V.i)} · ${sDate(A)} · ${j+1} of ${L.length}${r.suspect?' · <span class="warn">possible sensor misread</span>':""}</p></div>
+    <div class="head"><div><h2>${esc(CLUB[V.key]?.label||nameOf(V.key))} · ${shotLabel(r)}</h2><p class="sub">${r.tag?`Session ${r.tag.slice(1).split(" ")[0]}`:sName(V.i)} · ${sDate(A)} · ${j+1} of ${L.length}${r.suspect?' · <span class="warn">possible sensor misread</span>':""}</p></div>
       <div class="row-btns"><button class="btn sm" id="vprev" ${j<=0?"disabled":""}>‹ Prev</button><button class="btn sm" id="vnext" ${j>=L.length-1?"disabled":""}>Next ›</button><button class="btn icon" id="vclose" aria-label="Close">✕</button></div></div>
     <div class="vgrid">
       <div><div class="frame">${r.img?.impact?`<img src="${esc(r.img.impact)}" alt="Ball at impact">`:""}<span class="cap">Impact</span></div></div>
@@ -1117,7 +1130,7 @@ async function drawCrops(k, shots){
 }
 
 function renderSwing(){
-  const A = ALL[state.i], {keys, clubs} = A;
+  const A = VIEW(), {keys, clubs} = A;
   if (!clubs[state.swing]) state.swing = keys.includes("7i") ? "7i" : keys[0];
   const k = state.swing, c = clubs[k], sh = c.shots, clean = sh.filter(r=>!r.suspect);
   const tile = (l,key,v,cap) => `<div class="tile"><div class="l">${key?tip(key,l):l}</div><div class="v">${v}</div>${cap?`<div class="c">${cap}</div>`:""}</div>`;
@@ -1149,7 +1162,7 @@ function renderSwing(){
         <span class="muted small" id="swLabel">${state.swFrame==null?"each shot at its own contact frame":`frame ${state.swFrame+1} for every shot`}</span>
       </div>
       <div class="crops" id="crops">${sh.map(r=>`<div class="crop" data-crop="${k}-${r.n}" data-shot="${r.n}"><span class="fr">…</span><canvas width="220" height="154" aria-label="Shot ${r.n} at impact"></canvas>
-        <div class="cap"><span>#${r.n}${r.mishit?' <span class="warn">mishit</span>':r.suspect?' <span class="warn">?</span>':""}</span><span>smash ${f(r.smash,2)} · ${f(r.carry,0)} yd</span></div></div>`).join("")}</div>
+        <div class="cap"><span>${r.tag||"#"+r.n}${r.mishit?' <span class="warn">mishit</span>':r.suspect?' <span class="warn">?</span>':""}</span><span>smash ${f(r.smash,2)} · ${f(r.carry,0)} yd</span></div></div>`).join("")}</div>
       <p class="muted small" style="margin:12px 0 0">Top-down camera, cropped on the ball. The hosel/shaft is toward the top of each image, so a ball nearer the top is closer to the heel. This session has no measured face-contact location (that needs Uneekor's Optix), so judge it from the frames.</p>
     </section>
     <section class="card"><div class="head"><h2>Dispersion</h2><span class="muted small">${nameOf(k)} · outline wraps every shot</span></div><div class="chart" style="height:300px"><canvas id="swDisp"></canvas></div></section>`;
@@ -1170,16 +1183,16 @@ function renderSwing(){
     options:{maintainAspectRatio:false,interaction:{mode:"nearest",intersect:true},
       onClick:(e,els)=>{const el=els.find(x=>x.datasetIndex===0); if(el) openShot(state.i,k,pts[el.index].n);},
       scales:{x:{min:x0,max:x1,grid,title:{display:true,text:"Carry (yd)"}},y:{min:-my,max:my,grid,ticks:{stepSize:10,callback:v=>v===0?"0":`${Math.abs(v)} ${v>0?"L":"R"}`},title:{display:true,text:"↑ left · right ↓ (yd)"}}},
-      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:it=>it[0].raw.r?`${nameOf(k)} · shot ${it[0].raw.r.n}`:"Average",label:c=>c.raw.r?`carry ${f(c.raw.r.carry)} yd · ${lr(c.raw.r.side)}`:`carry ${f(c.raw.x)} yd · ${lr(-c.raw.y)}`}}}}});
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{title:it=>it[0].raw.r?`${nameOf(k)} · ${shotLabel(it[0].raw.r)}`:"Average",label:c=>c.raw.r?`carry ${f(c.raw.r.carry)} yd · ${lr(c.raw.r.side)}`:`carry ${f(c.raw.x)} yd · ${lr(-c.raw.y)}`}}}}});
 }
 
 /* ================= session picker + summary (Session and Swing tabs only) ================= */
 const pickerHTML = () => `<div class="date">
     <button class="btn icon" data-pick="-1" aria-label="Previous session" ${state.i<=0?"disabled":""}>‹</button>
-    <select data-pick-sel aria-label="Session">${ALL.map((A,i)=>`<option value="${i}" ${i===state.i?"selected":""}>${sName(i)} · ${sDate(A)}</option>`).reverse().join("")}</select>
-    <button class="btn icon" data-pick="1" aria-label="Next session" ${state.i>=ALL.length-1?"disabled":""}>›</button></div>`;
+    <select data-pick-sel aria-label="Session">${VIEWS.map((A,i)=>`<option value="${i}" ${i===state.i?"selected":""}>${sName(i)} · ${sDate(A)}</option>`).reverse().join("")}</select>
+    <button class="btn icon" data-pick="1" aria-label="Next session" ${state.i>=VIEWS.length-1?"disabled":""}>›</button></div>`;
 function wirePicker(root){
-  root.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ state.i=Math.max(0,Math.min(ALL.length-1,state.i+ +b.dataset.pick)); render(); });
+  root.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ state.i=Math.max(0,Math.min(VIEWS.length-1,state.i+ +b.dataset.pick)); render(); });
   root.querySelectorAll("[data-pick-sel]").forEach(el=>el.onchange=()=>{ state.i=+el.value; render(); });
 }
 function overviewHTML(){
@@ -1190,9 +1203,9 @@ function overviewHTML(){
   const partialOnly = [...hit].filter(k=>!fullSw.has(k)).sort((a,b)=>loftOf(a)-loftOf(b));
   const bagN = MAIN.filter(c=>c.key!=="Putter").length;
   const nCur = ALL.filter(A=>A.meta.curated).length;
-  const A = ALL[state.i];
+  const A = VIEW();
   return `<section class="overview">
-    <div class="ov now"><div class="l">This session</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>
+    <div class="ov now"><div class="l">${A.s.combined?"Showing":"This session"}</div><div class="v">${balls(A)} balls</div><div class="c">${sDate(A)} · ${A.keys.length} clubs</div></div>
     <div class="ov"><div class="l">All sessions</div><div class="v">${ALL.length}</div><div class="c">${sDate(ALL[0])}${ALL.length>1?" → "+sDate(ALL[ALL.length-1]):""}</div></div>
     <div class="ov"><div class="l">Balls hit, all sessions</div><div class="v">${total.toLocaleString()}</div><div class="c">${nCur===ALL.length?"recorded (mishits removed)":nCur?`${nCur} of ${ALL.length} sessions best shots only`:"every shot recorded"}</div></div>
     <div class="ov"><div class="l">Clubs hit</div><div class="v">${hit.size} / ${bagN}</div><div class="c">${partialOnly.length?`${partialOnly.map(nameOf).join(", ")} partial swings only`:`all full swings`}</div></div></section>`;
@@ -1306,11 +1319,11 @@ function render(){
   document.querySelectorAll("main").forEach(m=>m.hidden = m.id!=="tab-"+state.tab);
   document.querySelectorAll(".tabs .btn").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===state.tab));
   TABS[state.tab]();
-  history.replaceState(null,"",`#s${state.i+1}/${state.tab}`);
+  history.replaceState(null,"",`#${state.i>=ALL.length?"all":"s"+(state.i+1)}/${state.tab}`);
   if (typeof applyTour==="function" && tourStep>=0) applyTour();
 }
-const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hn ? +hn[1]-1 : -1;
-if (hi>=0 && hi<ALL.length) state.i = hi; if (TABS[ht]) state.tab = ht;
+const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hd==="all" && COMBINED ? ALL.length : hn ? +hn[1]-1 : -1;
+if (hi>=0 && hi<VIEWS.length) state.i = hi; if (TABS[ht]) state.tab = ht;
 document.querySelectorAll(".tabs .btn").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();scrollTo({top:0});});
 const tipEl = $("tip");
 document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");if(!t){tipEl.hidden=true;return;}tipEl.textContent=t.dataset.tip;tipEl.hidden=false;const r=t.getBoundingClientRect();

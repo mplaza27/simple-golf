@@ -1,20 +1,21 @@
 ## Goal: distance, not direction
-Your fade is consistent, so it's playable at a 25 handicap. Distance is the priority, and the data says it's a **contact** problem, not a speed problem:
-- **Speed:** 7-iron club speed of 78 mph is about what a 10–11 handicap swings (grade A for you).
-- **Conversion:** a 7-iron smash of 1.24 is around a 27 handicap's (C). Ball speed comes out ~15-handicap level (B), and your distances land around a 22–23 handicap (C).
-- **What's available:** solid contact at your current speed is worth about **+11 yd per iron** (7i +6, 8i +8, 9i +16, PW +15).
+Your iron fade is consistent and playable at a 25 handicap. Distance is the priority, and two sessions now agree it's a **contact** problem, not a speed problem:
+- **Speed is a strength:** 7-iron ~81 mph and driver 99 mph, roughly what a 9–11 handicap swings.
+- **Conversion isn't:** smash and distances play like a 22–27 handicap. Solid contact at your current speed is worth about +11 yd per iron.
+- **Effort hurts contact:** in Session 2 the 7-iron was swung 9 mph harder than in Session 1 but produced less ball speed.
+
+## What changed after Session 2
+- **Added: heel gate for driver and woods.** Centring the strike added 5 mph of driver ball speed and ~13 yd to the 3-hybrid and 7-wood.
+- **Added: driver face control.** The driver's path is nearly neutral but its face is +3.7° open, so drives finish 57 yd right on average. Irons are the opposite (path problem), so the driver gets its own drill.
+- **Added: speed ladder** to the compression drill, so you learn which effort level gives your best contact.
+- **Bag:** bench the 6-iron; demo a 5-wood against the 3-hybrid; decide on a 9-wood after the 7i/8i test.
 
 ## Priorities (most urgent first)
-- **1. Setup and S-posture.** Neutral pelvis via the club-along-spine check (TPI). Early extension adds loft and moves the low point, which costs ball speed, and the setup also protects your back.
-- **2. Compression: ball-first, hands ahead.** Towel drill. Target 7-iron launch under 20° (now 22°) with smash 1.28+.
-- **3. Centred strike.** Foot spray plus the two-ball heel gate. Target 7-iron smash 1.30.
-- **4. Optional path tidy-up.** Only if it comes easily: trimming −9° toward −5° adds a few yards. Keep aiming for your fade.
-
-## Four-week targets
-- **Week 1:** setup plus wall drill, half swings with the 8-iron.
-- **Week 2:** towel drill. 7-iron launch under 20°.
-- **Week 3:** foot spray plus heel gate. 7-iron smash 1.28+ (≈ +5 yd).
-- **Week 4:** 7-iron through driver retest. 7-iron smash 1.30, carry 135+, and settle 6i vs. 7W.
+- **1. Setup + contact.** Neutral pelvis (spine-club check), wall drill, and the heel gate with the driver.
+- **2. Compression + effort.** Towel drill and the 60/80/100% speed ladder. Target 7-iron smash 1.25+ at ~80% effort.
+- **3. Driver face.** Grip check (2–3 lead-hand knuckles) and the screwdriver drill. Target face under +1°.
+- **4. Retest + gapping.** 7i and 8i back to back; 5-wood vs 3-hybrid.
 
 ## On the course (DECADE)
-- Play the shot shape you have: aim left by your average finish for each club and let the fade work back.
+- Aim left by your average finish for each club: driver ~35–40 yd left until the face fix holds, irons ~15 yd.
+- On tight holes, tee off with the 3-wood or 3-hybrid: they finish closer to the target line than the driver.
