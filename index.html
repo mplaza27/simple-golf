@@ -574,10 +574,13 @@ function mainChart(A){
   const {keys, clubs, full} = A, fk = keys.filter(k=>!clubs[k].partial);
   const on = k => !state.club || state.club===k, pc = (k,a=.9) => alpha(colorOf(k), on(k)?a:.12);
   const shotTip = r => [`${nameOf(r.key)} #${r.n} · carry ${f(r.carry)} yd · ${lr(r.side)}`, `path ${sg(r.path)}° · F2P ${sg(r.f2p)}° · smash ${f(r.smash,2)}`, "Tap to open"];
-  const click = (e,els) => { const el=els.find(x=>charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r); if(!el) return; const r=charts.cMain.data.datasets[el.datasetIndex].data[el.index].r; openShot(state.i,r.key,r.n); };
+  // Several dots can sit under the cursor (overlapping shots): always take the one closest to it.
+  const shotAt = x => charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r;
+  const click = (e,els) => { const el = els.filter(shotAt).sort((a,b)=>Math.hypot(a.element.x-e.x,a.element.y-e.y)-Math.hypot(b.element.x-e.x,b.element.y-e.y))[0];
+    if (el){ const r=shotAt(el); openShot(state.i,r.key,r.n); } };
   const hover = (e,els) => { e.native.target.style.cursor = els.some(x=>charts.cMain.data.datasets[x.datasetIndex].data[x.index]?.r) ? "pointer":"default"; };
   const note = t => $("viewNote").textContent = t;
-  const base = {maintainAspectRatio:false, onClick:click, onHover:hover};
+  const base = {maintainAspectRatio:false, onClick:click, onHover:hover, interaction:{mode:"nearest", intersect:true}};
   const pathBand = {id:"band",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;ctx.save();ctx.fillStyle="rgba(159,208,124,.08)";ctx.fillRect(x.getPixelForValue(-2),a.top,x.getPixelForValue(2)-x.getPixelForValue(-2),a.bottom-a.top);ctx.restore();}};
   const scatter = fn => fk.map(k=>({label:nameOf(k),data:clubs[k].shots.filter(r=>r.path!=null).map(r=>({x:r.path,y:fn(r),r})),backgroundColor:pc(k),pointRadius:on(k)?5:3.5,pointHoverRadius:7}));
   const v = state.view;
@@ -589,18 +592,29 @@ function mainChart(A){
     if (bench("hcp25").some(x=>x!=null)) ds.push(tick("25 handicap","hcp25","#e8a676"));
     if (bench("lpga").some(x=>x!=null)) ds.push(tick("LPGA","lpga","#b9a3e3"));
     if (bench("pga").some(x=>x!=null)) ds.push(tick("PGA","pga","#84bcd9"));
-    ds.push({type:"scatter",label:"Shots",order:0,data:keys.flatMap((k,i)=>clubs[k].shots.filter(r=>r[m.shot]!=null).map(r=>({x:labels[i],y:r[m.shot],r}))),backgroundColor:c=>c.raw?.r&&on(c.raw.r.key)?"rgba(241,234,208,.9)":"rgba(241,234,208,.15)",pointRadius:3,pointHoverRadius:6});
+    // Shots sit on a hidden linear axis aligned with the bars, spread slightly side to side so no two dots overlap exactly.
+    ds.push({type:"scatter",label:"Shots",order:0,xAxisID:"xs",data:keys.flatMap((k,i)=>{ const sh=clubs[k].shots.filter(r=>r[m.shot]!=null);
+      return sh.map((r,j)=>({x:i+(j-(sh.length-1)/2)*0.07,y:r[m.shot],r})); }),backgroundColor:c=>c.raw?.r&&on(c.raw.r.key)?"rgba(241,234,208,.9)":"rgba(241,234,208,.15)",pointRadius:3,pointHoverRadius:6});
     const pct = src => { const ks=keys.filter(k=>!clubs[k].partial&&BENCH[src][k]?.[m.k]!=null&&clubs[k][m.k]!=null); return ks.length?Math.round(mean(ks.map(k=>clubs[k][m.k]/BENCH[src][k][m.k]))*100):null; };
     const pP=pct("pga"), pL=pct("lpga");
-    note(m.zero ? `Tour players average about 0. Your full-swing average: ${fm(m,mean(full.map(r=>r[m.shot])))}.` : pP!=null ? `Your ${m.label.toLowerCase()} is ${pP}% of the PGA average${pL!=null?` and ${pL}% of the LPGA average`:""}. Ticks are benchmarks; dots are your shots.` : "Dots are your shots.");
+    const star = keys.some(k=>clubs[k].partial) ? " * = partial swings (no benchmark)." : "";
+    note((m.zero ? `Tour players average about 0. Your full-swing average: ${fm(m,mean(full.map(r=>r[m.shot])))}.` : pP!=null ? `Your ${m.label.toLowerCase()} is ${pP}% of the PGA average${pL!=null?` and ${pL}% of the LPGA average`:""}. Bars = your average, ticks = benchmarks, dots = each shot (tap one).` : "Bars = your average, dots = each shot (tap one).") + star);
     const zero = {id:"zero",afterDatasetsDraw(ch){if(!m.zero)return;const {ctx,chartArea:a,scales:{y}}=ch;ctx.save();ctx.strokeStyle="rgba(159,208,124,.6)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(a.left,y.getPixelForValue(0));ctx.lineTo(a.right,y.getPixelForValue(0));ctx.stroke();ctx.restore();}};
-    draw("cMain",{type:"bar",data:{labels,datasets:ds},plugins:[zero],options:{...base,scales:{x:{grid:{display:false}},y:{grid,beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k),title:{display:true,text:m.label+(m.unit?` (${m.unit})`:"")}}},
+    draw("cMain",{type:"bar",data:{labels,datasets:ds},plugins:[zero],options:{...base,scales:{x:{grid:{display:false}},xs:{type:"linear",display:false,offset:false,bounds:"data",min:-0.5,max:keys.length-0.5},y:{grid,beginAtZero:!m.zero&&!["smash","launch","descent"].includes(m.k),title:{display:true,text:m.label+(m.unit?` (${m.unit})`:"")}}},
       plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.raw?.r?shotTip(c.raw.r):c.dataset.type==="scatter"?`${c.dataset.label}: ${fm(m,c.raw.y)}`:`You: ${fm(m,c.raw)}`}}}}});
   } else if (v==="dispersion"){
-    note("Each dot is a shot seen from above: left/right of the target vs. carry. Tap a dot to open it.");
-    const dk = state.club ? keys : fk, mx = Math.max(15, ...dk.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0))))+5;
+    note("Each dot is a shot seen from above: left/right of the target vs. carry. Ovals cover about two-thirds of each club's shots. Tap a dot to open it.");
+    const dk = state.club ? keys : fk, mx = Math.ceil((Math.max(15, ...dk.flatMap(k=>clubs[k].shots.map(r=>Math.abs(r.side||0))))+3)/5)*5;
     const line = {id:"line",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x}}=ch;ctx.save();ctx.strokeStyle="rgba(233,229,211,.2)";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x.getPixelForValue(0),a.top);ctx.lineTo(x.getPixelForValue(0),a.bottom);ctx.stroke();ctx.restore();}};
-    draw("cMain",{type:"scatter",plugins:[line],data:{datasets:dk.map(k=>({label:nameOf(k),data:clubs[k].shots.map(r=>({x:r.side,y:r.carry,r})),backgroundColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8}))},
+    // 68% oval per club: centred on the average finish, 1 standard deviation wide and long
+    const ovals = {id:"ovals",beforeDatasetsDraw(ch){const {ctx,chartArea:a,scales:{x,y}}=ch; ctx.save(); ctx.beginPath(); ctx.rect(a.left,a.top,a.right-a.left,a.bottom-a.top); ctx.clip();
+      ch.data.datasets.forEach((d,i)=>{ if(!ch.isDatasetVisible(i)) return; const k=d.key, sh=clubs[k].shots.filter(r=>r.side!=null&&r.carry!=null); if(sh.length<3) return;
+        const mx=mean(sh.map(r=>r.side)), my=mean(sh.map(r=>r.carry)), sx=sd(sh.map(r=>r.side)), sy=sd(sh.map(r=>r.carry));
+        const cx=x.getPixelForValue(mx), cy=y.getPixelForValue(my), rx=Math.abs(x.getPixelForValue(mx+sx)-cx), ry=Math.abs(y.getPixelForValue(my+sy)-cy);
+        ctx.beginPath(); ctx.ellipse(cx,cy,Math.max(rx,3),Math.max(ry,3),0,0,2*Math.PI); ctx.fillStyle=alpha(colorOf(k),on(k)?.14:.04); ctx.strokeStyle=alpha(colorOf(k),on(k)?.55:.12); ctx.fill(); ctx.stroke();
+        if (on(k)){ ctx.fillStyle=alpha(colorOf(k),.95); ctx.font="12px Space Mono, monospace"; ctx.textAlign="center"; ctx.fillText(nameOf(k), cx, cy-Math.max(ry,3)-5); } });
+      ctx.restore();}};
+    draw("cMain",{type:"scatter",plugins:[line,ovals],data:{datasets:dk.map(k=>({key:k,label:nameOf(k),data:clubs[k].shots.map(r=>({x:r.side,y:r.carry,r})),backgroundColor:pc(k),pointRadius:on(k)?6:4,pointHoverRadius:8}))},
       options:{...base,scales:{x:{min:-Math.ceil(mx),max:Math.ceil(mx),grid,title:{display:true,text:"← left   ·   yards   ·   right →"}},y:{grid,title:{display:true,text:"Carry (yd)"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
   } else if (v==="curve"){
     note("Dots above the dashed line had the face open to the path, so the ball curved right. The green band is a neutral path.");
@@ -612,12 +626,14 @@ function mainChart(A){
     const xs = fk.flatMap(k=>clubs[k].shots.map(r=>r.path)), lo=Math.min(-16,Math.floor(Math.min(...xs))-2);
     draw("cMain",{type:"scatter",plugins:[pathBand],data:{datasets:scatter(r=>r.smash)},options:{...base,scales:{x:{min:lo,max:4,grid,title:{display:true,text:"Club path (°)  ← out-to-in"}},y:{grid,title:{display:true,text:"Smash factor"}}},plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>shotTip(c.raw.r)}}}}});
   } else {
-    note("Carry by loft. Each step down in loft should add 10–12 yd. A flat stretch means two clubs overlap. Hollow points are partial swings.");
+    note("Carry by loft. Each step down in loft should add 10–12 yd; a flat stretch means two clubs overlap. Hollow points (*) are partial swings. Tap a club to focus it.");
     const lk = keys.filter(k=>CLUB[k]?.loft!=null);
     draw("cMain",{type:"line",data:{datasets:[
       {label:"Carry",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].carry),k})),borderColor:"#9fd07c",backgroundColor:lk.map(k=>clubs[k].partial?"#16231b":pc(k)),pointBorderColor:lk.map(k=>pc(k)),pointBorderWidth:2,pointRadius:7,pointHoverRadius:9,borderWidth:2,tension:.25},
       {label:"Total",data:lk.map(k=>({x:loftOf(k),y:+f(clubs[k].total),k})),borderColor:"rgba(233,229,211,.3)",borderDash:[4,4],pointRadius:0,borderWidth:1.5,tension:.25}]},
-      options:{maintainAspectRatio:false,parsing:false,onClick:(e,els)=>{if(els[0]){state.club=lk[els[0].index];render();}},
+      plugins:[{id:"names",afterDatasetsDraw(ch){const {ctx}=ch, meta=ch.getDatasetMeta(0); ctx.save(); ctx.font="12px Space Mono, monospace"; ctx.textAlign="center";
+        meta.data.forEach((pt,i)=>{ const k=lk[i]; ctx.fillStyle=alpha(colorOf(k),on(k)?1:.35); ctx.fillText(nameOf(k)+(clubs[k].partial?"*":""), pt.x, pt.y-14); }); ctx.restore();}}],
+      options:{maintainAspectRatio:false,parsing:false,interaction:{mode:"nearest",intersect:true},onClick:(e,els)=>{const el=els.find(x=>x.datasetIndex===0); if(el){state.club=lk[el.index];render();}},
         scales:{x:{type:"linear",grid,title:{display:true,text:"Loft (°)"},ticks:{callback:v=>v+"°"}},y:{grid,title:{display:true,text:"Yards"}}},
         plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>`${nameOf(c.raw.k)} (${c.raw.x}°): ${c.dataset.label.toLowerCase()} ${c.raw.y} yd`}}}}});
   }
