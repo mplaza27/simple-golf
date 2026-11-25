@@ -1,20 +1,38 @@
-# Golf sim data
+# Simple Golf
 
 Downloads every shot from a Uneekor Power U report and builds `index.html`, a green-retro dashboard (live at https://mplaza27.github.io/simple-golf/) with a session picker and four tabs: Session, Progress, Bag and Drills.
 
+## Layout
+```
+index.html               the site (generated; GitHub Pages serves it from the root)
+config/
+  bag.json               your handicap, main bag and par-3 bag (each club `key` = shot folder name)
+  courses.json           hole yardages (Stoneham Oaks, Killian Greens, Redland G&CC); not shown yet
+coaching/
+  plan.md                overall plan, shown on the Progress tab
+  drills.json            Drills tab: practice plan, drills, YouTube video IDs, resources
+data/
+  simulator/MM-DD-YY/    one Uneekor session
+    <club>/<club>_<n>/   one shot (n = 1 is the oldest): CSV, impact photo, 24 top-view frames
+    link.md              report link (git-ignored: it contains an access key)
+    session.json         optional: curated, per-club caveats, nextSession
+    review.md            optional: coach notes for that session
+  birdies/MM-DD-YY/      18Birdies exports (not used by the dashboard yet)
+scripts/
+  download_shots.py      download a session and rebuild the site
+  build_dashboard.py     rebuild index.html from data/ + config/ + coaching/
+  dashboard_template.html
+  dev/                   one-off scripts used to reverse-engineer the Uneekor page
+```
+
 ## New session
-1. Make a dated folder `data/MM-DD-YY/` containing a `link.md` with the report link. Sessions show up as Session 1, 2, 3… in date order.
-2. From `golf/`, run `python3 -I scripts/download_shots.py`. It uses the latest folder in `data/` (or pass folder names, e.g. `11-24-26`) and rebuilds the dashboard.
-3. Open `index.html`, then commit and push to update the GitHub Pages site. Pick a metric to compare against the Tour, pick a club to focus every chart on it, and click any shot (a chart dot or a table row) to see its impact photo and swing frames.
+1. Make `data/simulator/MM-DD-YY/link.md` containing the report link. Sessions show up as Session 1, 2, 3… in date order.
+2. From `golf/`, run `python3 -I scripts/download_shots.py`. It uses the latest folder in `data/simulator/` (or pass folder names, e.g. `11-24-26`) and rebuilds the site. Shots already downloaded are skipped.
+3. If you removed mishits in Uneekor, add a `session.json` with `"curated": true`.
+4. Commit and push to update the GitHub Pages site.
 
-Shots that are already downloaded are skipped. To rebuild the dashboard on its own, run `python3 -I scripts/build_dashboard.py`. `link.md` files are git-ignored because the report link contains an access key.
+To rebuild the site on its own: `python3 -I scripts/build_dashboard.py`.
 
-## Files
-- `data/MM-DD-YY/<club>/<club>_<n>/`: one folder per shot (`n = 1` is the oldest) with the shot CSV, a ball-impact image and 24 top-view images.
-- `data/MM-DD-YY/review.md` (optional): coach notes shown on that date's Session tab.
-- `data/MM-DD-YY/session.json` (optional): `curated` (best shots only, so the dashboard shows a banner), `caveats` per club (e.g. `{"7i": "possible outlier"}`) and `nextSession`.
-- `review.md`: the overall plan, shown on the Progress tab.
-- `bag.json`: main bag (each `key` matches a club folder name) and the par-3 bag, which borrows yardages from the main-bag club with the same loft (`equiv`).
-- `drills.json`: Drills tab content: practice-plan levels, drills, embedded YouTube video IDs and resource links. Swap a video by changing its ID.
-- `courses.json`: hole yardages for Stoneham Oaks, Killian Greens and Redland G&CC. Not shown in the dashboard right now (the course planner was removed for a rework).
-- `scripts/download_shots.py`: `CLUB_NAMES` maps Uneekor club names to folder names. The wood, hybrid and 6-iron names are guesses, so check them after your first session with those clubs.
+## Notes
+- `CLUB_NAMES` in `scripts/download_shots.py` maps Uneekor club names to folder names. The wood, hybrid and 6-iron names are guesses; check them after your first session with those clubs.
+- Benchmarks live in `scripts/dashboard_template.html` (`BENCH`, `AMATEUR`): TrackMan Tour averages, GolfLaunchLab amateur speeds (handicap levels for driver and 7-iron only), Shot Scope handicap distances. Missing numbers are left blank, not estimated.

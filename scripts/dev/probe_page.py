@@ -1,3 +1,4 @@
+"""One-off exploration script used to reverse-engineer the Uneekor report page (needs playwright + Chrome on :9222). Not part of the pipeline."""
 import sys
 from playwright.sync_api import sync_playwright
 out = sys.argv[1]

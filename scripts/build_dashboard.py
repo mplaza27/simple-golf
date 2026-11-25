@@ -1,8 +1,8 @@
 """Build golf/index.html (the GitHub Pages site) from every data/MM-DD-YY session folder plus bag.json.
 
 Usage: python3 -I scripts/build_dashboard.py
-Each session folder may contain review.md (coach notes shown on that date's Session tab)
-and golf/review.md is shown on the Over time tab.
+Layout: data/simulator/MM-DD-YY/ (shots, session.json, review.md), config/ (bag, courses),
+coaching/ (plan.md shown on the Progress tab, drills.json for the Drills tab).
 """
 import csv
 import html
@@ -14,7 +14,9 @@ from pathlib import Path
 GOLF_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE = Path(__file__).resolve().parent / "dashboard_template.html"
 OUT = GOLF_DIR / "index.html"
-DATA_DIR = GOLF_DIR / "data"
+DATA_DIR = GOLF_DIR / "data" / "simulator"
+CONFIG_DIR = GOLF_DIR / "config"
+COACHING_DIR = GOLF_DIR / "coaching"
 FIELDS = {
     "Carry": "carry", "Total": "total", "Side Dist": "side", "Smash Factor": "smash",
     "Club Speed": "clubSpeed", "Ball Speed": "ballSpeed", "Back Spin": "backSpin",
@@ -92,7 +94,7 @@ def load_session(folder):
                 continue
             shot = {"n": int(m.group(1)), "type": row.get("Type", "")}
             shot.update({k: num(row.get(src)) for src, k in FIELDS.items()})
-            rel = lambda p: p.relative_to(GOLF_DIR).as_posix()  # dashboard.html lives in GOLF_DIR
+            rel = lambda p: p.relative_to(GOLF_DIR).as_posix()  # index.html lives in GOLF_DIR
             impact = sorted(shot_dir.glob("*_ballimpact.jpg"))
             shot["img"] = {
                 "impact": rel(impact[0]) if impact else None,
@@ -115,12 +117,12 @@ def load_session(folder):
 def build():
     folders = sorted((p for p in DATA_DIR.iterdir() if p.is_dir() and folder_date(p)), key=folder_date) if DATA_DIR.exists() else []
     sessions = [s for s in (load_session(f) for f in folders) if s["clubs"]]
-    bag = json.loads((GOLF_DIR / "bag.json").read_text())
-    courses_file = GOLF_DIR / "courses.json"
+    bag = json.loads((CONFIG_DIR / "bag.json").read_text())
+    courses_file = CONFIG_DIR / "courses.json"
     courses = json.loads(courses_file.read_text())["courses"] if courses_file.exists() else []
-    drills_file = GOLF_DIR / "drills.json"
+    drills_file = COACHING_DIR / "drills.json"
     drills = json.loads(drills_file.read_text()) if drills_file.exists() else {}
-    overall = GOLF_DIR / "review.md"
+    overall = COACHING_DIR / "plan.md"
     data = {
         "sessions": sessions,
         "bag": bag,

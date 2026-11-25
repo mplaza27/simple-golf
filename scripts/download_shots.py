@@ -1,8 +1,8 @@
 """Download every shot's ALL export from a Uneekor Power U report.
 
 Usage: python3 -I scripts/download_shots.py [MM-DD-YY ...]
-With no args, uses the latest dated folder in golf/data/. Reads the report link from
-data/<folder>/link.md and creates <folder>/<club>/<club>_<n>/ (n = 1 for the oldest shot).
+With no args, uses the latest dated folder in golf/data/simulator/. Reads the report link from
+data/simulator/<folder>/link.md and creates <folder>/<club>/<club>_<n>/ (n = 1 for the oldest shot).
 Shots whose folder already has files are skipped.
 """
 import io
@@ -17,7 +17,7 @@ from pathlib import Path
 
 API = "https://api-v2.golfsvc.com/v2/oldmyuneekor/report"
 GOLF_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = GOLF_DIR / "data"
+DATA_DIR = GOLF_DIR / "data" / "simulator"
 # Uneekor club_name -> folder name (must match a "key" in bag.json to show up in the Bag tab).
 # Confirmed from real exports: IRON7-9, WEDGE_*. The wood/hybrid/6-iron names are best guesses;
 # an unmapped club is saved under its raw Uneekor name (e.g. "WOOD_7") so you can add it here.

@@ -243,18 +243,24 @@ const BENCH = {
         "9i":T(72,93,1.29,23.9,7589,26,47,119), PW:T(70,86,1.23,25.6,8403,23,48,107)},
   hcp25:{"6i":{carry:137},"7i":{carry:132},"8i":{carry:122},"9i":{carry:108}},
 };
-// Amateur levels. Distances: Shot Scope on-course averages (closest to TOTAL distance, so compared with your total).
-// 7-iron speeds: GolfLaunchLab's aggregated Shot Scope / Arccos / TrackMan amateur data (no scratch figure published).
+// Amateur benchmarks. Only what the sources publish; gaps stay blank (no extrapolation).
+// - Distance by handicap: Shot Scope on-course averages (closest to TOTAL distance, so compared with your total).
+// - Speed by handicap: GolfLaunchLab (aggregated Shot Scope / Arccos / TrackMan amateur data); published for driver and 7-iron only.
+// - Average male amateur per club: GolfLaunchLab (TrackMan published averages + shot-tracking data).
 const AMATEUR = {
-  dist:{0:{"6i":185,"7i":178,"8i":166,"9i":155,PW:141}, 10:{"6i":171,"7i":161,"8i":150,"9i":140,PW:127},
-        15:{"6i":162,"7i":154,"8i":146,"9i":136,PW:121}, 20:{"6i":151,"7i":146,"8i":138,"9i":129,PW:108}, 25:{"6i":137,"7i":132,"8i":122,"9i":108}},
-  club7:{5:83,10:79,15:75,20:72,25:68}, ball7:{5:110,10:103,15:97,20:92,25:85},
+  total:{ "6i":{0:185,10:171,15:162,20:151,25:137}, "7i":{0:178,10:161,15:154,20:146,25:132}, "8i":{0:166,10:150,15:146,20:138,25:122},
+          "9i":{0:155,10:140,15:136,20:129,25:108}, PW:{0:141,10:127,15:121,20:108} },
+  carry:{ Dr:{0:272,5:249,10:230,15:217,20:202,25:186} },
+  club: { "7i":{0:87,5:83,10:79,15:75,20:72,25:68}, Dr:{0:113,5:105,10:97,15:93,20:89,25:84} },
+  ball: { "7i":{0:116,5:110,10:103,15:97,20:92,25:85}, Dr:{0:161,5:150,10:140,15:133,20:126,25:117} },
+  avg:  { Dr:{club:93,ball:132}, "3W":{club:87,ball:123}, "3H":{club:82,ball:114}, "6i":{club:75,ball:101}, "7i":{club:75,ball:96},
+          "8i":{club:72,ball:91}, "9i":{club:70,ball:86}, PW:{club:68,ball:80}, "56":{club:64,ball:71}, "60":{club:60} },
 };
 const HCP = DATA.bag.player?.handicap ?? 25;
-const LEVELS = [["PGA Tour","pga"],["LPGA Tour","lpga"],["Scratch",0],["5",5],["10",10],["15",15],["20",20],["25",25]];
-// Which handicap your value matches (higher = better metrics). Linear between published levels; extrapolated past 25.
+const LEVELS = [["PGA Tour","pga"],["LPGA Tour","lpga"],["Avg amateur","avg"],["Scratch",0],["5",5],["10",10],["15",15],["20",20],["25",25]];
+// Which handicap your value matches (higher = better metrics). Linear between published levels; extrapolated past the last one.
 function hcpEquivalent(v, ladder){
-  const pts = Object.entries(ladder).map(([h,x])=>[+h,x]).sort((a,b)=>a[0]-b[0]);
+  const pts = Object.entries(ladder||{}).map(([h,x])=>[+h,x]).sort((a,b)=>a[0]-b[0]);
   if (v==null || pts.length<2) return null;
   if (v >= pts[0][1]) return pts[0][0];
   for (let i=0;i<pts.length-1;i++){ const [h1,a]=pts[i],[h2,b]=pts[i+1]; if (v<=a && v>=b) return h1+(a-v)/(a-b)*(h2-h1); }
@@ -263,8 +269,8 @@ function hcpEquivalent(v, ladder){
 // Grade relative to YOUR handicap: C = playing to it, A/B = like a better player, D/F = below it.
 const hcpGrade = eq => eq==null ? null : eq<=HCP-10 ? "A" : eq<=HCP-4 ? "B" : eq<=HCP+4 ? "C" : eq<=HCP+8 ? "D" : "F";
 const eqLabel = (eq, ladder) => { if (eq==null) return "—"; const best=Math.min(...Object.keys(ladder).map(Number));
-  return eq<=best ? (best===0?"scratch+":`${best} or better`) : eq>25 ? `~${Math.round(eq)}` : `~${Math.round(eq)}`; };
-const smashLadder = Object.fromEntries(Object.keys(AMATEUR.club7).map(h=>[h, +(AMATEUR.ball7[h]/AMATEUR.club7[h]).toFixed(3)]));
+  return eq<=best ? (best===0?"scratch+":`${best} or better`) : `~${Math.round(eq)}`; };
+const ratioLadder = (num, den) => num && den ? Object.fromEntries(Object.keys(num).filter(h=>den[h]).map(h=>[h, +(num[h]/den[h]).toFixed(3)])) : null;
 
 const METRICS = [
   {k:"carry",label:"Carry",unit:"yd",shot:"carry",dp:1},{k:"total",label:"Total",unit:"yd",shot:"total",dp:1},
@@ -364,18 +370,26 @@ function distanceModel(A){
   return { rows, avgGain: rows.length ? mean(rows.map(r=>r.gain)) : null, rSmashCarry: zs.length>=15 ? corr(zs.map(z=>z[0]),zs.map(z=>z[1])) : null };
 }
 
-function levelRows(A){
-  const D = distanceModel(A), rows = [], d7 = D.rows.find(r=>r.k==="7i");
-  if (d7){
-    rows.push({label:"7-iron club speed", unit:" mph", dp:1, you:d7.cs, tour:{pga:BENCH.pga["7i"].club, lpga:BENCH.lpga["7i"].club}, ladder:AMATEUR.club7});
-    rows.push({label:"7-iron ball speed", unit:" mph", dp:1, you:d7.ball, tour:{pga:BENCH.pga["7i"].ball, lpga:BENCH.lpga["7i"].ball}, ladder:AMATEUR.ball7});
-    rows.push({label:"7-iron smash", unit:"", dp:2, you:d7.smash, tour:{pga:BENCH.pga["7i"].smash, lpga:BENCH.lpga["7i"].smash}, ladder:smashLadder});
-  }
-  for (const k of A.keys.filter(k=>!A.clubs[k].partial && Object.values(AMATEUR.dist).some(v=>v[k]!=null))){
-    const c = A.clubs[k], ladder = Object.fromEntries(Object.entries(AMATEUR.dist).filter(([,v])=>v[k]!=null).map(([h,v])=>[h,v[k]]));
-    rows.push({label:`${nameOf(k)} distance`, unit:" yd", dp:0, you:c.total, youCarry:c.carry, tour:{pga:BENCH.pga[k]?.carry, lpga:BENCH.lpga[k]?.carry}, ladder, dist:true});
-  }
-  return rows.map(r=>({...r, eq:hcpEquivalent(r.you, r.ladder)})).map(r=>({...r, grade:hcpGrade(r.eq)}));
+// Clubs you can compare: full swings this session that have at least one published benchmark.
+const hasBench = k => !!(BENCH.pga[k] || BENCH.lpga[k] || AMATEUR.avg[k] || AMATEUR.total[k] || AMATEUR.carry[k]);
+const cmpClubs = A => A.keys.filter(k=>!A.clubs[k].partial && hasBench(k));
+function levelRows(A, k){
+  const c = A.clubs[k]; if (!c) return [];
+  const clean = c.shots.filter(r=>!r.suspect), cl = clean.length >= 3 ? clean : c.shots;   // speeds/smash/spin skip likely misreads
+  const cs = mean(cl.map(r=>r.clubSpeed)), ball = mean(cl.map(r=>r.ballSpeed));
+  const P = BENCH.pga[k]||{}, L = BENCH.lpga[k]||{}, AV = AMATEUR.avg[k]||{};
+  const row = (label, key, unit, dp, you, tour, avg, ladder, judged=true, note="") => ({label, key, unit, dp, you, tour, avg, ladder, judged, note});
+  const rows = [
+    row("Club speed","club"," mph",1, cs, {pga:P.club, lpga:L.club}, AV.club, AMATEUR.club[k]),
+    row("Ball speed","ball"," mph",1, ball, {pga:P.ball, lpga:L.ball}, AV.ball, AMATEUR.ball[k]),
+    row("Smash","smash","",2, cs?ball/cs:null, {pga:P.smash, lpga:L.smash}, AV.club&&AV.ball?AV.ball/AV.club:null, ratioLadder(AMATEUR.ball[k], AMATEUR.club[k])),
+    row("Carry","carry"," yd",0, c.carry, {pga:P.carry, lpga:L.carry}, null, AMATEUR.carry[k]),
+    row("Total","total"," yd",0, c.total, {}, null, AMATEUR.total[k], true, "Shot Scope on-course averages include roll, so they're compared with your total."),
+    row("Launch","launch","°",1, mean(c.shots.map(r=>r.launch)), {pga:P.launch, lpga:L.launch}, null, null, false, "Not graded: the right launch depends on loft and speed."),
+    row("Back spin","spin"," rpm",0, mean(cl.map(r=>r.backSpin)), {pga:P.spin, lpga:L.spin}, null, null, false, "Not graded: the right spin depends on loft and speed."),
+  ];
+  return rows.filter(r=>r.you!=null && (r.tour.pga!=null || r.tour.lpga!=null || r.avg!=null || r.ladder))
+    .map(r=>({...r, eq: r.judged ? hcpEquivalent(r.you, r.ladder) : null})).map(r=>({...r, grade:hcpGrade(r.eq)}));
 }
 
 function findings(A){
@@ -384,10 +398,12 @@ function findings(A){
   const D = distanceModel(A);
   if (D.avgGain!=null && D.avgGain >= 3) F.push({sev:"bad", t:`Strike is costing you ~${f(D.avgGain,0)} yd per iron`,
     b:`At the speed you already swing, solid contact (smash ${D.rows.filter(r=>r.gain>=1).map(r=>`${nameOf(r.k)} ${r.goal.toFixed(2)}`).join(", ")}) would add ${D.rows.filter(r=>r.gain>=1).map(r=>`${nameOf(r.k)} +${f(r.gain,0)}`).join(", ")} yd.`+(D.rSmashCarry!=null?` Within each club, carry follows smash closely (r = ${f(D.rSmashCarry,2)}).`:"")});
-  const d7 = D.rows.find(r=>r.k==="7i") || D.rows[0];
-  if (d7 && BENCH.lpga[d7.k]){ const L = BENCH.lpga[d7.k];
-    F.push({sev: d7.cs >= L.club-3 ? "info" : "warn", t: d7.cs >= L.club-3 ? "Speed isn't the problem" : "Speed is a limiter",
-      b:`Your ${nameOf(d7.k)} club speed is ${f(d7.cs)} mph (likely misreads removed). LPGA players swing ${L.club} mph and carry it ${L.carry} yd; your ${f(d7.ball)} mph ball speed vs. their ${L.ball} is the gap.`}); }
+  const withL = D.rows.filter(r=>BENCH.lpga[r.k]?.club && BENCH.lpga[r.k]?.ball);
+  if (withL.length){
+    const sp = Math.round(mean(withL.map(r=>r.cs/BENCH.lpga[r.k].club))*100), bp = Math.round(mean(withL.map(r=>r.ball/BENCH.lpga[r.k].ball))*100);
+    F.push({sev: sp>=96 ? "info" : "warn", t: sp>=96 ? "Speed isn't the problem" : "Speed is a limiter",
+      b:`Across ${withL.map(r=>nameOf(r.k)).join(", ")}, your club speed is ${sp}% of LPGA Tour speed but your ball speed is only ${bp}% (likely misreads removed). The gap is in how speed turns into ball speed.`});
+  }
   const consistent = sd(full.map(r=>r.path)) < 3.5 && sd(full.map(r=>r.f2p)) < 4;
   if (consistent && fp!=null && ff!=null && fp < -2 && ff > 3){
     F.push({sev:"info", t:`Consistent fade pattern (path ${sg(fp)}°, face-to-path ${sg(ff)}°)`, b:"It repeats, so it's playable: aim for it. Trimming the path toward −5° would still add a few yards, since less out-to-in swings carried a little further."});
@@ -435,7 +451,7 @@ const sDate = A => new Date(A.s.iso+"T12:00:00").toLocaleDateString(undefined,{m
 
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
-const state = { i:ALL.length-1, tab:"session", club:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
+const state = { i:ALL.length-1, tab:"session", club:null, cmp:null, view:"distance", metric:"carry", tmetric:"carry", sort:["loft",1] };
 
 /* ================= SESSION ================= */
 function renderSession(){
@@ -445,7 +461,9 @@ function renderSession(){
   const shots = keys.reduce((n,k)=>n+clubs[k].n,0), F = findings(A), top = F.filter(x=>x.sev==="bad"||x.sev==="warn").slice(0,3);
   const stat = (label,key,v,cap,g) => `<div class="stat"><div><div class="l">${tip(key,label)}</div><div class="v">${v}</div><div class="c">${cap}</div></div>${g?`<div class="grade g${g}" title="A = Tour level · F = biggest fix">${g}</div>`:""}</div>`;
   const D = distanceModel(A), d7 = D.rows.find(r=>r.k==="7i") || D.rows[0];
-  const LV = levelRows(A), LR = {speed:LV.find(r=>r.label==="7-iron club speed"), smash:LV.find(r=>r.label==="7-iron smash")};
+  const CC = cmpClubs(A); if (!CC.includes(state.cmp)) state.cmp = CC.includes("7i") ? "7i" : CC[0];
+  const LV = levelRows(A, state.cmp), LR = {speed:LV.find(r=>r.key==="club"), smash:LV.find(r=>r.key==="smash")};
+  const plays = r => r?.eq!=null ? ` · plays like ~${r.eq<=0?"scratch":Math.round(r.eq)}` : "";
   const views = [["distance","Distance"],["dispersion","Dispersion"],["curve","Curve"],["strike","Strike"],["gapping","Gapping"]];
   $("tab-session").innerHTML = `
     <div class="head" style="margin:0">
@@ -453,8 +471,8 @@ function renderSession(){
       ${meta.curated?`<span class="note" data-tip="${esc(meta.curatedNote||"Mishits were removed before export.")}">Best shots only</span>`:""}
     </div>
     <section class="stats">
-      ${stat("Club speed","club",d7?`${f(d7.cs,0)} mph`:"—", LR.speed?`${nameOf(d7.k)} · plays like a ${eqLabel(LR.speed.eq,LR.speed.ladder)} handicap`:"", LR.speed?.grade)}
-      ${stat("Strike (smash)","smash",LR.smash?f(LR.smash.you,2):f(sm,2), LR.smash?`7i · like a ${eqLabel(LR.smash.eq,LR.smash.ladder)} handicap · all irons ${f(sm,2)}`:"all irons", LR.smash?.grade)}
+      ${stat("Club speed","club",LR.speed?`${f(LR.speed.you,0)} mph`:"—", `${nameOf(state.cmp)}${LR.speed?.tour.lpga?` · LPGA ${LR.speed.tour.lpga}`:""}${plays(LR.speed)}`, LR.speed?.grade)}
+      ${stat("Strike (smash)","smash",LR.smash?f(LR.smash.you,2):"—", `${nameOf(state.cmp)}${LR.smash?.tour.pga?` · PGA ${LR.smash.tour.pga.toFixed(2)}`:""}${plays(LR.smash)}`, LR.smash?.grade)}
       ${stat("Distance available","gain",D.avgGain!=null?`+${f(D.avgGain,0)} yd`:"—", `per iron with solid contact, same speed`, null)}
     </section>
     <section class="card">
@@ -467,14 +485,15 @@ function renderSession(){
     </section>
     <section class="card">
       <div class="head"><h2>How you compare</h2><span class="muted small">Grades are weighted to your ${HCP} handicap: C = playing to it</span></div>
-      <div class="tablewrap"><table class="levels-t"><thead><tr><th></th><th>You</th>${LEVELS.map(([n])=>`<th>${/^\d/.test(n)?n+" hcp":n}</th>`).join("")}<th>Plays like</th><th>Grade</th></tr></thead><tbody>
-        ${LV.map(r=>{ const cell=v=>v==null?'<td class="muted">—</td>':`<td class="${r.you>=v?"hit":""}">${r.dp?v.toFixed(r.dp):Math.round(v)}</td>`;
-          return `<tr><td>${r.label}${r.dist?'<span class="tag" data-tip="Tour columns are carry (TrackMan). Handicap columns are Shot Scope on-course averages, compared with your total.">carry · total</span>':""}</td>
-            <td><b>${r.dist?`${Math.round(r.youCarry)} · ${Math.round(r.you)}`:(r.dp?r.you.toFixed(r.dp):Math.round(r.you))}</b></td>
-            ${LEVELS.map(([,id])=> typeof id==="string" ? (r.tour[id]==null?'<td class="muted">—</td>':`<td class="${(r.dist?r.youCarry:r.you)>=r.tour[id]?"hit":""}">${r.dp?r.tour[id].toFixed(r.dp):Math.round(r.tour[id])}</td>`) : cell(r.ladder[id])).join("")}
-            <td>${eqLabel(r.eq,r.ladder)}</td><td>${r.grade?`<span class="g${r.grade}" style="font-weight:700">${r.grade}</span>`:"—"}</td></tr>`;}).join("")}
+      <div class="row-btns" style="margin-bottom:14px">${CC.map(k=>`<button class="btn sm" data-cmp="${k}" aria-pressed="${k===state.cmp}">${sw(k)}${nameOf(k)}</button>`).join("")}</div>
+      <div class="tablewrap"><table class="levels-t"><thead><tr><th>${esc(CLUB[state.cmp]?.label||nameOf(state.cmp))}</th><th>You</th>${LEVELS.map(([n])=>`<th>${/^\d/.test(n)?n+" hcp":n}</th>`).join("")}<th>Plays like</th><th>Grade</th></tr></thead><tbody>
+        ${LV.map(r=>{ const fmt=v=>r.dp?v.toFixed(r.dp):Math.round(v).toLocaleString();
+          const cell=v=>v==null?'<td class="muted">—</td>':`<td class="${r.judged&&r.you>=v?"hit":""}">${fmt(v)}</td>`;
+          return `<tr><td>${tip(r.key,r.label)}${r.note?` <span class="tag" data-tip="${esc(r.note)}">?</span>`:""}</td><td><b>${fmt(r.you)}${r.unit}</b></td>
+            ${LEVELS.map(([,id])=> id==="pga"||id==="lpga" ? cell(r.tour[id]) : id==="avg" ? cell(r.avg) : cell(r.ladder?.[id])).join("")}
+            <td>${r.ladder&&r.judged?eqLabel(r.eq,r.ladder):'<span class="muted">—</span>'}</td><td>${r.grade?`<span class="g${r.grade}" style="font-weight:700">${r.grade}</span>`:'<span class="muted">—</span>'}</td></tr>`;}).join("")}
       </tbody></table></div>
-      <p class="muted small" style="margin:10px 0 0">Highlighted = you match or beat that level. Tour: TrackMan averages. Handicap distances: Shot Scope on-course averages (≈ total). Handicap speeds: GolfLaunchLab amateur data (no scratch figure published). Speeds use your shots with likely misreads removed.</p>
+      <p class="muted small" style="margin:10px 0 0">Highlighted = you match or beat that level. Blank = no published number (handicap speeds exist only for the driver and 7-iron).${A.keys.filter(k=>!A.clubs[k].partial&&!hasBench(k)).length?` No published benchmarks for ${A.keys.filter(k=>!A.clubs[k].partial&&!hasBench(k)).map(nameOf).join(", ")}.`:""} Tour: TrackMan averages. Avg amateur and handicap speeds: GolfLaunchLab. Handicap distances: Shot Scope. Your speeds, smash and spin leave out likely misreads.</p>
     </section>
     <section class="card">
       <div class="head"><h2>Clubs</h2><span class="muted small">Tap a club to focus</span></div>
@@ -495,6 +514,7 @@ function renderSession(){
     <details class="card" style="margin:0"><summary>All club numbers</summary><div class="tablewrap" style="margin-top:12px"><table id="tbl"></table></div></details>`;
   document.querySelectorAll("#tab-session [data-club]").forEach(b=>{ if (b.tagName==="BUTTON") b.onclick=()=>{state.club=b.dataset.club||null;render();}; });
   document.querySelectorAll("#tab-session [data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render();});
+  document.querySelectorAll("#tab-session [data-cmp]").forEach(b=>b.onclick=()=>{state.cmp=b.dataset.cmp;render();});
   $("metric") && ($("metric").onchange = e => { state.metric = e.target.value; render(); });
   document.querySelectorAll("#tab-session tr[data-shot]").forEach(tr=>tr.onclick=()=>openShot(state.i, tr.dataset.club, +tr.dataset.shot));
   renderTable(A); mainChart(A);
