@@ -447,7 +447,8 @@ const gSmash = v => v==null?"?":v>=1.33?"A":v>=1.28?"B":v>=1.22?"C":v>=1.15?"D":
 
 /* ================= sessions are numbered in date order ================= */
 const sName = i => `Session ${i+1}`;
-const sDate = A => new Date(A.s.iso+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+// The site only knows each session's month (and its order); exact dates stay local.
+const sDate = A => new Date(A.s.month+"-15T12:00:00").toLocaleDateString(undefined,{month:"short",year:"numeric"});
 
 /* ================= state ================= */
 const ALL = DATA.sessions.map(analyze);
@@ -762,7 +763,7 @@ function render(){
   history.replaceState(null,"",`#s${state.i+1}/${state.tab}`);
   renderOverview();
 }
-const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hn ? +hn[1]-1 : ALL.findIndex(A=>A.s.date===hd);
+const [hd,ht] = location.hash.slice(1).split("/"), hn = /^s(\d+)$/.exec(hd||""), hi = hn ? +hn[1]-1 : -1;
 if (hi>=0 && hi<ALL.length) state.i = hi; if (TABS[ht]) state.tab = ht;
 sel.onchange = () => { state.i=+sel.value; render(); };
 $("prev").onclick = () => { state.i--; render(); }; $("next").onclick = () => { state.i++; render(); };

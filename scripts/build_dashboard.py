@@ -107,8 +107,7 @@ def load_session(folder):
     meta_file = folder / "session.json"
     return {
         "meta": json.loads(meta_file.read_text()) if meta_file.exists() else {},
-        "date": folder.name,
-        "iso": folder_date(folder).strftime("%Y-%m-%d"),
+        "month": folder_date(folder).strftime("%Y-%m"),  # the site shows month only
         "clubs": clubs,
         "review": md_to_html(review.read_text()) if review.exists() else "",
     }
@@ -123,7 +122,8 @@ def public_rounds():
     if not ROUNDS_FILE.exists():
         return []
     rounds = sorted(json.loads(ROUNDS_FILE.read_text())["rounds"], key=lambda r: r["date"])
-    out = [{"month": r["date"][:7], **{k: r[k] for k in ROUND_FIELDS if k in r}} for r in rounds]
+    # seq keeps the true order (1 = oldest), even for several rounds in the same month
+    out = [{"seq": i, "month": r["date"][:7], **{k: r[k] for k in ROUND_FIELDS if k in r}} for i, r in enumerate(rounds, 1)]
     for r in out:  # guard: nothing day-level may reach the public page
         assert re.fullmatch(r"\d{4}-\d{2}", r["month"]) and "date" not in r, r
     return out
@@ -131,7 +131,9 @@ def public_rounds():
 
 def build():
     folders = sorted((p for p in DATA_DIR.iterdir() if p.is_dir() and folder_date(p)), key=folder_date) if DATA_DIR.exists() else []
-    sessions = [s for s in (load_session(f) for f in folders) if s["clubs"]]
+    sessions = [s for s in (load_session(f) for f in folders) if s["clubs"]]  # folders are sorted by date
+    for i, s in enumerate(sessions, 1):
+        s["seq"] = i
     bag = json.loads((CONFIG_DIR / "bag.json").read_text())
     courses_file = CONFIG_DIR / "courses.json"
     courses = json.loads(courses_file.read_text())["courses"] if courses_file.exists() else []
@@ -145,7 +147,7 @@ def build():
         "rounds": public_rounds(),
         "drills": drills,
         "overallReview": md_to_html(overall.read_text()) if overall.exists() else "",
-        "built": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "built": datetime.now().strftime("%Y-%m"),  # month only, like everything else on the site
     }
     payload = json.dumps(data, separators=(",", ":")).replace("</", "<\\/")
     OUT.write_text(TEMPLATE.read_text().replace("__DATA__", payload))
