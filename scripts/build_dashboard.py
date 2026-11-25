@@ -80,13 +80,15 @@ def md_to_html(text):
 
 
 def load_session(folder):
+    meta_path = folder / "session.json"
+    excluded = set(json.loads(meta_path.read_text()).get("exclude", [])) if meta_path.exists() else set()
     clubs = {}
     for club_dir in sorted(p for p in folder.iterdir() if p.is_dir()):
         shots = []
         for shot_dir in club_dir.iterdir():
             m = re.match(rf"^{re.escape(club_dir.name)}_(\d+)$", shot_dir.name)
             csvs = list(shot_dir.glob("*.csv")) if m and shot_dir.is_dir() else []
-            if not csvs:
+            if not csvs or shot_dir.name in excluded:  # session.json "exclude": ["7i_25", ...] keeps files but drops the shot
                 continue
             with open(csvs[0], newline="") as f:
                 row = next(csv.DictReader(f), None)

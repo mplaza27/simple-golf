@@ -15,7 +15,7 @@ data/
   simulator/MM-DD-YY/    one Uneekor session
     <club>/<club>_<n>/   one shot (n = 1 is the oldest): CSV, impact photo, 24 top-view frames
     link.md              report link (git-ignored: it contains an access key)
-    session.json         optional: curated, per-club caveats, nextSession
+    session.json         optional: curated, per-club caveats, nextSession, exclude (shot folders to drop, e.g. "7i_25")
     review.md            optional: coach notes for that session
   birdies/MM-DD-YY/      raw 18Birdies exports (git-ignored: they hold your email, phone and friends)
   birdies/rounds.json    sanitized rounds with exact dates (git-ignored; the site only gets the month)

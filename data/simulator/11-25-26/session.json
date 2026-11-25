@@ -1,8 +1,16 @@
 {
   "curated": false,
-  "curatedNote": "Every shot was exported, mishits included (e.g. two topped shots that carried 1 yd). Club numbers use good-contact shots; mishits are counted separately.",
+  "curatedNote": "Mostly every shot was exported. The six clear mishits (topped, skulled, grounders) are excluded via \"exclude\" so they don't skew the starting point; the files are kept.",
   "caveats": {
     "6i": "Only 8 shots (2 mishits). Worth another block before deciding for good."
   },
-  "nextSession": "Hit 7-iron and 8-iron back to back (10 each) to settle that gap, then 7-wood vs 3-hybrid. Try a few drivers aiming 30–40 yd left of target."
+  "nextSession": "Hit 7-iron and 8-iron back to back (10 each) to settle that gap, then 7-wood vs 3-hybrid. Try a few drivers aiming 30\u201340 yd left of target.",
+  "exclude": [
+    "3W_12",
+    "6i_5",
+    "6i_7",
+    "7i_1",
+    "7i_14",
+    "7i_25"
+  ]
 }
