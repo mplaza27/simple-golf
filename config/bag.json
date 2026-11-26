@@ -16,9 +16,7 @@
           "group": "Top of the bag",
           "shaft": "Project X Denali Blue",
           "flex": "5.5",
-          "weight": 50,
-          "newPrice": 600,
-          "value": 330
+          "weight": 50
         },
         {
           "key": "3W",
@@ -30,9 +28,7 @@
           "shaft": "Project X EvenFlow Riptide",
           "flex": "6.0 S",
           "weight": 60,
-          "grip": "Jumbo",
-          "newPrice": 300,
-          "value": 90
+          "grip": "Jumbo"
         },
         {
           "key": "5W",
@@ -44,10 +40,7 @@
           "note": "Ordered Nov 2026 to replace the 3H if it wins the 5W vs 3H test. Loft to confirm.",
           "shaft": "Mitsubishi Vanquish PL 50",
           "flex": "5.5",
-          "weight": null,
-          "newPrice": 400,
-          "value": 260,
-          "paid": 259.99
+          "weight": null
         },
         {
           "key": "3H",
@@ -58,9 +51,7 @@
           "note": "Replaces 4-iron; easier out of the rough",
           "shaft": "Project X Catalyst 75",
           "flex": "6.0",
-          "weight": 75,
-          "newPrice": 250,
-          "value": 75
+          "weight": 75
         },
         {
           "key": "7W",
@@ -71,9 +62,7 @@
           "note": "Replaces 5-iron; high launch / soft landing",
           "shaft": "Mitsubishi Chemical Vanquish 5",
           "flex": "R",
-          "weight": null,
-          "newPrice": 400,
-          "value": 260
+          "weight": null
         },
         {
           "key": "6i",
@@ -83,9 +72,7 @@
           "group": "Core irons",
           "shaft": "KBS Tour V 110",
           "flex": "S",
-          "weight": 110,
-          "newPrice": 200,
-          "value": 80
+          "weight": 110
         },
         {
           "key": "7i",
@@ -95,9 +82,7 @@
           "group": "Core irons",
           "shaft": "KBS Tour V 110",
           "flex": "S",
-          "weight": 110,
-          "newPrice": 200,
-          "value": 80
+          "weight": 110
         },
         {
           "key": "8i",
@@ -107,9 +92,7 @@
           "group": "Core irons",
           "shaft": "KBS Tour V 110",
           "flex": "S",
-          "weight": 110,
-          "newPrice": 200,
-          "value": 80
+          "weight": 110
         },
         {
           "key": "9i",
@@ -119,9 +102,7 @@
           "group": "Core irons",
           "shaft": "KBS Tour V 110",
           "flex": "S",
-          "weight": 110,
-          "newPrice": 200,
-          "value": 80
+          "weight": 110
         },
         {
           "key": "PW",
@@ -131,9 +112,7 @@
           "group": "Wedges",
           "shaft": "KBS Tour V 110",
           "flex": "S",
-          "weight": 110,
-          "newPrice": 200,
-          "value": 80
+          "weight": 110
         },
         {
           "key": "AW",
@@ -143,9 +122,7 @@
           "group": "Wedges",
           "shaft": "KBS Tour V 110",
           "flex": "S",
-          "weight": 110,
-          "newPrice": 200,
-          "value": 80
+          "weight": 110
         },
         {
           "key": "51",
@@ -155,9 +132,7 @@
           "group": "Wedges",
           "shaft": "Elevate MPH 65 Reflex",
           "flex": null,
-          "weight": null,
-          "newPrice": 200,
-          "value": 80
+          "weight": null
         },
         {
           "key": "56",
@@ -169,9 +144,7 @@
           "shaft": "UST Mamiya Recoil Dart 80 Wedge",
           "flex": null,
           "weight": null,
-          "bounce": 14,
-          "newPrice": 150,
-          "value": 80
+          "bounce": 14
         },
         {
           "key": "60",
@@ -183,18 +156,14 @@
           "shaft": "RBS Hi Rev 2.0 115",
           "flex": null,
           "weight": null,
-          "bounce": 12,
-          "newPrice": 150,
-          "value": 80
+          "bounce": 12
         },
         {
           "key": "Putter",
           "label": "Putter",
           "model": "L.A.B. Golf",
           "loft": null,
-          "group": "Green",
-          "newPrice": 450,
-          "value": 300
+          "group": "Green"
         }
       ]
     },
@@ -236,6 +205,5 @@
       ]
     }
   ],
-  "_shaft": "shaft = name printed on the shaft (e.g. 'Project X Cypher 2.0 50'); flex = L/A/R/S/X; weight in grams if printed. null = not checked yet.",
-  "_price": "newPrice = approx. retail when new (USD); value = rough used resale value today (USD); paid = what you paid. Estimates, not quotes."
+  "_shaft": "shaft = name printed on the shaft (e.g. 'Project X Cypher 2.0 50'); flex = L/A/R/S/X; weight in grams if printed. null = not checked yet."
 }
