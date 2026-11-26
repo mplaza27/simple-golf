@@ -352,9 +352,22 @@
     },
     {
       "day": "Tue",
-      "title": "Putting + mobility",
+      "title": "Putting + mobility (+ optional sim)",
       "where": "Home",
-      "sim": [],
+      "sim": [
+        {
+          "t": "Warm-up: 15 half wedges (not recorded)",
+          "m": 5
+        },
+        {
+          "t": "9 holes in GSPro (a different 9 from Friday's), full routine, every shot counts",
+          "m": 45
+        },
+        {
+          "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
+          "m": 10
+        }
+      ],
       "home": [
         {
           "t": "Putting ladder: 15 in a row from 3 ft, 6 from 6 ft, 3 from 9 ft (a miss restarts that distance)",
@@ -368,7 +381,8 @@
           "t": "Mobility + wall drill",
           "m": 10
         }
-      ]
+      ],
+      "simOptional": true
     },
     {
       "day": "Wed",
@@ -405,9 +419,22 @@
     },
     {
       "day": "Thu",
-      "title": "Light",
+      "title": "Light (+ optional sim)",
       "where": "Home",
-      "sim": [],
+      "sim": [
+        {
+          "t": "Warm-up: 15 half wedges (not recorded)",
+          "m": 5
+        },
+        {
+          "t": "9 holes in GSPro (a different 9 from Friday's), full routine, every shot counts",
+          "m": 45
+        },
+        {
+          "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
+          "m": 10
+        }
+      ],
       "home": [
         {
           "t": "Mobility",
@@ -417,11 +444,12 @@
           "t": "Lag game: 10 putts from 15–25 ft, count how many stop in a 3-ft circle",
           "m": 10
         }
-      ]
+      ],
+      "simOptional": true
     },
     {
       "day": "Fri",
-      "title": "Play a course",
+      "title": "Play a course (GSPro)",
       "where": "Simulator",
       "sim": [
         {

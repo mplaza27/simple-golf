@@ -1065,7 +1065,7 @@ function wireReview(wk){
 }
    // 0 = this week, -1 = last week, ...
 let gpDay = null;   // selected day index in the strip (null = today)
-const dayItems = w => [...(w.sim||[]).map((x,j)=>({...x, key:`${w.day}:s${j}`, sim:true})), ...(w.home||[]).map((x,j)=>({...x, key:`${w.day}:h${j}`}))];
+const dayItems = w => [...(w.sim||[]).map((x,j)=>({...x, key:`${w.day}:s${j}`, sim:true, opt:!!w.simOptional})), ...(w.home||[]).map((x,j)=>({...x, key:`${w.day}:h${j}`}))];
 const simMins = w => (w.sim||[]).reduce((a,x)=>a+x.m,0);
 const fold = (id, title, sub, inner, dflt=false) => { const o = store.get("golf-fold-v1",{})[id] ?? dflt;
   return `<details class="card fold" data-fold="${id}" ${o?"open":""}><summary><h2>${title}</h2><span class="muted small">${sub||""}</span></summary><div class="fbody">${inner}</div></details>`; };
@@ -1076,8 +1076,9 @@ function renderPractice(){
   const wk = dkey(mon), done = all[wk] || {};
   const todayIdx = gpWeek===0 ? (new Date().getDay()+6)%7 : -1;
   const sel = gpDay ?? (todayIdx>=0 ? todayIdx : 0), w = week[sel];
-  const stat = key => { const ws = all[key] || {}; let t=0, n=0; week.forEach(d=>dayItems(d).forEach(x=>{ t++; if (ws[x.key]) n++; })); return {t, n, pct: t ? n/t : 0}; };
-  const S = stat(wk), sims = week.filter(d=>(d.sim||[]).length), simDone = sims.filter(d=>(d.sim||[]).every((_,j)=>done[`${d.day}:s${j}`])).length;
+  const stat = key => { const ws = all[key] || {}; let t=0, n=0; week.forEach(d=>dayItems(d).forEach(x=>{ if (x.opt) return; t++; if (ws[x.key]) n++; })); return {t, n, pct: t ? n/t : 0}; };
+  const simFull = d => (d.sim||[]).length && d.sim.every((_,j)=>done[`${d.day}:s${j}`]);
+  const S = stat(wk), sims = week.filter(d=>(d.sim||[]).length && !d.simOptional), simDone = sims.filter(simFull).length, extra = week.filter(d=>d.simOptional && simFull(d)).length;
   const hist = [-5,-4,-3,-2,-1,0].map(o=>{ const d=weekStart(); d.setDate(d.getDate()+7*o); return {o, label: d.toLocaleDateString(undefined,{month:"short",day:"numeric"}), ...stat(dkey(d))}; });
   const end = new Date(mon); end.setDate(end.getDate()+6);
   const range = `${mon.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${end.toLocaleDateString(undefined,{month:"short",day:"numeric"})}`;
@@ -1085,17 +1086,17 @@ function renderPractice(){
   const sm = w ? simMins(w) : 0, items = w ? dayItems(w) : [];
   const dayCard = !w ? "" : `<section class="card today-card">
       <div class="head"><h2>${esc(w.day)} · ${esc(w.title)}</h2><span class="muted small">${sel===todayIdx?"today":""}</span></div>
-      ${(w.sim||[]).length?`<div class="blk"><div class="bh"><b>At the sim</b><span class="${sm<lo||sm>hi?"bad":"ok"}">${sm} min</span><span class="muted small">target ${lo}–${hi}</span></div>
+      ${(w.sim||[]).length?`<div class="blk"><div class="bh"><b>At the sim${w.simOptional?' <span class="tag">optional</span>':''}</b><span class="${sm<lo||sm>hi?"bad":"ok"}">${sm} min</span><span class="muted small">target ${lo}–${hi}</span></div>
         <div class="tbar">${w.sim.map(x=>`<i style="flex:${x.m}" title="${esc(x.t)} · ${x.m} min"></i>`).join("")}</div>
         ${items.filter(x=>x.sim).map(itemRow).join("")}</div>`:""}
       ${(w.home||[]).length?`<div class="blk"><div class="bh"><b>${w.where==="Course"?"At the course":"At home"}</b><span class="muted small">${(w.home||[]).reduce((a,x)=>a+x.m,0)} min</span></div>
         ${items.filter(x=>!x.sim).map(itemRow).join("")}</div>`:""}
     </section>`;
   $("tab-practice").innerHTML = `
-    <div class="head" style="margin:0"><div><h2>Practice</h2><p class="sub">${gpWeek===0?"This week":gpWeek===-1?"Last week":`${-gpWeek} weeks ago`} · ${range} · ${Math.round(S.pct*100)}% done · sims ${simDone}/${sims.length}</p></div>
+    <div class="head" style="margin:0"><div><h2>Practice</h2><p class="sub">${gpWeek===0?"This week":gpWeek===-1?"Last week":`${-gpWeek} weeks ago`} · ${range} · ${Math.round(S.pct*100)}% done · sims ${simDone}/${sims.length}${extra?` + ${extra} optional`:""}</p></div>
       <div class="weeknav"><button class="btn icon" data-gw="-1" aria-label="Previous week">‹</button><button class="btn sm" data-gw="0" ${gpWeek===0?"disabled":""}>This week</button><button class="btn icon" data-gw="1" aria-label="Next week" ${gpWeek>=0?"disabled":""}>›</button></div></div>
-    <div class="dstrip">${week.map((d,i)=>{ const its=dayItems(d), c=its.filter(x=>done[x.key]).length, full=its.length&&c===its.length;
-      return `<button class="dsb ${d.where.toLowerCase()} ${i===sel?"sel":""} ${i===todayIdx?"today":""} ${full?"done":""}" data-gd="${i}"><b>${esc(d.day)}</b><span>${full?"✓":(d.sim||[]).length?`Sim ${simMins(d)}′`:esc(d.where)}</span></button>`; }).join("")}</div>
+    <div class="dstrip">${week.map((d,i)=>{ const its=dayItems(d).filter(x=>!x.opt), c=its.filter(x=>done[x.key]).length, full=its.length&&c===its.length;
+      return `<button class="dsb ${d.where.toLowerCase()} ${i===sel?"sel":""} ${i===todayIdx?"today":""} ${full?"done":""}" data-gd="${i}"><b>${esc(d.day)}</b><span>${full?"✓":(d.sim||[]).length&&!d.simOptional?`Sim ${simMins(d)}′`:d.simOptional?"Home +sim":esc(d.where)}</span></button>`; }).join("")}</div>
     ${dayCard}
     ${combineHTML()}
     ${callerHTML()}
