@@ -194,11 +194,12 @@
   .it input:checked ~ span{color:var(--faint);text-decoration:line-through}
   details.fold>summary{display:flex;justify-content:space-between;align-items:baseline;gap:10px;cursor:pointer;list-style:none} details.fold>summary::-webkit-details-marker{display:none}
   details.fold{margin-top:0} details.fold>summary::before{content:none} details.fold>summary h2{margin:0} details.fold>summary h2::before{content:"+ ";color:var(--green)} details.fold[open]>summary h2::before{content:"− "} details.fold .fbody{margin-top:12px}
+  .chip.off{opacity:.45} .chip i{font-style:normal;color:var(--sand);font-size:11px}
   .lap{display:flex;flex-wrap:wrap;gap:6px} .chip{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink2)} .chip b{color:var(--faint);font-weight:400}
   .principles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px} .principles>div{background:var(--panel2);border-radius:8px;padding:12px} .principles b{color:var(--cream);font-size:13.5px} .principles p{margin:6px 0;font-size:12.5px;color:var(--ink2);line-height:1.5}
-  :is(.caller,.combine) .seg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px} :is(.caller,.combine) .seg .on{border-color:var(--green);color:var(--cream)}
-  :is(.caller,.combine) .call{display:flex;flex-direction:column;gap:4px;background:var(--panel2);border-radius:10px;padding:16px;margin:8px 0 12px} :is(.caller,.combine) .cn.big{font-size:24px;font-weight:700;color:var(--cream)} :is(.caller,.combine) .ty{font-size:15px;color:var(--ink2)} :is(.caller,.combine) .win{font-size:13px;color:var(--muted)} :is(.caller,.combine) .win b{color:var(--cream)}
-  :is(.caller,.combine) .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .callres{margin:8px 0 12px} .callres .v{font-size:30px;font-weight:700;color:var(--cream)}
+  .combine .seg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px} .combine .seg .on{border-color:var(--green);color:var(--cream)}
+  .combine .call{display:flex;flex-direction:column;gap:4px;background:var(--panel2);border-radius:10px;padding:16px;margin:8px 0 12px} .combine .cn.big{font-size:24px;font-weight:700;color:var(--cream)} .combine .ty{font-size:15px;color:var(--ink2)} .combine .win{font-size:13px;color:var(--muted)} .combine .win b{color:var(--cream)}
+  .combine .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cbin{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap} .cbin label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)} .cbin input{font:inherit;font-size:18px;width:96px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px 10px} .cbin .seg{display:flex;gap:6px}
   .review{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px} .rv{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)} .rv input{font:inherit;font-size:13px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:6px;padding:8px}
   .hist{display:flex;gap:8px;align-items:flex-end;height:70px;margin-top:6px}
@@ -899,15 +900,13 @@ function renderDrills(){
     b.outerHTML=`<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" title="${esc(b.dataset.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`; });
 }
 
-/* ================= PRACTICE (weekly schedule, benchmark, shot caller, review; tracked in this browser) ================= */
+/* ================= PRACTICE (weekly schedule, combine, benchmark, review; tracked in this browser) ================= */
 // Weeks run Monday→Sunday; key = Monday's local date, e.g. "2026-11-23".
 const weekStart = (d=new Date()) => { const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
 const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 let gpWeek = 0;
 const wname = k => /^\d+$/.test(k) ? `${k}° ${nameOf(k)}` : nameOf(k);
-const catOf = k => loftOf(k) < 24 ? "long" : loftOf(k) >= 41 ? "wedge" : "iron";
-const inBag = () => (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter" && !c.status && !c.bench);
 function benchHTML(B){
   if (!B) return "";
   return `<p class="sub" style="margin:0 0 10px">${esc(B.why)}</p>
@@ -918,7 +917,7 @@ function wedgeHTML(W){
   if (!W.length) return "";
   return `<div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Shot</th><th>Carry</th><th class="tl">How</th></tr></thead><tbody>
     ${W.map(w=>`<tr><td><span class="cn">${COLORS[w.club]?sw(w.club):""}${esc(wname(w.club))}</span></td><td class="tl">${esc(w.type)}</td><td>${w.carry?`${w.carry[0]}–${w.carry[1]}`:"—"}</td><td class="tl muted">${esc(w.how||"")}</td></tr>`).join("")}
-    </tbody></table></div><p class="muted small" style="margin:10px 0 0">From your warm-up; the benchmark session will measure them properly. The shot caller uses these windows.</p>`;
+    </tbody></table></div><p class="muted small" style="margin:10px 0 0">From your warm-up; the benchmark session will measure them properly.</p>`;
 }
 
 /* Simple Combine: fixed targets in a fixed order, 0–100 per shot from the carry and side you read off the sim.
@@ -982,79 +981,13 @@ function wireCombine(){
       const txt = h.map(x=>`COMBINE ${x.d} total ${x.total} | ${C.targets.map(t=>`${t.yd??"Dr"}:${x.per[t.id]??"-"}`).join(" ")}`).join("\n");
       navigator.clipboard?.writeText(txt).then(()=>{ $("cbMsg").textContent="Copied. Paste it to Claude."; }, ()=>{ $("cbMsg").textContent=txt; }); } });
 }
-/* Shot caller: a game that tells you what to hit next. Balanced across wedges / irons / long clubs,
-   never the same club twice in a row and never two long clubs in a row. You score yourself. */
-const SC = {mode:"mix", cards:null, i:0, hit:0, n:0};
-const CALLER_LEN = 18;
-function shotOptions(){
-  const W = (DATA.drills?.wedgeShots||[]).filter(w=>w.carry), opts=[];
-  inBag().forEach(c=>{ const k=c.key, ws=W.filter(w=>w.club===k);
-    if (ws.length) ws.forEach(w=>opts.push({k, cat:"wedge", type:w.type, lo:w.carry[0], hi:w.carry[1], side:Math.max(4,Math.round(w.carry[1]*.1))}));
-    else { const m=clubModel(k); if (!m) return; const c0=Math.round(m.carry), w=Math.max(4,Math.round(c0*.05));
-      opts.push({k, cat:catOf(k), type:"Full", lo:c0-w, hi:c0+w, side:Math.max(5,Math.round(c0*.1)), est:m.est}); } });
-  return opts;
-}
-function dealMix(mode){
-  const O = shotOptions(), cats = mode==="short" ? ["wedge","iron"] : ["wedge","iron","long"], out=[];
-  let bagCats=[], last=null;
-  while (out.length < CALLER_LEN){
-    if (!bagCats.length) bagCats = [...cats].sort(()=>Math.random()-.5);
-    let ci = bagCats.findIndex(c=>!(c==="long" && last?.cat==="long")); if (ci<0) ci=0;
-    const cat = bagCats.splice(ci,1)[0], pool = O.filter(o=>o.cat===cat && !(last && o.k===last.k));
-    if (!pool.length) continue;
-    last = pool[Math.floor(Math.random()*pool.length)]; out.push(last);
-  }
-  return out;
-}
-function dealCourse(){
-  const C = (DATA.courses||[]).filter(c=>c.bag==="Main bag"); if (!C.length) return [];
-  const crs = C[Math.floor(Math.random()*C.length)], tee = crs.defaultTee, yds = crs.tees[tee], start = Math.random()<.5 ? 0 : 9;
-  const full = inBag().map(c=>({k:c.key, m:clubModel(c.key)})).filter(x=>x.m && catOf(x.k)!=="wedge");
-  const O = shotOptions(), longest = full.filter(x=>x.k!=="Dr").sort((a,b)=>b.m.total-a.m.total)[0], out=[];
-  for (let h=start; h<start+9; h++){
-    let rem = yds[h], shot=1; const par = crs.par[h], head = `${crs.name} · hole ${h+1} · par ${par} · ${yds[h]} yd (${tee})`;
-    while (rem > 0 && shot <= 4){
-      const tee1 = shot===1 && par>=4, dr = full.find(x=>x.k==="Dr");
-      let pick;
-      if (tee1 && dr) pick = {k:"Dr", lo:Math.round(dr.m.carry)-10, hi:Math.round(dr.m.carry)+10, side:25, type:"Tee shot", carry:dr.m.total};
-      else if (longest && rem > longest.m.total + 15) pick = {k:longest.k, lo:Math.round(longest.m.carry)-8, hi:Math.round(longest.m.carry)+8, side:20, type:"Lay up / advance", carry:longest.m.total};
-      else { const o = O.slice().sort((a,b)=>Math.abs((a.lo+a.hi)/2-rem)-Math.abs((b.lo+b.hi)/2-rem))[0];
-        pick = {k:o.k, lo:rem-Math.max(5,Math.round(rem*.06)), hi:rem+Math.max(3,Math.round(rem*.04)), side:Math.max(5,Math.round(rem*.08)), type:`Approach · ${o.type.toLowerCase()} · flag at ${rem} yd`, carry:rem}; }
-      out.push({...pick, cat:catOf(pick.k), head, hole:h+1});
-      rem = Math.round(rem - pick.carry); shot++;
-      if (rem < 8) break;
-    }
-  }
-  return out;
-}
-function callerHTML(){
-  const hist = store.get("golf-caller-v1", []), card = SC.cards?.[SC.i], done = SC.cards && SC.i >= SC.cards.length;
-  const modes = [["short","Irons + wedges"],["mix","Full bag"],["course","Course"]];
-  const best = m => { const r = hist.filter(x=>x.mode===m && x.n); return r.length ? Math.max(...r.map(x=>Math.round(100*x.hit/x.n)))+"%" : "—"; };
-  let body;
-  if (!SC.cards) body = `<p class="sub" style="margin:6px 0 12px">Press start, hit the shot it calls with a full routine, then score it: <b>in</b> if the carry landed in the window and it finished within the side limit. Every shot counts; no re-hits.</p>
-    <button class="btn primary" data-sc="start">Start ${SC.mode==="course"?"9 holes":CALLER_LEN+" shots"}</button>`;
-  else if (done) body = `<div class="callres"><div class="v">${SC.hit} / ${SC.n}</div><div class="muted">${Math.round(100*SC.hit/Math.max(1,SC.n))}% in the window · saved</div></div><button class="btn primary" data-sc="start">Play again</button> <button class="btn" data-sc="reset">Done</button>`;
-  else body = `${card.head?`<div class="muted small">${esc(card.head)}</div>`:""}
-    <div class="call"><span class="cn big">${COLORS[card.k]?sw(card.k):""}${esc(wname(card.k))}</span><span class="ty">${esc(card.type)}</span>
-      <span class="win">carry <b>${card.lo}–${card.hi}</b> yd · within <b>${card.side}</b> yd of the line${card.est?' <span class="tag">est</span>':""}</span></div>
-    <div class="row"><button class="btn primary" data-sc="in">✓ In</button><button class="btn" data-sc="out">✗ Miss</button>
-      <span class="muted small">shot ${SC.i+1} of ${SC.cards.length} · ${SC.hit}/${SC.n} so far</span></div>`;
-  return `<section class="card caller"><div class="head"><h2>Shot caller</h2><span class="muted small">A game for the sim · best: ${modes.map(([m,l])=>`${l} ${best(m)}`).join(" · ")}</span></div>
-    <div class="seg">${modes.map(([m,l])=>`<button class="btn sm ${SC.mode===m?"on":""}" data-scm="${m}" ${SC.cards&&!done?"disabled":""}>${l}</button>`).join("")}</div>
-    ${body}
-    ${hist.length?`<div class="muted small" style="margin-top:10px">Recent: ${hist.slice(-5).reverse().map(x=>`${x.d.slice(5)} ${({short:"I+W",mix:"Bag",course:"Course"})[x.mode]} ${x.hit}/${x.n}`).join(" · ")}</div>`:""}</section>`;
-}
-function wireCaller(){
-  const rr = () => { const el = document.querySelector("#tab-practice .caller"); if (el) { el.outerHTML = callerHTML(); wireCaller(); } };
-  document.querySelectorAll("#tab-practice [data-scm]").forEach(b=>b.onclick=()=>{ SC.mode=b.dataset.scm; SC.cards=null; rr(); });
-  document.querySelectorAll("#tab-practice [data-sc]").forEach(b=>b.onclick=()=>{
-    const a=b.dataset.sc;
-    if (a==="start"){ SC.cards = SC.mode==="course" ? dealCourse() : dealMix(SC.mode); SC.i=0; SC.hit=0; SC.n=0; if (!SC.cards.length) SC.cards=null; }
-    else if (a==="reset") SC.cards=null;
-    else { SC.n++; if (a==="in") SC.hit++; SC.i++;
-      if (SC.i >= SC.cards.length){ const h=store.get("golf-caller-v1",[]); h.push({d:dkey(new Date()), mode:SC.mode, hit:SC.hit, n:SC.n}); store.set("golf-caller-v1", h.slice(-60)); } }
-    rr(); });
+/* Which bag clubs this week's required sim sessions touch (items tag their clubs in drills.json). */
+function coverageHTML(week){
+  const clubs = (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter"), hit = {};
+  week.filter(d=>!d.simOptional).forEach(d=>(d.sim||[]).forEach(x=>(x.clubs||[]).forEach(k=>(hit[k] ||= new Set()).add(d.day))));
+  const miss = clubs.filter(c=>!hit[c.key] && !c.status);
+  return `<section class="card"><div class="head"><h2>Clubs this week</h2><span class="muted small">${miss.length?`missing: ${miss.map(c=>esc(nameOf(c.key))).join(", ")}`:"every club gets hit ✓"}</span></div>
+    <div class="lap">${clubs.map(c=>{ const d=hit[c.key]; return `<span class="chip ${d?"":"off"}" title="${d?[...d].join(", "):"not this week"}">${COLORS[c.key]?sw(c.key):""}${esc(wname(c.key))}${c.status?` <i>${esc(c.status)}</i>`:""} <b>${d?[...d].map(x=>x[0]).join(""):"—"}</b></span>`; }).join("")}</div></section>`;
 }
 function reviewHTML(wk){
   const r = store.get("golf-review-v1",{})[wk] || {};
@@ -1109,8 +1042,8 @@ function renderPractice(){
     <div class="dstrip">${week.map((d,i)=>{ const its=dayItems(d).filter(x=>!x.opt), c=its.filter(x=>done[x.key]).length, full=its.length&&c===its.length;
       return `<button class="dsb ${d.where.toLowerCase()} ${d.special||""} ${i===sel?"sel":""} ${i===todayIdx?"today":""} ${full?"done":""}" data-gd="${i}"><b>${esc(d.day)}</b><span>${full?"✓":d.special==="measure"?"Measure":d.special==="override"?"Special":(d.sim||[]).length&&!d.simOptional?`Sim ${simMins(d)}′`:d.simOptional?"Home +sim":esc(d.where)}</span></button>`; }).join("")}</div>
     ${dayCard}
+    ${coverageHTML(week)}
     ${combineHTML()}
-    ${callerHTML()}
     ${D.benchmark?fold("bench", esc(D.benchmark.title), (()=>{ const n=nextMeasure(); return n?`next: ${n.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}`:""; })(), benchHTML(D.benchmark), true):""}
     ${fold("wedges","Wedge windows","two shots per wedge", wedgeHTML(D.wedgeShots||[]))}
     ${fold("review","Weekly review","Sunday, 5 minutes", reviewHTML(wk))}
@@ -1120,7 +1053,7 @@ function renderPractice(){
   document.querySelectorAll("#tab-practice [data-gp]").forEach(cb=>cb.onchange=()=>{ const a=store.get("golf-week-v1",{}); (a[wk] ||= {})[cb.dataset.gp]=cb.checked; store.set("golf-week-v1",a); renderPractice(); });
   document.querySelectorAll("#tab-practice [data-gd]").forEach(b=>b.onclick=()=>{ gpDay=+b.dataset.gd; renderPractice(); });
   document.querySelectorAll("#tab-practice details[data-fold]").forEach(d=>d.ontoggle=()=>{ const a=store.get("golf-fold-v1",{}); a[d.dataset.fold]=d.open; store.set("golf-fold-v1",a); });
-  wireCombine(); wireCaller(); wireReview(wk);
+  wireCombine(); wireReview(wk);
   document.querySelectorAll("#tab-practice [data-gw]").forEach(b=>b.onclick=()=>{ const v=+b.dataset.gw; gpWeek = v===0 ? 0 : Math.min(0, gpWeek+v); gpDay=null; renderPractice(); });
 }
 
@@ -1500,7 +1433,7 @@ const TOUR = [
   {tab:"trend", title:"Progress", what:"How your swing numbers move from session to session.", why:"It tells you whether the practice is working.", try:"Change the metric in the By club chart."},
   {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
   {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
-  {tab:"practice", title:"Practice", what:"Your week, the Simple Combine (8 fixed targets, scored 0–100), a shot caller, the next benchmark session and your wedge windows.", why:"Mixed, game-like practice with every shot counted transfers to the course better than hitting one club until it feels good.", try:"Tick items as you finish them, and end your next sim session with the Simple Combine."},
+  {tab:"practice", title:"Practice", what:"Your week, the Simple Combine (8 fixed targets, scored 0–100), which clubs you hit this week, the next measurement day and your wedge windows.", why:"Mixed, game-like practice with every shot counted transfers to the course better than hitting one club until it feels good.", try:"Tick items as you finish them, and end your next sim session with the Simple Combine."},
 ];
 let tourStep = -1, tourTapped = false, tourWasDone = false, tourScrollId = 0;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;

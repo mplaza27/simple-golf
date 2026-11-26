@@ -1,6 +1,6 @@
 # Simple Golf
 
-Downloads every shot from a Uneekor Power U report and builds `index.html`, a green-retro dashboard (live at https://mplaza27.github.io/simple-golf/) with seven tabs: Session (pick a session or All sessions), Swing, Rounds (18Birdies), Progress, Bag, Drills and Practice (weekly schedule you tick off, benchmark lap, shot caller game, wedge windows, ways of working and a weekly review; saved in your browser).
+Downloads every shot from a Uneekor Power U report and builds `index.html`, a green-retro dashboard (live at https://mplaza27.github.io/simple-golf/) with seven tabs: Session (pick a session or All sessions), Swing, Rounds (18Birdies), Progress, Bag, Drills and Practice (weekly schedule you tick off, Simple Combine, measurement day, club coverage, wedge windows, ways of working and a weekly review; saved in your browser).
 
 ## Layout
 ```

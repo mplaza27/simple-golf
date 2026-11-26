@@ -328,19 +328,44 @@
         },
         {
           "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
-          "m": 10
+          "m": 10,
+          "clubs": [
+            "60",
+            "56"
+          ]
         },
         {
           "t": "Drill block: heel gate + towel drill, 7i/8i",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "7i",
+            "8i"
+          ]
         },
         {
-          "t": "Shot caller: Irons + wedges",
-          "m": 15
+          "t": "Iron rotation: 9i → 6i → 8i → AW → 7i → PW, one ball each, 3 laps",
+          "m": 15,
+          "clubs": [
+            "9i",
+            "6i",
+            "8i",
+            "AW",
+            "7i",
+            "PW"
+          ]
         },
         {
           "t": "Simple Combine",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "60",
+            "56",
+            "PW",
+            "8i",
+            "7i",
+            "7W",
+            "Dr"
+          ]
         }
       ],
       "home": [
@@ -365,7 +390,11 @@
         },
         {
           "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
-          "m": 10
+          "m": 10,
+          "clubs": [
+            "60",
+            "56"
+          ]
         }
       ],
       "home": [
@@ -395,19 +424,47 @@
         },
         {
           "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
-          "m": 10
+          "m": 10,
+          "clubs": [
+            "60",
+            "56"
+          ]
         },
         {
           "t": "Drill block: driver face (grip check + screwdriver), 20 balls",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "Dr"
+          ]
         },
         {
-          "t": "Shot caller: Full bag",
-          "m": 15
+          "t": "Long rotation: 3W → 56 → 5W → 60 → 3H → 51 → 7W → AW → Dr → PW, one ball each, 2 laps (5W once it arrives)",
+          "m": 15,
+          "clubs": [
+            "3W",
+            "56",
+            "5W",
+            "60",
+            "3H",
+            "51",
+            "7W",
+            "AW",
+            "Dr",
+            "PW"
+          ]
         },
         {
           "t": "Simple Combine",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "60",
+            "56",
+            "PW",
+            "8i",
+            "7i",
+            "7W",
+            "Dr"
+          ]
         }
       ],
       "home": [
@@ -432,7 +489,11 @@
         },
         {
           "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
-          "m": 10
+          "m": 10,
+          "clubs": [
+            "60",
+            "56"
+          ]
         }
       ],
       "home": [
@@ -458,19 +519,47 @@
         },
         {
           "t": "Wedge windows: all six shots (60, 56, 51; low and full), new shot every ball",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "60",
+            "56",
+            "51"
+          ]
         },
         {
           "t": "Wedge ladder up and back, 25 → 100 yd, every wedge, both trajectories",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "60",
+            "56",
+            "51",
+            "AW",
+            "PW"
+          ]
         },
         {
           "t": "Three-ball test: 30, 50, 70, 90 yd; two of three must land within 5 yd",
-          "m": 10
+          "m": 10,
+          "clubs": [
+            "60",
+            "56",
+            "51",
+            "AW",
+            "PW"
+          ]
         },
         {
           "t": "Simple Combine",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "60",
+            "56",
+            "PW",
+            "8i",
+            "7i",
+            "7W",
+            "Dr"
+          ]
         }
       ],
       "home": [
@@ -495,7 +584,16 @@
         },
         {
           "t": "Simple Combine",
-          "m": 15
+          "m": 15,
+          "clubs": [
+            "60",
+            "56",
+            "PW",
+            "8i",
+            "7i",
+            "7W",
+            "Dr"
+          ]
         }
       ],
       "home": [
@@ -631,16 +729,17 @@
       "3H",
       "51 full",
       "7W",
-      "AW"
+      "AW",
+      "6i"
     ],
     "laps": 3,
     "perClub": 2,
     "notes": [
       "Replaces the scoring session every second Friday; about 60 minutes.",
       "Warm up: 15 shots, gradual progression (not recorded). Set the ball type to soft.",
-      "Go through the lap in order, 2 balls per club; 3 laps ≈ 90 balls. If time runs short, stop after lap 2 rather than rushing.",
+      "Go through the lap in order, 2 balls per club; 3 laps ≈ 96 balls. If time runs short, stop after lap 2 rather than rushing.",
       "Change the club in the Uneekor software each time; repeated blocks are pooled automatically.",
-      "Full routine on every ball; no re-hits. Leave the 6i out; skip the 5W until it arrives."
+      "Full routine on every ball; no re-hits. Skip the 5W until it arrives."
     ]
   },
   "testBlock": "Test block (16 balls, every shot counts): 7i, Dr, 56 full, 60 low, repeated 4 times. Same every session so Progress compares like with like.",
@@ -704,7 +803,16 @@
       "140",
       "40"
     ],
-    "laps": 3
+    "laps": 3,
+    "clubs": [
+      "60",
+      "56",
+      "PW",
+      "8i",
+      "7i",
+      "7W",
+      "Dr"
+    ]
   },
   "measure": {
     "every": 2,
@@ -726,7 +834,23 @@
         },
         {
           "t": "Benchmark: the 15-shot lap, 2 balls per club, 3 laps (see Measurement day below)",
-          "m": 55
+          "m": 55,
+          "clubs": [
+            "60",
+            "7i",
+            "Dr",
+            "56",
+            "9i",
+            "3W",
+            "8i",
+            "5W",
+            "PW",
+            "3H",
+            "51",
+            "7W",
+            "AW",
+            "6i"
+          ]
         }
       ]
     }
@@ -750,19 +874,39 @@
           },
           {
             "t": "Wedge windows: 60 and 56, low and full",
-            "m": 10
+            "m": 10,
+            "clubs": [
+              "60",
+              "56"
+            ]
           },
           {
             "t": "5W vs 3H: alternate every ball, 15 each, full routine, heel gate on",
-            "m": 25
+            "m": 25,
+            "clubs": [
+              "5W",
+              "3H"
+            ]
           },
           {
             "t": "Driver: 5 balls between every 10 fairway-wood shots so it isn't hit cold",
-            "m": 5
+            "m": 5,
+            "clubs": [
+              "Dr"
+            ]
           },
           {
             "t": "Simple Combine",
-            "m": 15
+            "m": 15,
+            "clubs": [
+              "60",
+              "56",
+              "PW",
+              "8i",
+              "7i",
+              "7W",
+              "Dr"
+            ]
           }
         ]
       }
