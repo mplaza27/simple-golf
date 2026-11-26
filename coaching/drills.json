@@ -336,11 +336,11 @@
         },
         {
           "t": "Shot caller: Irons + wedges",
-          "m": 20
+          "m": 15
         },
         {
-          "t": "Test block: 7i, Dr, 56 full, 60 low × 4",
-          "m": 10
+          "t": "Simple Combine: 24 balls, enter carry + side (Practice tab)",
+          "m": 15
         }
       ],
       "home": [
@@ -385,15 +385,15 @@
         },
         {
           "t": "Shot caller: Full bag",
-          "m": 20
+          "m": 15
         },
         {
           "t": "5W vs 3H, alternating every ball, 10 each",
           "m": 10
         },
         {
-          "t": "Test block",
-          "m": 10
+          "t": "Simple Combine: 24 balls, enter carry + side (Practice tab)",
+          "m": 15
         }
       ],
       "home": [
@@ -430,11 +430,11 @@
         },
         {
           "t": "Shot caller: Course mode, or 9 holes of Killian/Redland in course mode",
-          "m": 45
+          "m": 40
         },
         {
-          "t": "Wedge ladder up and back, 25 → 70 yd, both trajectories",
-          "m": 10
+          "t": "Simple Combine: 24 balls, enter carry + side (Practice tab)",
+          "m": 15
         }
       ],
       "home": [
@@ -478,7 +478,7 @@
     "Record everything after warm-up. Warm-up is the only part that isn't saved.",
     "Never two long clubs (driver, woods, hybrid) in a row. About a third of balls to wedges.",
     "Change club in the Uneekor software as you rotate; repeated club blocks are pooled automatically.",
-    "Finish every sim session with the same test block: 7i, Dr, 56 full, 60 low, repeated 4 times (16 balls). Progress then compares like with like.",
+    "Finish every sim session with the Simple Combine (same 8 targets, same order) so scores compare like with like.",
     "In 18Birdies, log putts, fairway and green on every hole."
   ],
   "wedgeShots": [
@@ -602,5 +602,63 @@
   "simRange": [
     45,
     65
-  ]
+  ],
+  "combine": {
+    "title": "Simple Combine",
+    "why": "Same 8 targets, same order, every session, so your score is comparable week to week. Modelled on the TrackMan Combine (fixed targets 60–180 yd, each shot scored 0–100), scaled to your game.",
+    "targets": [
+      {
+        "id": "30",
+        "yd": 30,
+        "label": "60° low spinner"
+      },
+      {
+        "id": "40",
+        "yd": 40,
+        "label": "56° low"
+      },
+      {
+        "id": "50",
+        "yd": 50,
+        "label": "60° full"
+      },
+      {
+        "id": "63",
+        "yd": 63,
+        "label": "56° full"
+      },
+      {
+        "id": "100",
+        "yd": 100,
+        "label": "PW"
+      },
+      {
+        "id": "120",
+        "yd": 120,
+        "label": "8i or 7i"
+      },
+      {
+        "id": "140",
+        "yd": 140,
+        "label": "7W"
+      },
+      {
+        "id": "dr",
+        "yd": null,
+        "label": "Driver: hit the fairway",
+        "fairway": 32
+      }
+    ],
+    "order": [
+      "50",
+      "120",
+      "dr",
+      "30",
+      "100",
+      "63",
+      "140",
+      "40"
+    ],
+    "laps": 3
+  }
 }

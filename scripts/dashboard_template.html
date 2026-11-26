@@ -195,9 +195,10 @@
   details.fold{margin-top:0} details.fold>summary::before{content:none} details.fold>summary h2{margin:0} details.fold>summary h2::before{content:"+ ";color:var(--green)} details.fold[open]>summary h2::before{content:"− "} details.fold .fbody{margin-top:12px}
   .lap{display:flex;flex-wrap:wrap;gap:6px} .chip{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink2)} .chip b{color:var(--faint);font-weight:400}
   .principles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px} .principles>div{background:var(--panel2);border-radius:8px;padding:12px} .principles b{color:var(--cream);font-size:13.5px} .principles p{margin:6px 0;font-size:12.5px;color:var(--ink2);line-height:1.5}
-  .caller .seg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px} .caller .seg .on{border-color:var(--green);color:var(--cream)}
-  .caller .call{display:flex;flex-direction:column;gap:4px;background:var(--panel2);border-radius:10px;padding:16px;margin:8px 0 12px} .caller .cn.big{font-size:24px;font-weight:700;color:var(--cream)} .caller .ty{font-size:15px;color:var(--ink2)} .caller .win{font-size:13px;color:var(--muted)} .caller .win b{color:var(--cream)}
-  .caller .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .callres{margin:8px 0 12px} .callres .v{font-size:30px;font-weight:700;color:var(--cream)}
+  :is(.caller,.combine) .seg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px} :is(.caller,.combine) .seg .on{border-color:var(--green);color:var(--cream)}
+  :is(.caller,.combine) .call{display:flex;flex-direction:column;gap:4px;background:var(--panel2);border-radius:10px;padding:16px;margin:8px 0 12px} :is(.caller,.combine) .cn.big{font-size:24px;font-weight:700;color:var(--cream)} :is(.caller,.combine) .ty{font-size:15px;color:var(--ink2)} :is(.caller,.combine) .win{font-size:13px;color:var(--muted)} :is(.caller,.combine) .win b{color:var(--cream)}
+  :is(.caller,.combine) .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .callres{margin:8px 0 12px} .callres .v{font-size:30px;font-weight:700;color:var(--cream)}
+.cbin{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap} .cbin label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)} .cbin input{font:inherit;font-size:18px;width:96px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px 10px} .cbin .seg{display:flex;gap:6px}
   .review{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px} .rv{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)} .rv input{font:inherit;font-size:13px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:6px;padding:8px}
   .hist{display:flex;gap:8px;align-items:flex-end;height:70px;margin-top:6px}
   .hist div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
@@ -918,6 +919,68 @@ function wedgeHTML(W){
     ${W.map(w=>`<tr><td><span class="cn">${COLORS[w.club]?sw(w.club):""}${esc(wname(w.club))}</span></td><td class="tl">${esc(w.type)}</td><td>${w.carry?`${w.carry[0]}–${w.carry[1]}`:"—"}</td><td class="tl muted">${esc(w.how||"")}</td></tr>`).join("")}
     </tbody></table></div><p class="muted small" style="margin:10px 0 0">From your warm-up; the benchmark session will measure them properly. The shot caller uses these windows.</p>`;
 }
+
+/* Simple Combine: fixed targets in a fixed order, 0–100 per shot from the carry and side you read off the sim.
+   In-progress rounds survive a reload; finished rounds are kept in this browser and can be copied out. */
+const CB = () => DATA.drills?.combine;
+const cbSeq = () => { const C=CB(); return Array.from({length:C.laps}, ()=>C.order).flat().map(id=>C.targets.find(t=>t.id===id)); };
+function cbScore(t, carry, side){
+  if (t.yd == null){ const avg = clubModel("Dr")?.carry || 190, off = Math.max(0, Math.abs(side) - t.fairway/2);
+    return Math.round(100 * Math.max(0, 1 - off/30) * Math.min(1, carry/avg)); }
+  const tol = Math.max(8, t.yd*.2), miss = Math.hypot(carry - t.yd, side);
+  return Math.round(100 * Math.max(0, 1 - miss/tol));
+}
+const cbSummary = shots => { const by={}; shots.forEach(x=>(by[x.id] ||= []).push(x.s));
+  const per = Object.fromEntries(Object.entries(by).map(([k,v])=>[k, Math.round(mean(v))]));
+  return {total: shots.length ? Math.round(mean(shots.map(x=>x.s))) : 0, per}; };
+let cbSide = "R";
+function combineHTML(){
+  const C = CB(); if (!C) return "";
+  const cur = store.get("golf-combine-cur", null), hist = store.get("golf-combine-v1", []), seq = cbSeq();
+  const last = hist[hist.length-1], best = hist.length ? Math.max(...hist.map(h=>h.total)) : null;
+  const tname = t => t.yd==null ? "Driver" : `${t.yd} yd`;
+  let body;
+  if (!cur) body = `<p class="sub" style="margin:4px 0 12px">${esc(C.why)}</p>
+    <div class="lap">${C.order.map((id,i)=>{ const t=C.targets.find(x=>x.id===id); return `<span class="chip"><b>${i+1}</b> ${esc(tname(t))} · ${esc(t.label)}</span>`; }).join("")}</div>
+    <p class="muted small" style="margin:10px 0 12px">${C.laps} laps × ${C.order.length} targets = ${seq.length} balls, about 15 minutes. After each ball, type the carry and how far left or right it finished.</p>
+    <button class="btn primary" data-cb="start">Start combine</button>`;
+  else { const i = cur.shots.length, t = seq[i], sum = cbSummary(cur.shots), prev = cur.shots[i-1];
+    body = `<div class="call"><span class="muted small">Ball ${i+1} of ${seq.length} · lap ${Math.floor(i/C.order.length)+1}</span>
+      <span class="cn big">${esc(tname(t))}</span><span class="ty">${esc(t.label)}${t.yd==null?` · fairway ${t.fairway} yd wide`:""}</span></div>
+      <div class="cbin"><label>Carry<input id="cbCarry" type="number" inputmode="decimal" placeholder="yd"></label>
+        <label>Side<input id="cbSide" type="number" inputmode="decimal" placeholder="yd" min="0"></label>
+        <div class="seg">${["L","R"].map(x=>`<button class="btn sm ${cbSide===x?"on":""}" data-cbs="${x}">${x}</button>`).join("")}</div>
+        <button class="btn primary" data-cb="save">Save</button></div>
+      <div class="row" style="margin-top:10px"><span class="muted small">${prev?`Last: ${prev.s} pts · `:""}Average so far <b>${sum.total}</b></span>
+        ${i?`<button class="btn sm" data-cb="undo">Undo last</button>`:""}<button class="btn sm" data-cb="quit">Abandon</button></div>`; }
+  const rows = hist.slice(-6).reverse().map(h=>`<tr><td class="tl">${esc(h.d)}</td><td><b>${h.total}</b></td>${C.targets.map(t=>`<td>${h.per[t.id]??"—"}</td>`).join("")}</tr>`).join("");
+  return `<section class="card combine"><div class="head"><h2>${esc(C.title)}</h2><span class="muted small">${last?`last ${last.total} · best ${best} · ${hist.length} played`:"score 0–100 · higher is better"}</span></div>
+    ${body}
+    ${hist.length?`<div class="tablewrap" style="margin-top:14px"><table><thead><tr><th class="tl">Date</th><th>Score</th>${C.targets.map(t=>`<th>${t.yd==null?"Dr":t.yd}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>
+      <button class="btn sm" data-cb="copy" style="margin-top:10px">Copy results</button> <span class="muted small" id="cbMsg">Paste them to Claude to save them in the repo.</span>`:""}</section>`;
+}
+function wireCombine(){
+  const rr = () => { const el=document.querySelector("#tab-practice .combine"); if (el){ el.outerHTML = combineHTML(); wireCombine(); } };
+  const C = CB(), seq = C ? cbSeq() : [];
+  document.querySelectorAll("#tab-practice [data-cbs]").forEach(b=>b.onclick=()=>{ cbSide=b.dataset.cbs; document.querySelectorAll("#tab-practice [data-cbs]").forEach(x=>x.classList.toggle("on", x===b)); });
+  const save = () => { const cur=store.get("golf-combine-cur",null); if (!cur) return;
+    const c=parseFloat($("cbCarry").value), sd=parseFloat($("cbSide").value||"0");
+    if (!isFinite(c) || c<=0){ $("cbCarry").focus(); return; }
+    const t=seq[cur.shots.length], side=(cbSide==="L"?-1:1)*Math.abs(sd||0);
+    cur.shots.push({id:t.id, c, side, s:cbScore(t,c,side)});
+    if (cur.shots.length >= seq.length){ const h=store.get("golf-combine-v1",[]); h.push({d:cur.d, ...cbSummary(cur.shots)}); store.set("golf-combine-v1",h.slice(-100)); store.set("golf-combine-cur",null); }
+    else store.set("golf-combine-cur",cur);
+    rr(); $("cbCarry")?.focus(); };
+  ["cbCarry","cbSide"].forEach(id=>{ const el=$(id); if (el) el.onkeydown=e=>{ if (e.key==="Enter") save(); }; });
+  document.querySelectorAll("#tab-practice [data-cb]").forEach(b=>b.onclick=()=>{ const a=b.dataset.cb;
+    if (a==="start"){ store.set("golf-combine-cur",{d:dkey(new Date()), shots:[]}); rr(); $("cbCarry")?.focus(); }
+    else if (a==="save") save();
+    else if (a==="undo"){ const cur=store.get("golf-combine-cur",null); cur.shots.pop(); store.set("golf-combine-cur",cur); rr(); }
+    else if (a==="quit"){ if (confirm("Abandon this combine? It won't be saved.")){ store.set("golf-combine-cur",null); rr(); } }
+    else if (a==="copy"){ const h=store.get("golf-combine-v1",[]);
+      const txt = h.map(x=>`COMBINE ${x.d} total ${x.total} | ${C.targets.map(t=>`${t.yd??"Dr"}:${x.per[t.id]??"-"}`).join(" ")}`).join("\n");
+      navigator.clipboard?.writeText(txt).then(()=>{ $("cbMsg").textContent="Copied. Paste it to Claude."; }, ()=>{ $("cbMsg").textContent=txt; }); } });
+}
 /* Shot caller: a game that tells you what to hit next. Balanced across wedges / irons / long clubs,
    never the same club twice in a row and never two long clubs in a row. You score yourself. */
 const SC = {mode:"mix", cards:null, i:0, hit:0, n:0};
@@ -1034,6 +1097,7 @@ function renderPractice(){
     <div class="dstrip">${week.map((d,i)=>{ const its=dayItems(d), c=its.filter(x=>done[x.key]).length, full=its.length&&c===its.length;
       return `<button class="dsb ${d.where.toLowerCase()} ${i===sel?"sel":""} ${i===todayIdx?"today":""} ${full?"done":""}" data-gd="${i}"><b>${esc(d.day)}</b><span>${full?"✓":(d.sim||[]).length?`Sim ${simMins(d)}′`:esc(d.where)}</span></button>`; }).join("")}</div>
     ${dayCard}
+    ${combineHTML()}
     ${callerHTML()}
     ${D.benchmark?fold("bench", esc(D.benchmark.title), `${D.benchmark.laps} laps × ${D.benchmark.perClub} balls`, benchHTML(D.benchmark), true):""}
     ${fold("wedges","Wedge windows","two shots per wedge", wedgeHTML(D.wedgeShots||[]))}
@@ -1044,7 +1108,7 @@ function renderPractice(){
   document.querySelectorAll("#tab-practice [data-gp]").forEach(cb=>cb.onchange=()=>{ const a=store.get("golf-week-v1",{}); (a[wk] ||= {})[cb.dataset.gp]=cb.checked; store.set("golf-week-v1",a); renderPractice(); });
   document.querySelectorAll("#tab-practice [data-gd]").forEach(b=>b.onclick=()=>{ gpDay=+b.dataset.gd; renderPractice(); });
   document.querySelectorAll("#tab-practice details[data-fold]").forEach(d=>d.ontoggle=()=>{ const a=store.get("golf-fold-v1",{}); a[d.dataset.fold]=d.open; store.set("golf-fold-v1",a); });
-  wireCaller(); wireReview(wk);
+  wireCombine(); wireCaller(); wireReview(wk);
   document.querySelectorAll("#tab-practice [data-gw]").forEach(b=>b.onclick=()=>{ const v=+b.dataset.gw; gpWeek = v===0 ? 0 : Math.min(0, gpWeek+v); gpDay=null; renderPractice(); });
 }
 
@@ -1424,7 +1488,7 @@ const TOUR = [
   {tab:"trend", title:"Progress", what:"How your swing numbers move from session to session.", why:"It tells you whether the practice is working.", try:"Change the metric in the By club chart."},
   {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
   {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
-  {tab:"practice", title:"Practice", what:"Your week, the next benchmark session, a shot caller that tells you what to hit next, and your wedge windows.", why:"Mixed, game-like practice with every shot counted transfers to the course better than hitting one club until it feels good.", try:"Tick items as you finish them, and press Start in the shot caller at your next sim session."},
+  {tab:"practice", title:"Practice", what:"Your week, the Simple Combine (8 fixed targets, scored 0–100), a shot caller, the next benchmark session and your wedge windows.", why:"Mixed, game-like practice with every shot counted transfers to the course better than hitting one club until it feels good.", try:"Tick items as you finish them, and end your next sim session with the Simple Combine."},
 ];
 let tourStep = -1, tourTapped = false, tourWasDone = false, tourScrollId = 0;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
