@@ -323,7 +323,7 @@
       "where": "Simulator",
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges (not recorded)",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -356,7 +356,7 @@
       "where": "Home",
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges (not recorded)",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -390,7 +390,7 @@
       "where": "Simulator",
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges (not recorded)",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -423,7 +423,7 @@
       "where": "Home",
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges (not recorded)",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -453,7 +453,7 @@
       "where": "Simulator",
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges (not recorded)",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -486,7 +486,7 @@
       "where": "Simulator",
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges, a few 7i and driver (not recorded)",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -637,7 +637,7 @@
     "perClub": 2,
     "notes": [
       "Replaces the scoring session every second Friday; about 60 minutes.",
-      "Warm up for 5 minutes first (not recorded), and set the ball type to soft.",
+      "Warm up: 15 shots, gradual progression (not recorded). Set the ball type to soft.",
       "Go through the lap in order, 2 balls per club; 3 laps ≈ 90 balls. If time runs short, stop after lap 2 rather than rushing.",
       "Change the club in the Uneekor software each time; repeated blocks are pooled automatically.",
       "Full routine on every ball; no re-hits. Leave the 6i out; skip the 5W until it arrives."
@@ -721,7 +721,7 @@
       ],
       "sim": [
         {
-          "t": "Warm-up: 15 half wedges (not recorded); set the ball type to soft",
+          "t": "Warm up: 15 shots, gradual progression",
           "m": 5
         },
         {
@@ -745,7 +745,7 @@
         "note": "One-off: settles whether the 5W replaces the 3H.",
         "sim": [
           {
-            "t": "Warm-up: 15 half wedges (not recorded)",
+            "t": "Warm up: 15 shots, gradual progression",
             "m": 5
           },
           {
