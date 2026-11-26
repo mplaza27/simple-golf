@@ -842,6 +842,9 @@ function renderTrend(){
 const shaftLine = c => !("shaft" in c) ? "" : c.shaft
   ? `<div class="small">${esc([c.shaft, c.flex, c.weight?c.weight+" g":null, c.bounce!=null?c.bounce+"° bounce":null, c.grip?c.grip+" grip":null].filter(Boolean).join(" · "))}</div>`
   : `<div class="small" style="opacity:.6">shaft not set</div>`;
+const priceLine = set => { const cs = set.clubs.filter(c=>c.value||c.paid); if (!cs.length) return "";
+  const v = cs.reduce((a,c)=>a+(c.value||c.paid||0),0), n = cs.reduce((a,c)=>a+(c.newPrice||0),0), miss = set.clubs.length-cs.length;
+  return `<p class="small" style="margin:10px 0 0">Estimated value <b>~$${v.toLocaleString()}</b> used · about $${n.toLocaleString()} new${miss?` · ${miss} club${miss>1?"s":""} not priced`:""}. Rough estimates from pre-owned listings, not quotes.</p>`; };
 function renderBag(){
   const L7 = clubModel("7i"), L6 = clubModel("6i"), LW = clubModel("7W");
   const card = (t, rows, sub) => `<div><b>${t}</b>${rows.map(([a,b])=>`<div class="r"><span>${a}</span><span>${b}</span></div>`).join("")}<div class="muted small" style="margin-top:6px">${sub}</div></div>`;
@@ -850,12 +853,12 @@ function renderBag(){
       : L6.carry-L7.carry<6 ? `Measured: the 6-iron overlaps the 7-iron (${f(L6.carry-L7.carry)} yd). Keep the 7-wood and drop the 6-iron.` : `Measured gaps: 7i→6i ${f(L6.carry-L7.carry)} yd, 6i→7W ${f(LW.carry-L6.carry)} yd.`)
     : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
   const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
-    return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${c.status?`<span class="tag warn">${esc(c.status)}</span>`:m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
+    return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${c.status?`<span class="tag warn">${esc(c.status)}</span>`:""}${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td><td title="${c.newPrice?`about $${c.newPrice} new`:""}">${c.paid?`$${Math.round(c.paid)}<span class="tag">paid</span>`:c.value?`~$${c.value}`:"—"}</td></tr>`; }).join("");
   $("tab-bag").innerHTML = `
     <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
       <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured in "+(m.date||"")):"").join("")}</div></section>
     ${DATA.bag.sets.map(set=>`<section class="card"><div class="head"><h2>${esc(set.name)}</h2></div>
-      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Wide</th></tr></thead><tbody>${setRows(set)}</tbody></table></div>
+      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Wide</th><th>Value</th></tr></thead><tbody>${setRows(set)}</tbody></table></div>${priceLine(set)}
       <p class="muted small" style="margin:10px 0 0">"est" = not hit yet, estimated from your 7-iron (or AW for wedges). Wide = left/right spread covering 68% of shots.${set.clubs.some(c=>"shaft" in c)?" Shaft: model, flex, weight; read it off the label on the shaft.":""}</p></section>`).join("")}`;
 }
 
