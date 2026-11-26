@@ -14,9 +14,9 @@
           "model": "Callaway Elyte",
           "loft": 10.5,
           "group": "Top of the bag",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "Project X Denali",
+          "flex": "5.5",
+          "weight": 50
         },
         {
           "key": "3W",
