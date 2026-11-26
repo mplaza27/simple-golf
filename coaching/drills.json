@@ -386,12 +386,16 @@
     },
     {
       "day": "Wed",
-      "title": "Long game, balanced",
+      "title": "Scoring + long game",
       "where": "Simulator",
       "sim": [
         {
           "t": "Warm-up: 15 half wedges (not recorded)",
           "m": 5
+        },
+        {
+          "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
+          "m": 10
         },
         {
           "t": "Drill block: driver face (grip check + screwdriver), 20 balls",
@@ -400,10 +404,6 @@
         {
           "t": "Shot caller: Full bag",
           "m": 15
-        },
-        {
-          "t": "5W vs 3H, alternating every ball, 10 each",
-          "m": 10
         },
         {
           "t": "Simple Combine",
@@ -449,7 +449,7 @@
     },
     {
       "day": "Fri",
-      "title": "Full-bag practice",
+      "title": "Scoring only",
       "where": "Simulator",
       "sim": [
         {
@@ -457,16 +457,16 @@
           "m": 5
         },
         {
-          "t": "Drill block: this week's focus from your review (one club or two)",
+          "t": "Wedge windows: all six shots (60, 56, 51; low and full), new shot every ball",
           "m": 15
         },
         {
-          "t": "Wedge ladder up and back, 25 → 70 yd, both trajectories",
+          "t": "Wedge ladder up and back, 25 → 100 yd, every wedge, both trajectories",
+          "m": 15
+        },
+        {
+          "t": "Three-ball test: 30, 50, 70, 90 yd; two of three must land within 5 yd",
           "m": 10
-        },
-        {
-          "t": "Shot caller: Full bag",
-          "m": 15
         },
         {
           "t": "Simple Combine",
@@ -523,7 +523,7 @@
     "Record everything after warm-up. Warm-up is the only part that isn't saved.",
     "Never two long clubs (driver, woods, hybrid) in a row. About a third of balls to wedges.",
     "Change club in the Uneekor software as you rotate; repeated club blocks are pooled automatically.",
-    "Finish every required sim session (Mon, Wed, Fri, Sat) with the Simple Combine (same 8 targets, same order) so scores compare like with like.",
+    "Finish every sim session except measurement day with the Simple Combine (same 8 targets, same order) so scores compare like with like.",
     "In 18Birdies, log putts, fairway and green on every hole."
   ],
   "wedgeShots": [
@@ -614,7 +614,7 @@
     }
   ],
   "benchmark": {
-    "title": "Next sim session: benchmark the whole bag",
+    "title": "Measurement day (every other Friday)",
     "why": "Gives every club a fresh, fair number with every shot counted, and settles the 5W vs 3H question.",
     "lap": [
       "60 low",
@@ -636,11 +636,11 @@
     "laps": 3,
     "perClub": 2,
     "notes": [
-      "Replaces Monday's plan for one session; about 60 minutes.",
+      "Replaces the scoring session every second Friday; about 60 minutes.",
       "Warm up for 5 minutes first (not recorded), and set the ball type to soft.",
       "Go through the lap in order, 2 balls per club; 3 laps ≈ 90 balls. If time runs short, stop after lap 2 rather than rushing.",
       "Change the club in the Uneekor software each time; repeated blocks are pooled automatically.",
-      "Full routine on every ball; no re-hits. Leave the 6i out."
+      "Full routine on every ball; no re-hits. Leave the 6i out; skip the 5W until it arrives."
     ]
   },
   "testBlock": "Test block (16 balls, every shot counts): 7i, Dr, 56 full, 60 low, repeated 4 times. Same every session so Progress compares like with like.",
@@ -705,5 +705,67 @@
       "40"
     ],
     "laps": 3
+  },
+  "measure": {
+    "every": 2,
+    "anchor": "2026-11-23",
+    "day": "Fri",
+    "plan": {
+      "title": "Measurement day",
+      "where": "Simulator",
+      "home": [
+        {
+          "t": "Before you go: mobility",
+          "m": 10
+        }
+      ],
+      "sim": [
+        {
+          "t": "Warm-up: 15 half wedges (not recorded); set the ball type to soft",
+          "m": 5
+        },
+        {
+          "t": "Benchmark: the 15-shot lap, 2 balls per club, 3 laps (see Measurement day below)",
+          "m": 55
+        }
+      ]
+    }
+  },
+  "overrides": {
+    "2026-11-30": {
+      "Wed": {
+        "title": "5W vs 3H",
+        "where": "Simulator",
+        "home": [
+          {
+            "t": "Before you go: mobility",
+            "m": 10
+          }
+        ],
+        "note": "One-off: settles whether the 5W replaces the 3H.",
+        "sim": [
+          {
+            "t": "Warm-up: 15 half wedges (not recorded)",
+            "m": 5
+          },
+          {
+            "t": "Wedge windows: 60 and 56, low and full",
+            "m": 10
+          },
+          {
+            "t": "5W vs 3H: alternate every ball, 15 each, full routine, heel gate on",
+            "m": 25
+          },
+          {
+            "t": "Driver: 5 balls between every 10 fairway-wood shots so it isn't hit cold",
+            "m": 5
+          },
+          {
+            "t": "Simple Combine",
+            "m": 15
+          }
+        ]
+      }
+    }
   }
 }
