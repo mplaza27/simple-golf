@@ -319,81 +319,157 @@
   "week": [
     {
       "day": "Mon",
-      "title": "Sim: scoring + irons",
+      "title": "Scoring + irons",
       "where": "Simulator",
-      "mins": 75,
-      "items": [
-        "10 min warm-up, not recorded: mobility + 20 half wedges",
-        "15 min wedge windows: 60 and 56, low then full, changing shot every ball",
-        "20 min drill block (one focus): heel gate + towel drill with 7i/8i",
-        "20 min shot caller (Irons + wedges): new club or shot every ball, full routine",
-        "10 min test block: 7i, Dr, 56 full, 60 low × 4 (every shot counts)"
+      "sim": [
+        {
+          "t": "Warm-up: 15 half wedges (not recorded)",
+          "m": 5
+        },
+        {
+          "t": "Wedge windows: 60 and 56, low and full, new shot every ball",
+          "m": 10
+        },
+        {
+          "t": "Drill block: heel gate + towel drill, 7i/8i",
+          "m": 15
+        },
+        {
+          "t": "Shot caller: Irons + wedges",
+          "m": 20
+        },
+        {
+          "t": "Test block: 7i, Dr, 56 full, 60 low × 4",
+          "m": 10
+        }
+      ],
+      "home": [
+        {
+          "t": "Before you go: pelvic tilt, spine-club check, hip openers",
+          "m": 10
+        }
       ]
     },
     {
       "day": "Tue",
-      "title": "Home: putting + mobility",
+      "title": "Putting + mobility",
       "where": "Home",
-      "mins": 30,
-      "items": [
-        "Putting ladder: 15 in a row from 3 ft, 6 from 6 ft, 3 from 9 ft; a miss restarts that distance",
-        "Gate drill, 3–5 ft: 30 putts through tees just wider than the putter",
-        "10 min pelvic tilt, spine-club check and wall drill"
+      "sim": [],
+      "home": [
+        {
+          "t": "Putting ladder: 15 in a row from 3 ft, 6 from 6 ft, 3 from 9 ft (a miss restarts that distance)",
+          "m": 15
+        },
+        {
+          "t": "Gate drill, 3–5 ft: 30 putts through tees just wider than the putter",
+          "m": 10
+        },
+        {
+          "t": "Mobility + wall drill",
+          "m": 10
+        }
       ]
     },
     {
       "day": "Wed",
-      "title": "Sim: long game, balanced",
+      "title": "Long game, balanced",
       "where": "Simulator",
-      "mins": 75,
-      "items": [
-        "10 min warm-up, not recorded",
-        "15 min drill block: driver face (grip check + screwdriver), 20 balls",
-        "20 min shot caller (Full bag): never two long clubs in a row",
-        "15 min question of the week: 5W vs 3H, alternating every ball (10 each)",
-        "10 min test block"
+      "sim": [
+        {
+          "t": "Warm-up: 15 half wedges (not recorded)",
+          "m": 5
+        },
+        {
+          "t": "Drill block: driver face (grip check + screwdriver), 20 balls",
+          "m": 15
+        },
+        {
+          "t": "Shot caller: Full bag",
+          "m": 20
+        },
+        {
+          "t": "5W vs 3H, alternating every ball, 10 each",
+          "m": 10
+        },
+        {
+          "t": "Test block",
+          "m": 10
+        }
+      ],
+      "home": [
+        {
+          "t": "Before you go: mobility",
+          "m": 10
+        }
       ]
     },
     {
       "day": "Thu",
-      "title": "Home: light",
+      "title": "Light",
       "where": "Home",
-      "mins": 20,
-      "items": [
-        "Mobility 10 min",
-        "Lag game: 10 putts from 15–25 ft (across the room), score how many stop in a 3-ft circle"
+      "sim": [],
+      "home": [
+        {
+          "t": "Mobility",
+          "m": 10
+        },
+        {
+          "t": "Lag game: 10 putts from 15–25 ft, count how many stop in a 3-ft circle",
+          "m": 10
+        }
       ]
     },
     {
       "day": "Fri",
-      "title": "Sim: play a course",
+      "title": "Play a course",
       "where": "Simulator",
-      "mins": 90,
-      "items": [
-        "9 holes of Killian or Redland in course mode, or the shot caller's Course mode",
-        "Every shot gets a full routine: pick a target, aim off your average finish",
-        "Export the CSV before closing",
-        "Last 15 min: wedge ladder up and back, 25 → 70 yd, using both trajectories"
+      "sim": [
+        {
+          "t": "Warm-up: 15 half wedges (not recorded)",
+          "m": 5
+        },
+        {
+          "t": "Shot caller: Course mode, or 9 holes of Killian/Redland in course mode",
+          "m": 45
+        },
+        {
+          "t": "Wedge ladder up and back, 25 → 70 yd, both trajectories",
+          "m": 10
+        }
+      ],
+      "home": [
+        {
+          "t": "Export the CSV / note the course score",
+          "m": 2
+        }
       ]
     },
     {
       "day": "Sat",
       "title": "Course",
       "where": "Course",
-      "mins": 120,
-      "items": [
-        "Warm up with 30–40% wedges, then a few 7i and driver",
-        "9 or 18 holes; log every hole in 18Birdies with putts, fairway and green",
-        "Note the tees you played"
+      "sim": [],
+      "home": [
+        {
+          "t": "Warm up with 30–40% wedges, then a few 7i and driver",
+          "m": 15
+        },
+        {
+          "t": "9 or 18 holes; log every hole in 18Birdies (putts, fairway, green, tees)",
+          "m": 120
+        }
       ]
     },
     {
       "day": "Sun",
       "title": "Rest + review",
       "where": "Rest",
-      "mins": 10,
-      "items": [
-        "Fill in the weekly review below: one weakness, one strength, one focus"
+      "sim": [],
+      "home": [
+        {
+          "t": "Weekly review: one weakness, one strength, one focus",
+          "m": 5
+        }
       ]
     }
   ],
@@ -515,12 +591,16 @@
     "laps": 3,
     "perClub": 2,
     "notes": [
-      "Warm up first (not recorded): mobility and 20 half wedges.",
-      "Go through the lap in order: 2 balls per club, then move on. 3 laps ≈ 90 balls, so no club is ever hit cold or tired.",
-      "Change the club in the Uneekor software each time; the download pools repeated blocks automatically.",
-      "Full routine on every ball; no re-hits.",
-      "Leave the 6i out unless there's time at the end."
+      "Replaces Monday's plan for one session; about 60 minutes.",
+      "Warm up for 5 minutes first (not recorded), and set the ball type to soft.",
+      "Go through the lap in order, 2 balls per club; 3 laps ≈ 90 balls. If time runs short, stop after lap 2 rather than rushing.",
+      "Change the club in the Uneekor software each time; repeated blocks are pooled automatically.",
+      "Full routine on every ball; no re-hits. Leave the 6i out."
     ]
   },
-  "testBlock": "Test block (16 balls, every shot counts): 7i, Dr, 56 full, 60 low, repeated 4 times. Same every session so Progress compares like with like."
+  "testBlock": "Test block (16 balls, every shot counts): 7i, Dr, 56 full, 60 low, repeated 4 times. Same every session so Progress compares like with like.",
+  "simRange": [
+    45,
+    65
+  ]
 }
