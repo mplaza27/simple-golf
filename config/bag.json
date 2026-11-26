@@ -117,7 +117,7 @@
           "model": "Callaway Paradym X",
           "loft": 51,
           "group": "Wedges",
-          "shaft": null,
+          "shaft": "Elevate MPH 65 Reflex",
           "flex": null,
           "weight": null
         },
@@ -140,7 +140,7 @@
           "loft": 60,
           "group": "Wedges",
           "note": "Short-sided shots over hazards",
-          "shaft": "Elevate MPH 65 Reflex",
+          "shaft": "RBS Hi Rev 2.0 115",
           "flex": null,
           "weight": null,
           "bounce": 12
