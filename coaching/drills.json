@@ -339,7 +339,7 @@
           "m": 15
         },
         {
-          "t": "Simple Combine: 24 balls, enter carry + side (Practice tab)",
+          "t": "Simple Combine",
           "m": 15
         }
       ],
@@ -360,7 +360,7 @@
           "m": 5
         },
         {
-          "t": "9 holes in GSPro (a different 9 from Friday's), full routine, every shot counts",
+          "t": "9 holes on the Uneekor (a different 9 from Saturday's), full routine, every shot counts",
           "m": 45
         },
         {
@@ -406,7 +406,7 @@
           "m": 10
         },
         {
-          "t": "Simple Combine: 24 balls, enter carry + side (Practice tab)",
+          "t": "Simple Combine",
           "m": 15
         }
       ],
@@ -427,7 +427,7 @@
           "m": 5
         },
         {
-          "t": "9 holes in GSPro (a different 9 from Friday's), full routine, every shot counts",
+          "t": "9 holes on the Uneekor (a different 9 from Saturday's), full routine, every shot counts",
           "m": 45
         },
         {
@@ -449,7 +449,7 @@
     },
     {
       "day": "Fri",
-      "title": "Play a course (GSPro)",
+      "title": "Full-bag practice",
       "where": "Simulator",
       "sim": [
         {
@@ -457,34 +457,51 @@
           "m": 5
         },
         {
-          "t": "9 holes in GSPro: Killian or Redland if the sim has them, otherwise a similar ~6,100-yd par 72; full routine, every shot counts",
-          "m": 40
+          "t": "Drill block: this week's focus from your review (one club or two)",
+          "m": 15
         },
         {
-          "t": "Simple Combine: 24 balls, enter carry + side (Practice tab)",
+          "t": "Wedge ladder up and back, 25 → 70 yd, both trajectories",
+          "m": 10
+        },
+        {
+          "t": "Shot caller: Full bag",
+          "m": 15
+        },
+        {
+          "t": "Simple Combine",
           "m": 15
         }
       ],
       "home": [
         {
-          "t": "Export the GSPro CSV before closing and send it to Claude (don't log sim rounds in 18Birdies)",
-          "m": 2
+          "t": "Before you go: mobility",
+          "m": 10
         }
       ]
     },
     {
       "day": "Sat",
-      "title": "Course",
-      "where": "Course",
-      "sim": [],
-      "home": [
+      "title": "Course on the Uneekor",
+      "where": "Simulator",
+      "sim": [
         {
-          "t": "Warm up with 30–40% wedges, then a few 7i and driver",
-          "m": 15
+          "t": "Warm-up: 15 half wedges, a few 7i and driver (not recorded)",
+          "m": 5
         },
         {
-          "t": "9 or 18 holes; log every hole in 18Birdies (putts, fairway, green, tees)",
-          "m": 120
+          "t": "9 holes on the Uneekor: Killian or Redland if available, otherwise a similar ~6,100-yd par 72; full routine, every shot counts",
+          "m": 40
+        },
+        {
+          "t": "Simple Combine",
+          "m": 15
+        }
+      ],
+      "home": [
+        {
+          "t": "Before you go: mobility",
+          "m": 10
         }
       ]
     },
@@ -506,7 +523,7 @@
     "Record everything after warm-up. Warm-up is the only part that isn't saved.",
     "Never two long clubs (driver, woods, hybrid) in a row. About a third of balls to wedges.",
     "Change club in the Uneekor software as you rotate; repeated club blocks are pooled automatically.",
-    "Finish every sim session with the Simple Combine (same 8 targets, same order) so scores compare like with like.",
+    "Finish every required sim session (Mon, Wed, Fri, Sat) with the Simple Combine (same 8 targets, same order) so scores compare like with like.",
     "In 18Birdies, log putts, fairway and green on every hole."
   ],
   "wedgeShots": [
