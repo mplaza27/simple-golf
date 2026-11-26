@@ -57,9 +57,9 @@
           "model": "Callaway Paradym X",
           "loft": 24.5,
           "group": "Core irons",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "KBS Tour V 110",
+          "flex": "S",
+          "weight": 110
         },
         {
           "key": "7i",
@@ -67,9 +67,9 @@
           "model": "Callaway Paradym X",
           "loft": 27.5,
           "group": "Core irons",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "KBS Tour V 110",
+          "flex": "S",
+          "weight": 110
         },
         {
           "key": "8i",
@@ -77,9 +77,9 @@
           "model": "Callaway Paradym X",
           "loft": 31.5,
           "group": "Core irons",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "KBS Tour V 110",
+          "flex": "S",
+          "weight": 110
         },
         {
           "key": "9i",
@@ -87,9 +87,9 @@
           "model": "Callaway Paradym X",
           "loft": 36,
           "group": "Core irons",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "KBS Tour V 110",
+          "flex": "S",
+          "weight": 110
         },
         {
           "key": "PW",
@@ -97,9 +97,9 @@
           "model": "Callaway Paradym X",
           "loft": 41,
           "group": "Wedges",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "KBS Tour V 110",
+          "flex": "S",
+          "weight": 110
         },
         {
           "key": "AW",
@@ -107,9 +107,9 @@
           "model": "Callaway Paradym X",
           "loft": 46,
           "group": "Wedges",
-          "shaft": null,
-          "flex": null,
-          "weight": null
+          "shaft": "KBS Tour V 110",
+          "flex": "S",
+          "weight": 110
         },
         {
           "key": "51",
