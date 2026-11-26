@@ -128,9 +128,10 @@
           "loft": 56,
           "group": "Wedges",
           "note": "Bunker shots and chips",
-          "shaft": null,
+          "shaft": "UST Mamiya Recoil Dart 80 Wedge",
           "flex": null,
-          "weight": null
+          "weight": null,
+          "bounce": 14
         },
         {
           "key": "60",
@@ -139,9 +140,10 @@
           "loft": 60,
           "group": "Wedges",
           "note": "Short-sided shots over hazards",
-          "shaft": null,
+          "shaft": "Elevate MPH 65 Reflex",
           "flex": null,
-          "weight": null
+          "weight": null,
+          "bounce": 12
         },
         {
           "key": "Putter",
