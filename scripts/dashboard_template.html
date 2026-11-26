@@ -833,7 +833,7 @@ function renderTrend(){
 
 /* ================= BAG ================= */
 const shaftLine = c => !("shaft" in c) ? "" : c.shaft
-  ? `<div class="small">${esc([c.shaft, c.flex, c.weight?c.weight+" g":null, c.bounce!=null?c.bounce+"° bounce":null].filter(Boolean).join(" · "))}</div>`
+  ? `<div class="small">${esc([c.shaft, c.flex, c.weight?c.weight+" g":null, c.bounce!=null?c.bounce+"° bounce":null, c.grip?c.grip+" grip":null].filter(Boolean).join(" · "))}</div>`
   : `<div class="small" style="opacity:.6">shaft not set</div>`;
 function renderBag(){
   const L7 = clubModel("7i"), L6 = clubModel("6i"), LW = clubModel("7W");
