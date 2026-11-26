@@ -47,8 +47,8 @@
           "loft": 21.5,
           "group": "Top of the bag",
           "note": "Replaces 5-iron; high launch / soft landing",
-          "shaft": null,
-          "flex": null,
+          "shaft": "Mitsubishi Chemical Vanquish 5",
+          "flex": "R",
           "weight": null
         },
         {
