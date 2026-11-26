@@ -429,7 +429,7 @@
           "m": 5
         },
         {
-          "t": "Shot caller: Course mode, or 9 holes of Killian/Redland in course mode",
+          "t": "9 holes in GSPro: Killian or Redland if the sim has them, otherwise a similar ~6,100-yd par 72; full routine, every shot counts",
           "m": 40
         },
         {
@@ -439,7 +439,7 @@
       ],
       "home": [
         {
-          "t": "Export the CSV / note the course score",
+          "t": "Export the GSPro CSV before closing and send it to Claude (don't log sim rounds in 18Birdies)",
           "m": 2
         }
       ]
