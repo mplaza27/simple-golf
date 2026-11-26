@@ -315,5 +315,92 @@
       "url": "https://www.youtube.com/channel/UCeVCpvV8BfIqcLahWaJEATQ/videos",
       "desc": "Strategy videos from the DECADE channel."
     }
+  ],
+  "week": [
+    {
+      "day": "Mon",
+      "title": "Sim: contact",
+      "where": "Simulator",
+      "mins": 75,
+      "items": [
+        "10 min warm-up, not recorded: stretches + 20 half-swing wedges",
+        "25 min heel gate + towel drill, 7i and driver (recorded)",
+        "20 min speed ladder, 7i at 60 / 80 / 100%",
+        "15 min test: 10 × 7i + 5 × driver at 80%, full routine each ball"
+      ]
+    },
+    {
+      "day": "Tue",
+      "title": "Home: putting + mobility",
+      "where": "Home",
+      "mins": 30,
+      "items": [
+        "Gate drill, 3–5 ft: 50 putts through tees just wider than the putter",
+        "Ladder drill to coins or socks, stopping each putt at the target",
+        "10 min pelvic tilt, spine-club check and wall drill"
+      ]
+    },
+    {
+      "day": "Wed",
+      "title": "Sim: long game + gapping",
+      "where": "Simulator",
+      "mins": 75,
+      "items": [
+        "10 min warm-up, not recorded",
+        "20 min driver face: grip check + screwdriver drill, 20 balls",
+        "20 min woods with the heel gate: 3W, 3H, 7W",
+        "15 min gapping question of the week (7i vs 8i back to back, then 5W demo)",
+        "10 min test block: same as Monday"
+      ]
+    },
+    {
+      "day": "Thu",
+      "title": "Home: light",
+      "where": "Home",
+      "mins": 20,
+      "items": [
+        "Mobility 10 min",
+        "Putting game: 3-ft circle around a coin, start over on a miss"
+      ]
+    },
+    {
+      "day": "Fri",
+      "title": "Sim: play a course",
+      "where": "Simulator",
+      "mins": 90,
+      "items": [
+        "9 holes of a course you play (Stoneham, Killian, Redland) in GSPro On-Course Practice or Uneekor's course mode",
+        "Every shot gets a full routine: pick a target, aim off your average finish",
+        "Export the CSV before closing (GSPro keeps no history)",
+        "Last 15 min: wedge ladder to 30 / 50 / 70 yd"
+      ]
+    },
+    {
+      "day": "Sat",
+      "title": "Course",
+      "where": "Course",
+      "mins": 120,
+      "items": [
+        "9 or 18 holes; log every hole in 18Birdies",
+        "Record putts, fairway and green on every hole",
+        "Note the tees you played"
+      ]
+    },
+    {
+      "day": "Sun",
+      "title": "Rest",
+      "where": "Rest",
+      "mins": 0,
+      "items": [
+        "Rest, or 15 min of easy putting"
+      ]
+    }
+  ],
+  "dataRules": [
+    "Record everything after warm-up; if you hit ~200 balls an hour and only ~100 are saved, the unsaved ones should only be the warm-up.",
+    "End every sim session with the same test block (10 × 7i at 80% + 5 × driver) so the Progress tab compares like with like.",
+    "Don't delete mishits in Uneekor; tell me which clear ones to exclude and they go in session.json, so the files stay.",
+    "In 18Birdies, log putts, fairway and green on every hole; putts have never been recorded, so putting is currently invisible.",
+    "In GSPro, export the CSV before closing a session."
   ]
 }

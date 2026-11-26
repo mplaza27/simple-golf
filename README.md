@@ -1,6 +1,6 @@
 # Simple Golf
 
-Downloads every shot from a Uneekor Power U report and builds `index.html`, a green-retro dashboard (live at https://mplaza27.github.io/simple-golf/) with six tabs: Session (pick a session; summary across sessions), Swing (one club per session: path and face, ball flight, impact frames, dispersion), Rounds (18Birdies), Progress, Bag and Drills.
+Downloads every shot from a Uneekor Power U report and builds `index.html`, a green-retro dashboard (live at https://mplaza27.github.io/simple-golf/) with seven tabs: Session (pick a session or All sessions), Swing, Rounds (18Birdies), Progress, Bag, Drills and Gameplan (weekly schedule you tick off; saved in your browser).
 
 ## Layout
 ```
@@ -11,7 +11,7 @@ config/
 coaching/
   plan.md                overall plan, shown on the Progress tab
   analysis.md            analysis of all data, shown when "All sessions" is picked
-  drills.json            Drills tab: practice plan, drills, YouTube video IDs, resources
+  drills.json            Drills tab (practice plan, drills, videos, resources) and Gameplan tab (`week`, `dataRules`)
 data/
   simulator/MM-DD-YY/    one Uneekor session
     <club>/<club>_<n>/   one shot (n = 1 is the oldest): CSV, impact photo, 24 top-view frames

@@ -165,6 +165,26 @@
   @keyframes tourBounce{0%,100%{translate:0 0}50%{translate:0 -6px}}
   @media (prefers-reduced-motion:reduce){.tour-target,#tourPoint{animation:none}}
 
+  /* weekly schedule */
+  .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+  .day{background:var(--panel2);border-radius:8px;padding:10px;border-top:3px solid var(--line2)}
+  .day.simulator{border-top-color:var(--green)} .day.home{border-top-color:var(--info)} .day.course{border-top-color:var(--sand)} .day.rest{opacity:.7}
+  .day .dh{display:flex;justify-content:space-between;align-items:baseline;font-size:13px} .day .dh span{color:var(--muted);font-size:11.5px}
+  .day .dt{font-size:12.5px;font-weight:700;color:var(--cream);margin:4px 0 6px}
+  .day ul{margin:0;padding-left:15px;font-size:12px;color:var(--ink2);line-height:1.5} .day li{margin:3px 0}
+  .rules{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink2)} .rules li{margin:4px 0}
+  .day.today{outline:2px solid var(--sand);outline-offset:2px}
+  .day.done{background:rgba(159,208,124,.12)}
+  .day .dh .ok{color:var(--good);font-weight:700}
+  .day label{display:flex;gap:7px;align-items:flex-start;font-size:12px;color:var(--ink2);line-height:1.45;margin:5px 0;cursor:pointer}
+  .day label input{accent-color:var(--green);width:15px;height:15px;margin-top:1px;flex:none}
+  .day label input:checked + span{color:var(--faint);text-decoration:line-through}
+  .weeknav{display:flex;align-items:center;gap:8px}
+  .hist{display:flex;gap:8px;align-items:flex-end;height:70px;margin-top:6px}
+  .hist div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+  .hist i{display:block;width:100%;max-width:46px;background:var(--green);border-radius:4px 4px 0 0;min-height:2px}
+  .hist div.cur i{background:var(--sand)}
+
   /* rounds */
   .mix{display:grid;grid-template-columns:70px 1fr;gap:8px 12px;align-items:center;font-size:13px;margin-top:14px}
   .mixbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--panel3)}
@@ -252,6 +272,7 @@
   footer{color:var(--faint);font-size:12.5px;margin-top:36px}
 
   @media (max-width:860px){
+    .week{grid-template-columns:repeat(2,minmax(0,1fr))}
     .sw-grid{grid-template-columns:1fr}
     .misses{grid-template-columns:1fr}
     .overview{grid-template-columns:1fr 1fr}
@@ -310,6 +331,7 @@
         <button class="btn" role="tab" data-tab="trend">Progress</button>
         <button class="btn" role="tab" data-tab="bag">Bag</button>
         <button class="btn" role="tab" data-tab="drills">Drills</button>
+        <button class="btn" role="tab" data-tab="gameplan">Gameplan</button>
       </nav>
     </div>
     <button class="btn sm" id="tourBtn" title="Quick tour of the site">Tour</button>
@@ -321,6 +343,7 @@
   <main id="tab-trend" class="stack" hidden></main>
   <main id="tab-bag" class="stack" hidden></main>
   <main id="tab-drills" class="stack" hidden></main>
+  <main id="tab-gameplan" class="stack" hidden></main>
   <footer id="foot"></footer>
 </div>
 <div id="tip" hidden></div>
@@ -848,6 +871,45 @@ function renderDrills(){
     b.outerHTML=`<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" title="${esc(b.dataset.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`; });
 }
 
+/* ================= GAMEPLAN (weekly schedule, ticked off and tracked in this browser) ================= */
+// Weeks run Monday→Sunday; key = Monday's local date, e.g. "2026-11-23".
+const weekStart = (d=new Date()) => { const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
+const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+let gpWeek = 0;   // 0 = this week, -1 = last week, ...
+function renderGameplan(){
+  const D = DATA.drills || {}, week = D.week || [];
+  const all = store.get("golf-week-v1", {});
+  const mon = weekStart(); mon.setDate(mon.getDate() + 7*gpWeek);
+  const wk = dkey(mon), done = all[wk] || {};
+  const todayIdx = gpWeek===0 ? (new Date().getDay()+6)%7 : -1;
+  const stat = key => { const ws = all[key] || {}; let t=0, n=0, mins=0;
+    week.forEach(w=>{ const c = w.items.filter((_,j)=>ws[`${w.day}:${j}`]).length; t+=w.items.length; n+=c; if (w.items.length && c===w.items.length) mins+=w.mins; });
+    return {t, n, mins, pct: t ? n/t : 0}; };
+  const S = stat(wk), plannedMins = week.reduce((a,w)=>a+w.mins,0);
+  const sims = week.filter(w=>w.where==="Simulator"), simDone = sims.filter(w=>w.items.every((_,j)=>done[`${w.day}:${j}`])).length;
+  const hist = [-5,-4,-3,-2,-1,0].map(o=>{ const d=weekStart(); d.setDate(d.getDate()+7*o); return {o, label: d.toLocaleDateString(undefined,{month:"short",day:"numeric"}), ...stat(dkey(d))}; });
+  const end = new Date(mon); end.setDate(end.getDate()+6);
+  const range = `${mon.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${end.toLocaleDateString(undefined,{month:"short",day:"numeric"})}`;
+  $("tab-gameplan").innerHTML = `
+    <div class="head" style="margin:0"><div><h2>Gameplan</h2><p class="sub">${gpWeek===0?"This week":gpWeek===-1?"Last week":`${-gpWeek} weeks ago`} · ${range}</p></div>
+      <div class="weeknav"><button class="btn icon" data-gw="-1" aria-label="Previous week">‹</button><button class="btn sm" data-gw="0" ${gpWeek===0?"disabled":""}>This week</button><button class="btn icon" data-gw="1" aria-label="Next week" ${gpWeek>=0?"disabled":""}>›</button></div></div>
+    <section class="stats">
+      <div class="stat"><div><div class="l">Done this week</div><div class="v">${Math.round(S.pct*100)}%</div><div class="c">${S.n} of ${S.t} items</div></div></div>
+      <div class="stat"><div><div class="l">Sim sessions</div><div class="v">${simDone} / ${sims.length}</div><div class="c">fully ticked off</div></div></div>
+      <div class="stat"><div><div class="l">Minutes</div><div class="v">${S.mins}</div><div class="c">of ${plannedMins} planned (finished days)</div></div></div>
+    </section>
+    <section class="card"><div class="head"><h2>The week</h2><span class="muted small">Tick items as you do them · saved in this browser</span></div>
+      <div class="week">${week.map((w,i)=>{ const c = w.items.filter((_,j)=>done[`${w.day}:${j}`]).length, full = w.items.length && c===w.items.length;
+        return `<div class="day ${w.where.toLowerCase()} ${i===todayIdx?"today":""} ${full?"done":""}"><div class="dh"><b>${esc(w.day)}${i===todayIdx?" · today":""}</b><span>${full?'<span class="ok">✓</span>':w.mins?`${w.mins} min`:""}</span></div>
+          <div class="dt">${esc(w.title)}</div>${w.items.map((x,j)=>`<label><input type="checkbox" data-gp="${esc(w.day)}:${j}" ${done[`${w.day}:${j}`]?"checked":""}><span>${esc(x)}</span></label>`).join("")}</div>`; }).join("")}</div></section>
+    <section class="card"><div class="head"><h2>Consistency</h2><span class="muted small">Share of items done, last 6 weeks</span></div>
+      <div class="hist">${hist.map(h=>`<div class="${h.o===gpWeek?"cur":""}" title="${Math.round(h.pct*100)}% · ${h.mins} min"><span>${Math.round(h.pct*100)}%</span><i style="height:${Math.max(2,h.pct*48)}px"></i><span>${h.label}</span></div>`).join("")}</div></section>
+    ${(D.dataRules||[]).length?`<section class="card"><div class="head"><h2>Data habits</h2></div><ul class="rules">${D.dataRules.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}`;
+  document.querySelectorAll("#tab-gameplan [data-gp]").forEach(cb=>cb.onchange=()=>{ const a=store.get("golf-week-v1",{}); (a[wk] ||= {})[cb.dataset.gp]=cb.checked; store.set("golf-week-v1",a); renderGameplan(); });
+  document.querySelectorAll("#tab-gameplan [data-gw]").forEach(b=>b.onclick=()=>{ const v=+b.dataset.gw; gpWeek = v===0 ? 0 : Math.min(0, gpWeek+v); renderGameplan(); });
+}
+
 /* ================= SHOT VIEWER ================= */
 const V = {i:0,key:null,n:null,frame:0,timer:null,speed:1}, vEl = $("viewer");
 const sessionShots = i => VIEWS[i].keys.flatMap(k=>VIEWS[i].clubs[k].shots);
@@ -1224,6 +1286,7 @@ const TOUR = [
   {tab:"trend", title:"Progress", what:"How your swing numbers move from session to session.", why:"It tells you whether the practice is working.", try:"Change the metric in the By club chart."},
   {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
   {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
+  {tab:"gameplan", title:"Gameplan", what:"Your week: three sim sessions, two short home sessions, a course round and a rest day.", why:"Consistent practice, and the same test block each session, is what makes the data trustworthy.", try:"Tick off items as you finish them; the last six weeks show how consistent you've been."},
 ];
 let tourStep = -1, tourTapped = false, tourWasDone = false, tourScrollId = 0;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1313,7 +1376,7 @@ document.addEventListener("click", e => { if (tourStep>=0 && TOUR[tourStep].tab=
 new MutationObserver(()=>{ if (tourStep>=0 && !vEl.hidden) applyTour(); }).observe(vEl, {childList:true});   // viewer re-renders (prev/next shot)
 
 /* ================= wiring ================= */
-const TABS = {session:renderSession, swing:renderSwing, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills};
+const TABS = {session:renderSession, swing:renderSwing, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills, gameplan:renderGameplan};
 function render(){
   if (!ALL.length) return;
   document.querySelectorAll("main").forEach(m=>m.hidden = m.id!=="tab-"+state.tab);
