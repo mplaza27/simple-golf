@@ -45,6 +45,7 @@
   .btn[aria-pressed="true"],.btn[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#132016;font-weight:700}
   .btn:disabled{opacity:.35;cursor:default}
   .btn.sm{padding:5px 11px;font-size:13px}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#10180f;font-weight:700} .btn:disabled{opacity:.45;cursor:default}
   .btn.icon{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%}
   .btn .sw{width:9px;height:9px;border-radius:50%}
   .btn .n{font-family:var(--mono);font-size:12.5px;opacity:.75}
@@ -180,6 +181,12 @@
   .day label input{accent-color:var(--green);width:15px;height:15px;margin-top:1px;flex:none}
   .day label input:checked + span{color:var(--faint);text-decoration:line-through}
   .weeknav{display:flex;align-items:center;gap:8px}
+  .lap{display:flex;flex-wrap:wrap;gap:6px} .chip{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink2)} .chip b{color:var(--faint);font-weight:400}
+  .principles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px} .principles>div{background:var(--panel2);border-radius:8px;padding:12px} .principles b{color:var(--cream);font-size:13.5px} .principles p{margin:6px 0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+  .caller .seg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px} .caller .seg .on{border-color:var(--green);color:var(--cream)}
+  .caller .call{display:flex;flex-direction:column;gap:4px;background:var(--panel2);border-radius:10px;padding:16px;margin:8px 0 12px} .caller .cn.big{font-size:24px;font-weight:700;color:var(--cream)} .caller .ty{font-size:15px;color:var(--ink2)} .caller .win{font-size:13px;color:var(--muted)} .caller .win b{color:var(--cream)}
+  .caller .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .callres{margin:8px 0 12px} .callres .v{font-size:30px;font-weight:700;color:var(--cream)}
+  .review{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px} .rv{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)} .rv input{font:inherit;font-size:13px;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:6px;padding:8px}
   .hist{display:flex;gap:8px;align-items:flex-end;height:70px;margin-top:6px}
   .hist div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
   .hist i{display:block;width:100%;max-width:46px;background:var(--green);border-radius:4px 4px 0 0;min-height:2px}
@@ -331,7 +338,7 @@
         <button class="btn" role="tab" data-tab="trend">Progress</button>
         <button class="btn" role="tab" data-tab="bag">Bag</button>
         <button class="btn" role="tab" data-tab="drills">Drills</button>
-        <button class="btn" role="tab" data-tab="gameplan">Gameplan</button>
+        <button class="btn" role="tab" data-tab="practice">Practice</button>
       </nav>
     </div>
     <button class="btn sm" id="tourBtn" title="Quick tour of the site">Tour</button>
@@ -343,7 +350,7 @@
   <main id="tab-trend" class="stack" hidden></main>
   <main id="tab-bag" class="stack" hidden></main>
   <main id="tab-drills" class="stack" hidden></main>
-  <main id="tab-gameplan" class="stack" hidden></main>
+  <main id="tab-practice" class="stack" hidden></main>
   <footer id="foot"></footer>
 </div>
 <div id="tip" hidden></div>
@@ -420,7 +427,7 @@ const nameOf = k => SHORT[k] || k;
 const loftOf = k => CLUB[k]?.loft ?? 99;
 const IRON = k => { const l = loftOf(k); return l >= 24 && l <= 41; };
 const WEDGE = k => loftOf(k) > 41 && loftOf(k) < 99;
-const COLORS = {Dr:"#e9a178","3W":"#e8c170","3H":"#d6d07a","7W":"#b4d07a","6i":"#8fcf8a","7i":"#6cc4a4","8i":"#e3c97a","9i":"#e09078",PW:"#b9a3e3",AW:"#84bcd9","51":"#e39bc0","56":"#b8a48c","60":"#9fb3ad"};
+const COLORS = {Dr:"#e9a178","3W":"#e8c170","5W":"#e4b06a","3H":"#d6d07a","7W":"#b4d07a","6i":"#8fcf8a","7i":"#6cc4a4","8i":"#e3c97a","9i":"#e09078",PW:"#b9a3e3",AW:"#84bcd9","51":"#e39bc0","56":"#b8a48c","60":"#9fb3ad"};
 const colorOf = k => COLORS[k] || "#93a796";
 const alpha = (hex,a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
 
@@ -780,7 +787,7 @@ function latestFor(k){
   return null;
 }
 // Clubs not measured yet are estimated from the latest full 7-iron (carry ratio, roll %), or from the AW for wedges.
-const EST = {Dr:[1.55,.12],"3W":[1.40,.09],"3H":[1.25,.07],"7W":[1.15,.06],"6i":[1.04,.07]};
+const EST = {Dr:[1.55,.12],"3W":[1.40,.09],"5W":[1.33,.08],"3H":[1.25,.07],"7W":[1.15,.06],"6i":[1.04,.07]};
 const WEST = {"51":12,"56":24,"60":34};
 function clubModel(k){
   const L = latestFor(k);
@@ -843,7 +850,7 @@ function renderBag(){
       : L6.carry-L7.carry<6 ? `Measured: the 6-iron overlaps the 7-iron (${f(L6.carry-L7.carry)} yd). Keep the 7-wood and drop the 6-iron.` : `Measured gaps: 7i→6i ${f(L6.carry-L7.carry)} yd, 6i→7W ${f(LW.carry-L6.carry)} yd.`)
     : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
   const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
-    return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
+    return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${c.status?`<span class="tag warn">${esc(c.status)}</span>`:m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
   $("tab-bag").innerHTML = `
     <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
       <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured in "+(m.date||"")):"").join("")}</div></section>
@@ -874,13 +881,114 @@ function renderDrills(){
     b.outerHTML=`<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" title="${esc(b.dataset.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`; });
 }
 
-/* ================= GAMEPLAN (weekly schedule, ticked off and tracked in this browser) ================= */
+/* ================= PRACTICE (weekly schedule, benchmark, shot caller, review; tracked in this browser) ================= */
 // Weeks run Monday→Sunday; key = Monday's local date, e.g. "2026-11-23".
 const weekStart = (d=new Date()) => { const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
 const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-let gpWeek = 0;   // 0 = this week, -1 = last week, ...
-function renderGameplan(){
+let gpWeek = 0;
+const wname = k => /^\d+$/.test(k) ? `${k}° ${nameOf(k)}` : nameOf(k);
+const catOf = k => loftOf(k) < 24 ? "long" : loftOf(k) >= 41 ? "wedge" : "iron";
+const inBag = () => (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter" && !c.status && !c.bench);
+function benchHTML(B){
+  if (!B) return "";
+  return `<section class="card"><div class="head"><h2>${esc(B.title)}</h2><span class="muted small">${B.laps} laps × ${B.perClub} balls per club</span></div>
+    <p class="sub" style="margin:0 0 10px">${esc(B.why)}</p>
+    <div class="lap">${B.lap.map((x,i)=>{ const k=x.split(" ")[0]; return `<span class="chip">${COLORS[k]?sw(k):""}<b>${i+1}</b> ${esc(x)}</span>`; }).join("")}</div>
+    <ul class="rules" style="margin-top:10px">${B.notes.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`;
+}
+function wedgeHTML(W){
+  if (!W.length) return "";
+  return `<section class="card"><div class="head"><h2>Wedge windows</h2><span class="muted small">Two shots per wedge · carry in yards</span></div>
+    <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Shot</th><th>Carry</th><th class="tl">How</th></tr></thead><tbody>
+    ${W.map(w=>`<tr><td><span class="cn">${COLORS[w.club]?sw(w.club):""}${esc(wname(w.club))}</span></td><td class="tl">${esc(w.type)}</td><td>${w.carry?`${w.carry[0]}–${w.carry[1]}`:"—"}</td><td class="tl muted">${esc(w.how||"")}</td></tr>`).join("")}
+    </tbody></table></div><p class="muted small" style="margin:10px 0 0">From your warm-up; the benchmark session will measure them properly. The shot caller uses these windows.</p></section>`;
+}
+/* Shot caller: a game that tells you what to hit next. Balanced across wedges / irons / long clubs,
+   never the same club twice in a row and never two long clubs in a row. You score yourself. */
+const SC = {mode:"mix", cards:null, i:0, hit:0, n:0};
+const CALLER_LEN = 18;
+function shotOptions(){
+  const W = (DATA.drills?.wedgeShots||[]).filter(w=>w.carry), opts=[];
+  inBag().forEach(c=>{ const k=c.key, ws=W.filter(w=>w.club===k);
+    if (ws.length) ws.forEach(w=>opts.push({k, cat:"wedge", type:w.type, lo:w.carry[0], hi:w.carry[1], side:Math.max(4,Math.round(w.carry[1]*.1))}));
+    else { const m=clubModel(k); if (!m) return; const c0=Math.round(m.carry), w=Math.max(4,Math.round(c0*.05));
+      opts.push({k, cat:catOf(k), type:"Full", lo:c0-w, hi:c0+w, side:Math.max(5,Math.round(c0*.1)), est:m.est}); } });
+  return opts;
+}
+function dealMix(mode){
+  const O = shotOptions(), cats = mode==="short" ? ["wedge","iron"] : ["wedge","iron","long"], out=[];
+  let bagCats=[], last=null;
+  while (out.length < CALLER_LEN){
+    if (!bagCats.length) bagCats = [...cats].sort(()=>Math.random()-.5);
+    let ci = bagCats.findIndex(c=>!(c==="long" && last?.cat==="long")); if (ci<0) ci=0;
+    const cat = bagCats.splice(ci,1)[0], pool = O.filter(o=>o.cat===cat && !(last && o.k===last.k));
+    if (!pool.length) continue;
+    last = pool[Math.floor(Math.random()*pool.length)]; out.push(last);
+  }
+  return out;
+}
+function dealCourse(){
+  const C = (DATA.courses||[]).filter(c=>c.bag==="Main bag"); if (!C.length) return [];
+  const crs = C[Math.floor(Math.random()*C.length)], tee = crs.defaultTee, yds = crs.tees[tee], start = Math.random()<.5 ? 0 : 9;
+  const full = inBag().map(c=>({k:c.key, m:clubModel(c.key)})).filter(x=>x.m && catOf(x.k)!=="wedge");
+  const O = shotOptions(), longest = full.filter(x=>x.k!=="Dr").sort((a,b)=>b.m.total-a.m.total)[0], out=[];
+  for (let h=start; h<start+9; h++){
+    let rem = yds[h], shot=1; const par = crs.par[h], head = `${crs.name} · hole ${h+1} · par ${par} · ${yds[h]} yd (${tee})`;
+    while (rem > 0 && shot <= 4){
+      const tee1 = shot===1 && par>=4, dr = full.find(x=>x.k==="Dr");
+      let pick;
+      if (tee1 && dr) pick = {k:"Dr", lo:Math.round(dr.m.carry)-10, hi:Math.round(dr.m.carry)+10, side:25, type:"Tee shot", carry:dr.m.total};
+      else if (longest && rem > longest.m.total + 15) pick = {k:longest.k, lo:Math.round(longest.m.carry)-8, hi:Math.round(longest.m.carry)+8, side:20, type:"Lay up / advance", carry:longest.m.total};
+      else { const o = O.slice().sort((a,b)=>Math.abs((a.lo+a.hi)/2-rem)-Math.abs((b.lo+b.hi)/2-rem))[0];
+        pick = {k:o.k, lo:rem-Math.max(5,Math.round(rem*.06)), hi:rem+Math.max(3,Math.round(rem*.04)), side:Math.max(5,Math.round(rem*.08)), type:`Approach · ${o.type.toLowerCase()} · flag at ${rem} yd`, carry:rem}; }
+      out.push({...pick, cat:catOf(pick.k), head, hole:h+1});
+      rem = Math.round(rem - pick.carry); shot++;
+      if (rem < 8) break;
+    }
+  }
+  return out;
+}
+function callerHTML(){
+  const hist = store.get("golf-caller-v1", []), card = SC.cards?.[SC.i], done = SC.cards && SC.i >= SC.cards.length;
+  const modes = [["short","Irons + wedges"],["mix","Full bag"],["course","Course"]];
+  const best = m => { const r = hist.filter(x=>x.mode===m && x.n); return r.length ? Math.max(...r.map(x=>Math.round(100*x.hit/x.n)))+"%" : "—"; };
+  let body;
+  if (!SC.cards) body = `<p class="sub" style="margin:6px 0 12px">Press start, hit the shot it calls with a full routine, then score it: <b>in</b> if the carry landed in the window and it finished within the side limit. Every shot counts; no re-hits.</p>
+    <button class="btn primary" data-sc="start">Start ${SC.mode==="course"?"9 holes":CALLER_LEN+" shots"}</button>`;
+  else if (done) body = `<div class="callres"><div class="v">${SC.hit} / ${SC.n}</div><div class="muted">${Math.round(100*SC.hit/Math.max(1,SC.n))}% in the window · saved</div></div><button class="btn primary" data-sc="start">Play again</button> <button class="btn" data-sc="reset">Done</button>`;
+  else body = `${card.head?`<div class="muted small">${esc(card.head)}</div>`:""}
+    <div class="call"><span class="cn big">${COLORS[card.k]?sw(card.k):""}${esc(wname(card.k))}</span><span class="ty">${esc(card.type)}</span>
+      <span class="win">carry <b>${card.lo}–${card.hi}</b> yd · within <b>${card.side}</b> yd of the line${card.est?' <span class="tag">est</span>':""}</span></div>
+    <div class="row"><button class="btn primary" data-sc="in">✓ In</button><button class="btn" data-sc="out">✗ Miss</button>
+      <span class="muted small">shot ${SC.i+1} of ${SC.cards.length} · ${SC.hit}/${SC.n} so far</span></div>`;
+  return `<section class="card caller"><div class="head"><h2>Shot caller</h2><span class="muted small">A game for the sim · best: ${modes.map(([m,l])=>`${l} ${best(m)}`).join(" · ")}</span></div>
+    <div class="seg">${modes.map(([m,l])=>`<button class="btn sm ${SC.mode===m?"on":""}" data-scm="${m}" ${SC.cards&&!done?"disabled":""}>${l}</button>`).join("")}</div>
+    ${body}
+    ${hist.length?`<div class="muted small" style="margin-top:10px">Recent: ${hist.slice(-5).reverse().map(x=>`${x.d.slice(5)} ${({short:"I+W",mix:"Bag",course:"Course"})[x.mode]} ${x.hit}/${x.n}`).join(" · ")}</div>`:""}</section>`;
+}
+function wireCaller(){
+  const rr = () => { const el = document.querySelector("#tab-practice .caller"); if (el) { el.outerHTML = callerHTML(); wireCaller(); } };
+  document.querySelectorAll("#tab-practice [data-scm]").forEach(b=>b.onclick=()=>{ SC.mode=b.dataset.scm; SC.cards=null; rr(); });
+  document.querySelectorAll("#tab-practice [data-sc]").forEach(b=>b.onclick=()=>{
+    const a=b.dataset.sc;
+    if (a==="start"){ SC.cards = SC.mode==="course" ? dealCourse() : dealMix(SC.mode); SC.i=0; SC.hit=0; SC.n=0; if (!SC.cards.length) SC.cards=null; }
+    else if (a==="reset") SC.cards=null;
+    else { SC.n++; if (a==="in") SC.hit++; SC.i++;
+      if (SC.i >= SC.cards.length){ const h=store.get("golf-caller-v1",[]); h.push({d:dkey(new Date()), mode:SC.mode, hit:SC.hit, n:SC.n}); store.set("golf-caller-v1", h.slice(-60)); } }
+    rr(); });
+}
+function reviewHTML(wk){
+  const r = store.get("golf-review-v1",{})[wk] || {};
+  const f1 = (k,l,ph) => `<label class="rv"><span>${l}</span><input data-rv="${k}" value="${esc(r[k]||"")}" placeholder="${ph}"></label>`;
+  return `<section class="card"><div class="head"><h2>Weekly review</h2><span class="muted small">Sunday, 5 minutes · saved in this browser</span></div>
+    <div class="review">${f1("weak","One weakness","e.g. 7i heel strikes when I swing hard")}${f1("strong","One strength","e.g. 56 low window 8/10")}${f1("focus","Next week's focus","e.g. 80% effort on every iron")}</div></section>`;
+}
+function wireReview(wk){
+  document.querySelectorAll("#tab-practice [data-rv]").forEach(i=>i.onchange=()=>{ const a=store.get("golf-review-v1",{}); (a[wk] ||= {})[i.dataset.rv]=i.value.trim(); store.set("golf-review-v1",a); });
+}
+   // 0 = this week, -1 = last week, ...
+function renderPractice(){
   const D = DATA.drills || {}, week = D.week || [];
   const all = store.get("golf-week-v1", {});
   const mon = weekStart(); mon.setDate(mon.getDate() + 7*gpWeek);
@@ -894,8 +1002,8 @@ function renderGameplan(){
   const hist = [-5,-4,-3,-2,-1,0].map(o=>{ const d=weekStart(); d.setDate(d.getDate()+7*o); return {o, label: d.toLocaleDateString(undefined,{month:"short",day:"numeric"}), ...stat(dkey(d))}; });
   const end = new Date(mon); end.setDate(end.getDate()+6);
   const range = `${mon.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${end.toLocaleDateString(undefined,{month:"short",day:"numeric"})}`;
-  $("tab-gameplan").innerHTML = `
-    <div class="head" style="margin:0"><div><h2>Gameplan</h2><p class="sub">${gpWeek===0?"This week":gpWeek===-1?"Last week":`${-gpWeek} weeks ago`} · ${range}</p></div>
+  $("tab-practice").innerHTML = `
+    <div class="head" style="margin:0"><div><h2>Practice</h2><p class="sub">${gpWeek===0?"This week":gpWeek===-1?"Last week":`${-gpWeek} weeks ago`} · ${range}</p></div>
       <div class="weeknav"><button class="btn icon" data-gw="-1" aria-label="Previous week">‹</button><button class="btn sm" data-gw="0" ${gpWeek===0?"disabled":""}>This week</button><button class="btn icon" data-gw="1" aria-label="Next week" ${gpWeek>=0?"disabled":""}>›</button></div></div>
     <section class="stats">
       <div class="stat"><div><div class="l">Done this week</div><div class="v">${Math.round(S.pct*100)}%</div><div class="c">${S.n} of ${S.t} items</div></div></div>
@@ -906,11 +1014,18 @@ function renderGameplan(){
       <div class="week">${week.map((w,i)=>{ const c = w.items.filter((_,j)=>done[`${w.day}:${j}`]).length, full = w.items.length && c===w.items.length;
         return `<div class="day ${w.where.toLowerCase()} ${i===todayIdx?"today":""} ${full?"done":""}"><div class="dh"><b>${esc(w.day)}${i===todayIdx?" · today":""}</b><span>${full?'<span class="ok">✓</span>':w.mins?`${w.mins} min`:""}</span></div>
           <div class="dt">${esc(w.title)}</div>${w.items.map((x,j)=>`<label><input type="checkbox" data-gp="${esc(w.day)}:${j}" ${done[`${w.day}:${j}`]?"checked":""}><span>${esc(x)}</span></label>`).join("")}</div>`; }).join("")}</div></section>
+    ${benchHTML(D.benchmark)}
+    ${callerHTML()}
+    ${wedgeHTML(D.wedgeShots||[])}
+    ${(D.principles||[]).length?`<section class="card"><div class="head"><h2>Ways of working</h2><span class="muted small">What the research says makes practice count</span></div>
+      <div class="principles">${D.principles.map(x=>`<div><b>${esc(x.t)}</b><p>${esc(x.b)}</p><span class="muted small">${esc(x.src)}</span></div>`).join("")}</div></section>`:""}
+    ${reviewHTML(wk)}
     <section class="card"><div class="head"><h2>Consistency</h2><span class="muted small">Share of items done, last 6 weeks</span></div>
       <div class="hist">${hist.map(h=>`<div class="${h.o===gpWeek?"cur":""}" title="${Math.round(h.pct*100)}% · ${h.mins} min"><span>${Math.round(h.pct*100)}%</span><i style="height:${Math.max(2,h.pct*48)}px"></i><span>${h.label}</span></div>`).join("")}</div></section>
     ${(D.dataRules||[]).length?`<section class="card"><div class="head"><h2>Data habits</h2></div><ul class="rules">${D.dataRules.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}`;
-  document.querySelectorAll("#tab-gameplan [data-gp]").forEach(cb=>cb.onchange=()=>{ const a=store.get("golf-week-v1",{}); (a[wk] ||= {})[cb.dataset.gp]=cb.checked; store.set("golf-week-v1",a); renderGameplan(); });
-  document.querySelectorAll("#tab-gameplan [data-gw]").forEach(b=>b.onclick=()=>{ const v=+b.dataset.gw; gpWeek = v===0 ? 0 : Math.min(0, gpWeek+v); renderGameplan(); });
+  document.querySelectorAll("#tab-practice [data-gp]").forEach(cb=>cb.onchange=()=>{ const a=store.get("golf-week-v1",{}); (a[wk] ||= {})[cb.dataset.gp]=cb.checked; store.set("golf-week-v1",a); renderPractice(); });
+  wireCaller(); wireReview(wk);
+  document.querySelectorAll("#tab-practice [data-gw]").forEach(b=>b.onclick=()=>{ const v=+b.dataset.gw; gpWeek = v===0 ? 0 : Math.min(0, gpWeek+v); renderPractice(); });
 }
 
 /* ================= SHOT VIEWER ================= */
@@ -1289,7 +1404,7 @@ const TOUR = [
   {tab:"trend", title:"Progress", what:"How your swing numbers move from session to session.", why:"It tells you whether the practice is working.", try:"Change the metric in the By club chart."},
   {tab:"bag", title:"Bag", what:"Every club with its carry, total and spread, measured or estimated.", why:"It shows gaps and overlaps, like the 6-iron versus the 7-wood.", try:"Look for clubs marked est: they still need a session."},
   {tab:"drills", title:"Drills", what:"A short practice plan with drills and videos.", why:"It targets the contact problem that costs you the most yards.", try:"Tick off a task; your progress is saved in this browser."},
-  {tab:"gameplan", title:"Gameplan", what:"Your week: three sim sessions, two short home sessions, a course round and a rest day.", why:"Consistent practice, and the same test block each session, is what makes the data trustworthy.", try:"Tick off items as you finish them; the last six weeks show how consistent you've been."},
+  {tab:"practice", title:"Practice", what:"Your week, the next benchmark session, a shot caller that tells you what to hit next, and your wedge windows.", why:"Mixed, game-like practice with every shot counted transfers to the course better than hitting one club until it feels good.", try:"Tick items as you finish them, and press Start in the shot caller at your next sim session."},
 ];
 let tourStep = -1, tourTapped = false, tourWasDone = false, tourScrollId = 0;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1379,7 +1494,7 @@ document.addEventListener("click", e => { if (tourStep>=0 && TOUR[tourStep].tab=
 new MutationObserver(()=>{ if (tourStep>=0 && !vEl.hidden) applyTour(); }).observe(vEl, {childList:true});   // viewer re-renders (prev/next shot)
 
 /* ================= wiring ================= */
-const TABS = {session:renderSession, swing:renderSwing, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills, gameplan:renderGameplan};
+const TABS = {session:renderSession, swing:renderSwing, rounds:renderRounds, trend:renderTrend, bag:renderBag, drills:renderDrills, practice:renderPractice};
 function render(){
   if (!ALL.length) return;
   document.querySelectorAll("main").forEach(m=>m.hidden = m.id!=="tab-"+state.tab);

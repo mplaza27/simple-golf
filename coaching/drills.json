@@ -319,14 +319,15 @@
   "week": [
     {
       "day": "Mon",
-      "title": "Sim: contact",
+      "title": "Sim: scoring + irons",
       "where": "Simulator",
       "mins": 75,
       "items": [
-        "10 min warm-up, not recorded: stretches + 20 half-swing wedges",
-        "25 min heel gate + towel drill, 7i and driver (recorded)",
-        "20 min speed ladder, 7i at 60 / 80 / 100%",
-        "15 min test: 10 × 7i + 5 × driver at 80%, full routine each ball"
+        "10 min warm-up, not recorded: mobility + 20 half wedges",
+        "15 min wedge windows: 60 and 56, low then full, changing shot every ball",
+        "20 min drill block (one focus): heel gate + towel drill with 7i/8i",
+        "20 min shot caller (Irons + wedges): new club or shot every ball, full routine",
+        "10 min test block: 7i, Dr, 56 full, 60 low × 4 (every shot counts)"
       ]
     },
     {
@@ -335,22 +336,22 @@
       "where": "Home",
       "mins": 30,
       "items": [
-        "Gate drill, 3–5 ft: 50 putts through tees just wider than the putter",
-        "Ladder drill to coins or socks, stopping each putt at the target",
+        "Putting ladder: 15 in a row from 3 ft, 6 from 6 ft, 3 from 9 ft; a miss restarts that distance",
+        "Gate drill, 3–5 ft: 30 putts through tees just wider than the putter",
         "10 min pelvic tilt, spine-club check and wall drill"
       ]
     },
     {
       "day": "Wed",
-      "title": "Sim: long game + gapping",
+      "title": "Sim: long game, balanced",
       "where": "Simulator",
       "mins": 75,
       "items": [
         "10 min warm-up, not recorded",
-        "20 min driver face: grip check + screwdriver drill, 20 balls",
-        "20 min woods with the heel gate: 3W, 3H, 7W",
-        "15 min gapping question of the week (7i vs 8i back to back, then 5W demo)",
-        "10 min test block: same as Monday"
+        "15 min drill block: driver face (grip check + screwdriver), 20 balls",
+        "20 min shot caller (Full bag): never two long clubs in a row",
+        "15 min question of the week: 5W vs 3H, alternating every ball (10 each)",
+        "10 min test block"
       ]
     },
     {
@@ -360,7 +361,7 @@
       "mins": 20,
       "items": [
         "Mobility 10 min",
-        "Putting game: 3-ft circle around a coin, start over on a miss"
+        "Lag game: 10 putts from 15–25 ft (across the room), score how many stop in a 3-ft circle"
       ]
     },
     {
@@ -369,10 +370,10 @@
       "where": "Simulator",
       "mins": 90,
       "items": [
-        "9 holes of a course you play (Stoneham, Killian, Redland) in GSPro On-Course Practice or Uneekor's course mode",
+        "9 holes of Killian or Redland in course mode, or the shot caller's Course mode",
         "Every shot gets a full routine: pick a target, aim off your average finish",
-        "Export the CSV before closing (GSPro keeps no history)",
-        "Last 15 min: wedge ladder to 30 / 50 / 70 yd"
+        "Export the CSV before closing",
+        "Last 15 min: wedge ladder up and back, 25 → 70 yd, using both trajectories"
       ]
     },
     {
@@ -381,26 +382,145 @@
       "where": "Course",
       "mins": 120,
       "items": [
-        "9 or 18 holes; log every hole in 18Birdies",
-        "Record putts, fairway and green on every hole",
+        "Warm up with 30–40% wedges, then a few 7i and driver",
+        "9 or 18 holes; log every hole in 18Birdies with putts, fairway and green",
         "Note the tees you played"
       ]
     },
     {
       "day": "Sun",
-      "title": "Rest",
+      "title": "Rest + review",
       "where": "Rest",
-      "mins": 0,
+      "mins": 10,
       "items": [
-        "Rest, or 15 min of easy putting"
+        "Fill in the weekly review below: one weakness, one strength, one focus"
       ]
     }
   ],
   "dataRules": [
-    "Record everything after warm-up; if you hit ~200 balls an hour and only ~100 are saved, the unsaved ones should only be the warm-up.",
-    "End every sim session with the same test block (10 × 7i at 80% + 5 × driver) so the Progress tab compares like with like.",
-    "Don't delete mishits in Uneekor; tell me which clear ones to exclude and they go in session.json, so the files stay.",
-    "In 18Birdies, log putts, fairway and green on every hole; putts have never been recorded, so putting is currently invisible.",
-    "In GSPro, export the CSV before closing a session."
-  ]
+    "Keep every recorded shot. Grades use averages; only sensor errors and clear tops are excluded (tell me which and they go in session.json).",
+    "Record everything after warm-up. Warm-up is the only part that isn't saved.",
+    "Never two long clubs (driver, woods, hybrid) in a row. About a third of balls to wedges.",
+    "Change club in the Uneekor software as you rotate; repeated club blocks are pooled automatically.",
+    "Finish every sim session with the same test block: 7i, Dr, 56 full, 60 low, repeated 4 times (16 balls). Progress then compares like with like.",
+    "In 18Birdies, log putts, fairway and green on every hole."
+  ],
+  "wedgeShots": [
+    {
+      "club": "60",
+      "type": "Low spinner",
+      "carry": [
+        25,
+        30
+      ],
+      "how": "Ball back, hands ahead, short finish"
+    },
+    {
+      "club": "60",
+      "type": "Full, high",
+      "carry": [
+        46,
+        54
+      ],
+      "how": "Normal ball position, full finish"
+    },
+    {
+      "club": "56",
+      "type": "Low",
+      "carry": [
+        35,
+        42
+      ],
+      "how": "Ball back, hands ahead, short finish"
+    },
+    {
+      "club": "56",
+      "type": "Full, high",
+      "carry": [
+        57,
+        69
+      ],
+      "how": "Normal ball position, full finish"
+    },
+    {
+      "club": "51",
+      "type": "Low",
+      "carry": null,
+      "how": "Measure it next session"
+    },
+    {
+      "club": "51",
+      "type": "Full, high",
+      "carry": null,
+      "how": "Measure it next session"
+    }
+  ],
+  "principles": [
+    {
+      "t": "Block to learn, mix to keep",
+      "b": "Work on one change with one club for 20–30 balls, then switch club or shot every ball. Mixed practice feels worse while you do it but holds up better a week later.",
+      "src": "Golf putting and chipping trials on random vs blocked practice"
+    },
+    {
+      "t": "Every shot counts",
+      "b": "Record everything after the warm-up and judge yourself on the average, not the best. Your best 7-iron isn't your 7-iron; the average is what you'll hit on the course. Only sensor errors and clear tops get excluded.",
+      "src": "Practical Golf: best vs average shot"
+    },
+    {
+      "t": "Balance the bag",
+      "b": "Scratch players put twice as many balls into the sand and lob wedges as 20+ handicaps (14% vs 7%) and fewer into woods, hybrids and mid irons (42% vs 52%). Aim for about a third wedges, a third irons, a third woods per session; never two long clubs in a row.",
+      "src": "Shot Scope LM1 data, Nov 2026"
+    },
+    {
+      "t": "Change the shot, not just the club",
+      "b": "Hit the same wedge low and high, short and full. Varying the shot helped higher handicaps most in a pitching study.",
+      "src": "Differential learning in pitching by handicap (2022)"
+    },
+    {
+      "t": "Think target, not body",
+      "b": "In the mix and test blocks, focus on the target or the strike (ball first, centre of the face), not your arms or hips. Save body cues for the drill block.",
+      "src": "Wulf & Su, 2007: external focus improved pitch accuracy"
+    },
+    {
+      "t": "Fewer clubs, one purpose",
+      "b": "Better players don't practise longer; their sessions use fewer clubs with a clear purpose. Keep the drill block to one or two clubs and one focus, and write the focus down.",
+      "src": "Shot Scope LM1 data, Nov 2026"
+    },
+    {
+      "t": "Review, then plan",
+      "b": "After each week, note one weakness, one strength and one focus for next week in the weekly review box below.",
+      "src": "Golf Today weekly plan, 2026"
+    }
+  ],
+  "benchmark": {
+    "title": "Next sim session: benchmark the whole bag",
+    "why": "Gives every club a fresh, fair number with every shot counted, and settles the 5W vs 3H question.",
+    "lap": [
+      "60 low",
+      "7i",
+      "Dr",
+      "56 full",
+      "9i",
+      "3W",
+      "60 full",
+      "8i",
+      "5W",
+      "56 low",
+      "PW",
+      "3H",
+      "51 full",
+      "7W",
+      "AW"
+    ],
+    "laps": 3,
+    "perClub": 2,
+    "notes": [
+      "Warm up first (not recorded): mobility and 20 half wedges.",
+      "Go through the lap in order: 2 balls per club, then move on. 3 laps ≈ 90 balls, so no club is ever hit cold or tired.",
+      "Change the club in the Uneekor software each time; the download pools repeated blocks automatically.",
+      "Full routine on every ball; no re-hits.",
+      "Leave the 6i out unless there's time at the end."
+    ]
+  },
+  "testBlock": "Test block (16 balls, every shot counts): 7i, Dr, 56 full, 60 low, repeated 4 times. Same every session so Progress compares like with like."
 }

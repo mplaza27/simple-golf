@@ -31,6 +31,18 @@
           "grip": "Jumbo"
         },
         {
+          "key": "5W",
+          "label": "5 Wood",
+          "model": "Callaway Quantum Max D",
+          "loft": 18.5,
+          "group": "Top of the bag",
+          "status": "ordered",
+          "note": "Ordered Nov 2026 to replace the 3H if it wins the 5W vs 3H test. Loft to confirm.",
+          "shaft": "Mitsubishi Vanquish PL 50",
+          "flex": "5.5",
+          "weight": null
+        },
+        {
           "key": "3H",
           "label": "3 Hybrid",
           "model": "Callaway Mavrik",

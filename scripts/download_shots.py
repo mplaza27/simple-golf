@@ -22,7 +22,7 @@ DATA_DIR = GOLF_DIR / "data" / "simulator"
 # Confirmed from real exports: IRON7-9, WEDGE_*. The wood/hybrid/6-iron names are best guesses;
 # an unmapped club is saved under its raw Uneekor name (e.g. "WOOD_7") so you can add it here.
 CLUB_NAMES = {
-    "DRIVER": "Dr", "WOOD3": "3W", "WOOD_3": "3W", "WOOD7": "7W", "WOOD_7": "7W",
+    "DRIVER": "Dr", "WOOD3": "3W", "WOOD_3": "3W", "WOOD5": "5W", "WOOD_5": "5W", "WOOD7": "7W", "WOOD_7": "7W",
     "HYBRID3": "3H", "HYBRID_3": "3H", "IRON6": "6i",
     "IRON7": "7i", "IRON8": "8i", "IRON9": "9i",
     "WEDGE_PITCHING": "PW", "WEDGE_LOB": "AW",
