@@ -192,13 +192,20 @@
   .rbar .cur{position:absolute;top:2px;width:4px;height:18px;margin-left:-2px;background:var(--cream);border-radius:2px;box-shadow:0 0 0 2px var(--panel2)}
   .rbar .lat{position:absolute;top:5px;width:10px;height:10px;margin-left:-5px;border:2px solid var(--cream);border-radius:50%;background:var(--panel2)}
   .rbar .goal{position:absolute;top:-6px;margin-left:-4px;font-size:12px;color:var(--sand)}
-  .ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-  .ytile{background:var(--panel2);border-radius:10px;padding:12px} .ytile .yh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px} .ytile .yh b{color:var(--cream)}
-  .ybody{display:flex;gap:12px;align-items:center} .ynums{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink2);min-width:0}
-  .ybig{font-size:26px;font-weight:700;color:var(--cream);line-height:1} .ybig small{font-size:12px;font-weight:400;color:var(--muted)} .yaim{margin-top:3px;color:var(--sand)} .yaim b{color:var(--sand)}
-  svg.disp{width:112px;height:112px;flex:none;background:var(--panel);border-radius:8px}
+  .ybox{width:min(980px,100%)} .ybox > .head{flex-wrap:nowrap;align-items:flex-start}
+  .yrow{display:grid;grid-template-columns:118px 64px repeat(6,minmax(0,1fr)) 28px;gap:10px;align-items:center;padding:8px 6px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink2);text-align:right}
+  .yrow > :first-child{text-align:left} .yrow.yhead{border-top:0;color:var(--muted);font-size:12px;padding-bottom:4px} .yrow.yhead > :nth-child(2){text-align:center}
+  .yrow.est{opacity:.7} .yrow:not(.yhead):hover{background:var(--panel2);border-radius:8px}
+  .yc-club b{color:var(--cream)} .yc-club small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;padding-left:15px}
+  .yc-shape{display:flex;justify-content:center} .yc-shape svg.disp{width:56px;height:56px}
+  .yc-carry b{font-size:20px;color:var(--cream)}
+  .roll{display:block;color:var(--good);font-size:11.5px} p .roll{display:inline}
+  .ygrp{margin:16px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+  .iicon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--line2);color:var(--muted);font-size:11px;font-style:italic;font-weight:700;cursor:help}
+  .iicon:hover,.iicon:focus{color:var(--cream);border-color:var(--green);outline:none}
+  svg.disp{width:112px;height:112px;flex:none;background:var(--panel2);border-radius:8px}
   svg.disp .tl{stroke:var(--line2);stroke-dasharray:3 3} svg.disp .r95{fill:rgba(159,208,124,.07);stroke:rgba(159,208,124,.35)} svg.disp .r68{fill:rgba(159,208,124,.16);stroke:rgba(159,208,124,.7)}
-  svg.disp .po{fill:var(--muted);opacity:.55} svg.disp .pl{fill:var(--cream)} svg.disp .mu{fill:var(--sand)} svg.disp text{fill:var(--faint);font-size:8px;font-family:var(--sans)}
+  svg.disp .po{fill:var(--muted);opacity:.55} svg.disp .pl{fill:var(--cream)} svg.disp .mu{fill:var(--sand)} 
   .dstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
   .dsb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--ink2);cursor:pointer;font:inherit;border-top:3px solid var(--line2)}
   .dsb b{font-size:14px;color:var(--cream)} .dsb span{font-size:11.5px;color:var(--muted)}
@@ -324,6 +331,10 @@
     .planner .map{max-width:340px}
   }
   @media (max-width:560px){
+    .yrow.yhead{display:none} .yrow{grid-template-columns:60px repeat(3,minmax(0,1fr)) 24px;grid-template-areas:"s c c c i" "s a b t t" "s d e f f";text-align:left;row-gap:4px;column-gap:10px}
+    .yc-club{grid-area:c} .yc-shape{grid-area:s} .yc-i{grid-area:i} .yrow > [data-l]{font-size:12.5px} .yrow > [data-l]::before{content:attr(data-l);display:block;color:var(--muted);font-size:10.5px}
+    .yc-carry{grid-area:a} .yrow > :nth-child(4){grid-area:b} .yrow > :nth-child(7){grid-area:t} .yrow > :nth-child(5){grid-area:d} .yrow > :nth-child(6){grid-area:e} .yrow > :nth-child(8){grid-area:f}
+    .yc-carry b{font-size:17px}
     .dsb{padding:7px 2px} .dsb span{font-size:10px} .dsb.today b::after{content:none} .dsb.today{box-shadow:inset 0 -2px 0 var(--sand)}
     body{font-size:13px}
     .page{padding-inline:12px}
@@ -930,54 +941,62 @@ function yardStats(k, keep=()=>true){
     pts: pts.map(p=>({c:p.r.carry, s:p.r.side??0, latest:p.latest})), sessions:S.length};
 }
 function dispSVG(Y){
+  // Shot pattern on a true-to-scale square: rings hold 68% and 95% of shots for a normal spread; dashed line = target.
   const rings = Y.sideSd!=null && Y.carrySd!=null, sx = Y.sideSd || 4, sy = Y.carrySd || 4, R = Math.max(2.6*sx + Math.abs(Y.side), 2.6*sy, 8), H = 60, sc = H/R;
-  const X = s => H + s*sc, Yp = c => H - (c - Y.carry)*sc;
+  const X = v => H + v*sc, Yp = c => H - (c - Y.carry)*sc;
   const ring = (k, cls) => `<ellipse class="${cls}" cx="${X(Y.side)}" cy="${H}" rx="${Math.max(1,k*sx*sc)}" ry="${Math.max(1,k*sy*sc)}"/>`;
-  return `<svg class="disp" viewBox="0 0 120 120" role="img" aria-label="Dispersion">
-    <line class="tl" x1="${H}" y1="0" x2="${H}" y2="120"/>
+  return `<svg class="disp" viewBox="0 0 120 120" role="img" aria-label="Shot pattern"><line class="tl" x1="${H}" y1="0" x2="${H}" y2="120"/>
     ${rings?ring(2.448,"r95")+ring(1.515,"r68"):""}
-    ${Y.pts.map(p=>`<circle class="${p.latest?"pl":"po"}" cx="${X(p.s).toFixed(1)}" cy="${Yp(p.c).toFixed(1)}" r="2.2"/>`).join("")}
-    <circle class="mu" cx="${X(Y.side)}" cy="${H}" r="3"/>
-    <text x="${H+3}" y="10">target</text><text x="2" y="117">±${Math.round(R)} yd</text></svg>`;
+    ${Y.pts.map(p=>`<circle class="${p.latest?"pl":"po"}" cx="${X(p.s).toFixed(1)}" cy="${Yp(p.c).toFixed(1)}" r="3.2"/>`).join("")}
+    <circle class="mu" cx="${X(Y.side)}" cy="${H}" r="4.5"/></svg>`;
 }
-function yardTile(k, Y, label, est){
-  if (!Y) return "";
-  const lr = Y.side >= 0 ? "left" : "right", aim = Math.abs(Y.side);
-  const rng = (m, s, z) => s ? `${Math.round(m - z*s)}–${Math.round(m + z*s)}` : "—";
-  return `<div class="ytile"><div class="yh"><span class="cn">${COLORS[k]?sw(k):""}<b>${esc(label)}</b></span><span class="muted small">${est?"estimated":`${Y.n} shot${Y.n>1?"s":""}`}</span></div>
-    <div class="ybody">${dispSVG(Y)}<div class="ynums">
-      <div class="ybig">${Math.round(Y.carry)}<small> carry</small></div>
-      <div>${Math.round(Y.total)} total · roll ${Math.round(Y.roll)}</div>
-      ${Y.carrySd!=null?`<div class="muted small">68%: ${rng(Y.carry,Y.carrySd,1)} yd · ±${Math.round(Y.sideSd)} side</div>
-      <div class="muted small">95%: ${rng(Y.carry,Y.carrySd,1.96)} yd · ±${Math.round(1.96*Y.sideSd)} side</div>`:`<div class="muted small">Ranges need 3+ shots</div>`}
-      <div class="yaim">${aim < 3 ? "Aim at the target" : `Aim <b>${Math.round(aim)} yd ${lr}</b>`}</div></div></div></div>`;
-}
-function yardageHTML(){
-  const clubs = (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter");
-  const tiles = [], wedgeRows = [];
-  clubs.forEach(c=>{ const k = c.key, sp = wedgeSplit(k);
-    if (sp){
-      // A shot counts toward a window only if it carried within 5 yd of it; in-between partial swings are left out.
-      const near = w => r => r.carry >= w.carry[0]-5 && r.carry <= w.carry[1]+5;
-      [["low",sp.lo,near(sp.lo)],["full",sp.hi,near(sp.hi)]].forEach(([t,win,keep])=>{
-        const Y = yardStats(k, keep);
-        wedgeRows.push({k, type:win.type, win:win.carry, Y});
-        if (Y) tiles.push(yardTile(k, Y, `${k}° ${t}`));
-      }); return; }
+/* Yardages pop-up (button at the top of the Bag tab). */
+function yardRows(){
+  const clubs = (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter"), rows = [];
+  clubs.forEach(c=>{ const k = c.key, sp = wedgeSplit(k), grp = loftOf(k) < 24 ? "Woods & hybrid" : loftOf(k) >= 41 ? "Wedges" : "Irons";
+    if (sp){ const near = w => r => r.carry >= w.carry[0]-5 && r.carry <= w.carry[1]+5;
+      rows.push({k, grp, label:`${k}°`, sub:"High · full", Y:yardStats(k, near(sp.hi)), win:sp.hi.carry, wedge:true});
+      rows.push({k, grp, label:`${k}°`, sub:"Low", Y:yardStats(k, near(sp.lo)), win:sp.lo.carry, wedge:true}); return; }
     const Y = yardStats(k);
-    if (Y){ tiles.push(yardTile(k, Y, nameOf(k))); if (WEDGE(k)||k==="PW") wedgeRows.push({k, type:"Full", Y}); return; }
-    const m = clubModel(k); if (m) tiles.push(yardTile(k, {k, n:0, carry:m.carry, total:m.total, roll:m.total-m.carry, side:m.side||0, carrySd:m.carrySd, sideSd:m.sideSd, pts:[]}, nameOf(k), true));
+    if (Y) { rows.push({k, grp, label:nameOf(k), Y, wedge:grp==="Wedges"}); return; }
+    const m = clubModel(k);
+    rows.push({k, grp, label:nameOf(k), est:true, status:c.status, wedge:grp==="Wedges",
+      Y: m ? {k, n:0, carry:m.carry, total:m.total, roll:m.total-m.carry, side:m.side||0, carrySd:m.carrySd, sideSd:m.sideSd, pts:[]} : null});
   });
-  const wl = wedgeRows.map(x=>`<tr><td><span class="cn">${COLORS[x.k]?sw(x.k):""}${esc(wname(x.k))}</span></td><td class="tl">${esc(x.type)}</td>
-    <td>${x.Y?Math.round(x.Y.carry):x.win?`${x.win[0]}–${x.win[1]}`:"—"}</td><td>${x.Y?Math.round(x.Y.total):"—"}</td><td>${x.Y?Math.round(x.Y.roll):"—"}</td>
-    <td>${x.Y&&x.Y.carrySd?`${Math.round(x.Y.carry-x.Y.carrySd)}–${Math.round(x.Y.carry+x.Y.carrySd)}`:"—"}</td><td class="tl muted small">${x.Y?`${x.Y.n} shot${x.Y.n>1?"s":""}`:"from your warm-up; measured on Friday"}</td></tr>`).join("");
-  return `<section class="card"><div class="head"><h2>Yardage card</h2><span class="muted small">recent sessions weighted most · sim yardages</span></div>
-    <div class="ygrid">${tiles.join("")}</div>
-    <p class="muted small" style="margin:10px 0 0">Inner ring: 68% of shots land inside it; outer ring: 95% (assuming a bell-curve spread). Dots are shots (bright = latest session); the dashed line is the target. "Aim" offsets your average finish so the middle of your spread lands on the target. Roll is on the sim's fairway: firm courses add more, soft or wet ones less.</p></section>
-    ${wl?`<section class="card"><div class="head"><h2>Wedges by trajectory</h2><span class="muted small">carry · total · roll</span></div>
-      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Shot</th><th>Carry</th><th>Total</th><th>Roll</th><th>68% carry</th><th class="tl"></th></tr></thead><tbody>${wl}</tbody></table></div>
-      <p class="muted small" style="margin:10px 0 0">Low shots come off lower with less spin, so expect them to release more than full ones; their roll fills in once you hit them in a recorded session.</p></section>`:""}`;
+  return rows;
 }
+function yardagesHTML(){
+  const rows = yardRows(), r0 = v => Math.round(v);
+  const rng = (Y, z) => Y?.carrySd!=null ? `${r0(Y.carry - z*Y.carrySd)}–${r0(Y.carry + z*Y.carrySd)}` : "—";
+  const side = Y => { if (!Y) return "—"; const a = Math.abs(Y.side); return a < 2 ? "on line" : `${r0(a)} ${Y.side > 0 ? "R" : "L"}`; };
+  let grp = null;
+  const body = rows.map(x=>{ const Y = x.Y, head = x.grp!==grp ? `<div class="ygrp">${esc(grp = x.grp)}</div>` : "";
+    const info = !Y ? "" : [x.est ? `Estimated${x.status?` (${x.status})`:""}: not hit yet` : `${Y.n} shot${Y.n>1?"s":""} from ${Y.sessions} session${Y.sessions>1?"s":""}, latest weighted most`,
+      Y.carrySd!=null ? `95% of carries: ${rng(Y,1.96)} yd` : "Ranges need 3+ shots", Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68%)` : null,
+      `Roll: ${r0(Y.roll)} yd`, Math.abs(Y.side) >= 3 ? `Aim ${r0(Math.abs(Y.side))} yd ${Y.side>0?"left":"right"} to centre your pattern` : null,
+      x.win ? `Window you set: ${x.win[0]}–${x.win[1]} yd` : null].filter(Boolean).join(" · ");
+    return head + `<div class="yrow ${x.est?"est":""}">
+      <div class="yc-club"><span class="cn">${COLORS[x.k]?sw(x.k):""}<b>${esc(x.label)}</b></span>${x.sub?`<small>${esc(x.sub)}</small>`:x.est?`<small>estimated</small>`:""}</div>
+      <div class="yc-shape">${Y ? dispSVG(Y) : ""}</div>
+      <div class="yc-carry" data-l="Carry"><b>${Y ? r0(Y.carry) : x.win ? `${x.win[0]}–${x.win[1]}` : "—"}</b></div>
+      <div data-l="±">${Y?.carrySd!=null ? `±${r0(Y.carrySd)}` : "—"}</div>
+      <div data-l="68%">${rng(Y,1)}</div>
+      <div data-l="76%">${rng(Y,1.175)}</div>
+      <div data-l="Total">${Y ? r0(Y.total) : "—"}${x.wedge && Y ? `<span class="roll">+${r0(Y.roll)} roll</span>` : ""}</div>
+      <div data-l="Finishes">${side(Y)}</div>
+      <div class="yc-i">${info ? `<span class="iicon" data-tip="${esc(info)}" tabindex="0" aria-label="More">i</span>` : ""}</div></div>`; }).join("");
+  return `<div class="vbox ybox" role="dialog" aria-label="Yardages">
+    <div class="head"><div><h2>Yardages</h2><p class="sub">Good-contact shots, recent sessions weighted most · sim yardages</p></div><button class="btn icon" id="yClose" aria-label="Close">✕</button></div>
+    <div class="yrow yhead"><div>Club</div><div>Pattern</div><div>Carry</div><div>±</div><div>68%</div><div>76%</div><div>Total</div><div>Finishes</div><div></div></div>
+    ${body}
+    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 76% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. Hover or tap <span class="iicon">i</span> for more.</p></div>`;
+}
+const yEl = (() => { const d = document.createElement("div"); d.id = "ymodal"; d.className = "viewer"; d.hidden = true; document.body.appendChild(d); return d; })();
+function openYardages(){ yEl.innerHTML = yardagesHTML(); yEl.hidden = false; document.body.style.overflow = "hidden"; $("yClose").onclick = closeYardages; }
+function closeYardages(){ yEl.hidden = true; document.body.style.overflow = ""; $("tip").hidden = true; }
+yEl.addEventListener("click", e => { if (e.target === yEl) closeYardages(); });
+document.addEventListener("click", e => { if (e.target.closest?.("#yBtn")) openYardages(); });
+document.addEventListener("keydown", e => { if (!yEl.hidden && e.key === "Escape") closeYardages(); });
 
 /* ================= PROGRESS ================= */
 function renderTrend(){
@@ -1027,7 +1046,8 @@ function renderBag(){
     : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
   const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
     return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${c.status?`<span class="tag warn">${esc(c.status)}</span>`:""}${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
-  $("tab-bag").innerHTML = yardageHTML() + `
+  $("tab-bag").innerHTML = `
+    <div class="head" style="margin:0"><div><h2>Bag</h2><p class="sub">Your clubs, shafts and distances</p></div><button class="btn primary" id="yBtn">Yardages</button></div>
     <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
       <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured in "+(m.date||"")):"").join("")}</div></section>
     ${DATA.bag.sets.map(set=>`<section class="card"><div class="head"><h2>${esc(set.name)}</h2></div>
