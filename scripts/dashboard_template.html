@@ -972,7 +972,7 @@ function yardagesHTML(){
   let grp = null;
   const body = rows.map(x=>{ const Y = x.Y, head = x.grp!==grp ? `<div class="ygrp">${esc(grp = x.grp)}</div>` : "";
     const info = !Y ? "" : [x.est ? `Estimated${x.status?` (${x.status})`:""}: not hit yet` : `${Y.n} shot${Y.n>1?"s":""} from ${Y.sessions} session${Y.sessions>1?"s":""}, latest weighted most`,
-      Y.carrySd!=null ? `95% of carries: ${rng(Y,1.96)} yd` : "Ranges need 3+ shots", Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68%)` : null,
+      Y.carrySd==null ? "Ranges need 3+ shots" : null, Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68%)` : null,
       `Roll: ${r0(Y.roll)} yd`, Math.abs(Y.side) >= 3 ? `Aim ${r0(Math.abs(Y.side))} yd ${Y.side>0?"left":"right"} to centre your pattern` : null,
       x.win ? `Window you set: ${x.win[0]}–${x.win[1]} yd` : null].filter(Boolean).join(" · ");
     return head + `<div class="yrow ${x.est?"est":""}">
@@ -981,15 +981,15 @@ function yardagesHTML(){
       <div class="yc-carry" data-l="Carry"><b>${Y ? r0(Y.carry) : x.win ? `${x.win[0]}–${x.win[1]}` : "—"}</b></div>
       <div data-l="±">${Y?.carrySd!=null ? `±${r0(Y.carrySd)}` : "—"}</div>
       <div data-l="68%">${rng(Y,1)}</div>
-      <div data-l="76%">${rng(Y,1.175)}</div>
+      <div data-l="95%">${rng(Y,1.96)}</div>
       <div data-l="Total">${Y ? r0(Y.total) : "—"}${x.wedge && Y ? `<span class="roll">+${r0(Y.roll)} roll</span>` : ""}</div>
       <div data-l="Finishes">${side(Y)}</div>
       <div class="yc-i">${info ? `<span class="iicon" data-tip="${esc(info)}" tabindex="0" aria-label="More">i</span>` : ""}</div></div>`; }).join("");
   return `<div class="vbox ybox" role="dialog" aria-label="Yardages">
     <div class="head"><div><h2>Yardages</h2><p class="sub">Good-contact shots, recent sessions weighted most · sim yardages</p></div><button class="btn icon" id="yClose" aria-label="Close">✕</button></div>
-    <div class="yrow yhead"><div>Club</div><div>Pattern</div><div>Carry</div><div>±</div><div>68%</div><div>76%</div><div>Total</div><div>Finishes</div><div></div></div>
+    <div class="yrow yhead"><div>Club</div><div>Pattern</div><div>Carry</div><div>±</div><div>68%</div><div>95%</div><div>Total</div><div>Finishes</div><div></div></div>
     ${body}
-    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 76% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. Hover or tap <span class="iicon">i</span> for more.</p></div>`;
+    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 95% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. Hover or tap <span class="iicon">i</span> for more.</p></div>`;
 }
 const yEl = (() => { const d = document.createElement("div"); d.id = "ymodal"; d.className = "viewer"; d.hidden = true; document.body.appendChild(d); return d; })();
 function openYardages(){ yEl.innerHTML = yardagesHTML(); yEl.hidden = false; document.body.style.overflow = "hidden"; $("yClose").onclick = closeYardages; }
@@ -1038,18 +1038,10 @@ const shaftLine = c => !("shaft" in c) ? "" : c.shaft
   ? `<div class="small">${esc([c.shaft, c.flex, c.weight?c.weight+" g":null, c.bounce!=null?c.bounce+"° bounce":null, c.grip?c.grip+" grip":null].filter(Boolean).join(" · "))}</div>`
   : `<div class="small" style="opacity:.6">shaft not set</div>`;
 function renderBag(){
-  const L7 = clubModel("7i"), L6 = clubModel("6i"), LW = clubModel("7W");
-  const card = (t, rows, sub) => `<div><b>${t}</b>${rows.map(([a,b])=>`<div class="r"><span>${a}</span><span>${b}</span></div>`).join("")}<div class="muted small" style="margin-top:6px">${sub}</div></div>`;
-  const verdict = L6 && LW && L7 && !L6.est && !LW.est
-    ? (L6.carry < L7.carry ? `Measured: the 6-iron carried ${f(L7.carry-L6.carry,0)} yd shorter than the 7-iron (good contact only), while the 7-wood carried ${f(LW.carry-L7.carry,0)} yd past the 7-iron. Keep the 7-wood; the 6-iron isn't adding distance.`
-      : L6.carry-L7.carry<6 ? `Measured: the 6-iron overlaps the 7-iron (${f(L6.carry-L7.carry)} yd). Keep the 7-wood and drop the 6-iron.` : `Measured gaps: 7i→6i ${f(L6.carry-L7.carry)} yd, 6i→7W ${f(LW.carry-L6.carry)} yd.`)
-    : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
   const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
     return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${c.status?`<span class="tag warn">${esc(c.status)}</span>`:""}${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
   $("tab-bag").innerHTML = `
     <div class="head" style="margin:0"><div><h2>Bag</h2><p class="sub">Your clubs, shafts and distances</p></div><button class="btn primary" id="yBtn">Yardages</button></div>
-    <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
-      <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured in "+(m.date||"")):"").join("")}</div></section>
     ${DATA.bag.sets.map(set=>`<section class="card"><div class="head"><h2>${esc(set.name)}</h2></div>
       <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Model</th><th>Loft</th><th>${tip("carry","Carry")}</th><th>${tip("total","Total")}</th><th>Wide</th></tr></thead><tbody>${setRows(set)}</tbody></table></div>
       <p class="muted small" style="margin:10px 0 0">"est" = not hit yet, estimated from your 7-iron (or AW for wedges). Wide = left/right spread covering 68% of shots.${set.clubs.some(c=>"shaft" in c)?" Shaft: model, flex, weight; read it off the label on the shaft.":""}</p></section>`).join("")}`;
