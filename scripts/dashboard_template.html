@@ -269,7 +269,7 @@
   .sw{width:9px;height:9px;border-radius:50%;display:inline-block}
   img.thumb{width:30px;height:32px;object-fit:cover;border-radius:5px;display:block;background:#000}
   [data-tip]{text-decoration:underline dotted var(--faint);text-underline-offset:3px;cursor:help}
-  #tip{position:fixed;z-index:200;max-width:280px;background:#0b130e;color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45;pointer-events:none}
+  #tip{position:fixed;z-index:200;white-space:pre-line;max-width:280px;background:#0b130e;color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45;pointer-events:none}
 
   /* viewer */
   .viewer{position:fixed;inset:0;z-index:150;background:rgba(6,10,8,.8);display:flex;align-items:center;justify-content:center;padding:16px}
@@ -971,10 +971,9 @@ function yardagesHTML(){
   const side = Y => { if (!Y) return "—"; const a = Math.abs(Y.side); return a < 2 ? "on line" : `${r0(a)} ${Y.side > 0 ? "R" : "L"}`; };
   let grp = null;
   const body = rows.map(x=>{ const Y = x.Y, head = x.grp!==grp ? `<div class="ygrp">${esc(grp = x.grp)}</div>` : "";
-    const info = !Y ? "" : [x.est ? `Estimated${x.status?` (${x.status})`:""}: not hit yet` : `${Y.n} shot${Y.n>1?"s":""} from ${Y.sessions} session${Y.sessions>1?"s":""}, latest weighted most`,
-      Y.carrySd==null ? "Ranges need 3+ shots" : null, Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68%)` : null,
-      `Roll: ${r0(Y.roll)} yd`, Math.abs(Y.side) >= 3 ? `Aim ${r0(Math.abs(Y.side))} yd ${Y.side>0?"left":"right"} to centre your pattern` : null,
-      x.win ? `Window you set: ${x.win[0]}–${x.win[1]} yd` : null].filter(Boolean).join(" · ");
+    const info = !Y ? "" : [x.est ? `Estimated${x.status?` (${x.status})`:""}: not hit yet` : `${Y.n} shot${Y.n>1?"s":""} · ${Y.sessions} session${Y.sessions>1?"s":""}`,
+      Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68% of shots)` : null, Y.carrySd==null && !x.est ? "Ranges need 3+ shots" : null,
+      x.win ? `Your window: ${x.win[0]}–${x.win[1]} yd` : null].filter(Boolean).join("\n");
     return head + `<div class="yrow ${x.est?"est":""}">
       <div class="yc-club"><span class="cn">${COLORS[x.k]?sw(x.k):""}<b>${esc(x.label)}</b></span>${x.sub?`<small>${esc(x.sub)}</small>`:x.est?`<small>estimated</small>`:""}</div>
       <div class="yc-shape">${Y ? dispSVG(Y) : ""}</div>
@@ -986,10 +985,10 @@ function yardagesHTML(){
       <div data-l="Finishes">${side(Y)}</div>
       <div class="yc-i">${info ? `<span class="iicon" data-tip="${esc(info)}" tabindex="0" aria-label="More">i</span>` : ""}</div></div>`; }).join("");
   return `<div class="vbox ybox" role="dialog" aria-label="Yardages">
-    <div class="head"><div><h2>Yardages</h2><p class="sub">Good-contact shots, recent sessions weighted most · sim yardages</p></div><button class="btn icon" id="yClose" aria-label="Close">✕</button></div>
+    <div class="head"><div><h2>Yardages</h2><p class="sub">Good-contact shots · sim yardages</p></div><button class="btn icon" id="yClose" aria-label="Close">✕</button></div>
     <div class="yrow yhead"><div>Club</div><div>Pattern</div><div>Carry</div><div>±</div><div>68%</div><div>95%</div><div>Total</div><div>Finishes</div><div></div></div>
     ${body}
-    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 95% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. Hover or tap <span class="iicon">i</span> for more.</p></div>`;
+    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 95% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. Hover or tap <span class="iicon">i</span> for shot count, side spread and wedge windows. Recent sessions are weighted most.</p></div>`;
 }
 const yEl = (() => { const d = document.createElement("div"); d.id = "ymodal"; d.className = "viewer"; d.hidden = true; document.body.appendChild(d); return d; })();
 function openYardages(){ yEl.innerHTML = yardagesHTML(); yEl.hidden = false; document.body.style.overflow = "hidden"; $("yClose").onclick = closeYardages; }
