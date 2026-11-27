@@ -181,6 +181,24 @@
   .day label input{accent-color:var(--green);width:15px;height:15px;margin-top:1px;flex:none}
   .day label input:checked + span{color:var(--faint);text-decoration:line-through}
   .weeknav{display:flex;align-items:center;gap:8px}
+  .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+  .rcard{background:var(--panel2);border-radius:10px;padding:14px} .rcard.off{opacity:.55}
+  .rcard .rh{display:flex;justify-content:space-between;align-items:center;gap:8px} .rcard .rh b{color:var(--cream);font-size:14px}
+  .rcard .rv{font-size:22px;font-weight:700;color:var(--cream);margin:8px 0 4px} .rcard .rv span{font-weight:400}
+  .rcard .rn{font-size:12.5px;color:var(--ink2);margin:6px 0 4px}
+  .rbadge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--rc);background:color-mix(in srgb,var(--rc) 14%,transparent);border:1px solid color-mix(in srgb,var(--rc) 45%,transparent);border-radius:999px;padding:2px 10px 2px 7px;white-space:nowrap}
+  .rbadge i{width:9px;height:9px;background:var(--rc);transform:rotate(45deg);border-radius:2px} .rbadge.big{font-size:15px}
+  .rbar{position:relative;height:22px;margin:8px 0 2px} .rbar .trk{position:absolute;left:0;right:0;top:8px;height:6px;display:flex;gap:2px;opacity:.55} .rbar .trk span{border-radius:2px}
+  .rbar .cur{position:absolute;top:2px;width:4px;height:18px;margin-left:-2px;background:var(--cream);border-radius:2px;box-shadow:0 0 0 2px var(--panel2)}
+  .rbar .lat{position:absolute;top:5px;width:10px;height:10px;margin-left:-5px;border:2px solid var(--cream);border-radius:50%;background:var(--panel2)}
+  .rbar .goal{position:absolute;top:-6px;margin-left:-4px;font-size:12px;color:var(--sand)}
+  .ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+  .ytile{background:var(--panel2);border-radius:10px;padding:12px} .ytile .yh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px} .ytile .yh b{color:var(--cream)}
+  .ybody{display:flex;gap:12px;align-items:center} .ynums{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink2);min-width:0}
+  .ybig{font-size:26px;font-weight:700;color:var(--cream);line-height:1} .ybig small{font-size:12px;font-weight:400;color:var(--muted)} .yaim{margin-top:3px;color:var(--sand)} .yaim b{color:var(--sand)}
+  svg.disp{width:112px;height:112px;flex:none;background:var(--panel);border-radius:8px}
+  svg.disp .tl{stroke:var(--line2);stroke-dasharray:3 3} svg.disp .r95{fill:rgba(159,208,124,.07);stroke:rgba(159,208,124,.35)} svg.disp .r68{fill:rgba(159,208,124,.16);stroke:rgba(159,208,124,.7)}
+  svg.disp .po{fill:var(--muted);opacity:.55} svg.disp .pl{fill:var(--cream)} svg.disp .mu{fill:var(--sand)} svg.disp text{fill:var(--faint);font-size:8px;font-family:var(--sans)}
   .dstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
   .dsb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--ink2);cursor:pointer;font:inherit;border-top:3px solid var(--line2)}
   .dsb b{font-size:14px;color:var(--cream)} .dsb span{font-size:11.5px;color:var(--muted)}
@@ -820,6 +838,147 @@ function clubModel(k){
   return null;
 }
 
+/* ================= RANKS (Progress tab) =================
+   25 levels like Valorant: Iron 1 … Immortal 3, then Radiant. Anchors per metric: beginner = Iron 1, average golfer = Gold 2,
+   scratch = Immortal 1, tour average = Radiant; linear in between. Value = recency-weighted average with the latest session at 50%. */
+const RANKS = ["Iron","Bronze","Silver","Gold","Platinum","Diamond","Ascendant","Immortal"].flatMap(n=>[1,2,3].map(t=>({n,t}))).concat([{n:"Radiant",t:null}]);
+const RANK_COLOR = {Iron:"#9aa19c",Bronze:"#c58f5d",Silver:"#cfd5da",Gold:"#e3c97a",Platinum:"#5fc2b8",Diamond:"#b597ec",Ascendant:"#6fd08c",Immortal:"#e46a84",Radiant:"#fff0a8"};
+const ANCHOR_POS = [0,10,21,24];
+const rankOf = i => RANKS[Math.max(0,Math.min(24,Math.floor(i+1e-9)))];
+const rankName = i => { const r=rankOf(i); return r.t ? `${r.n} ${r.t}` : r.n; };
+function rankIndex(v, a){
+  const s = a[3] > a[0] ? 1 : -1, x = v*s, A = a.map(q=>q*s);
+  if (x <= A[0]) return 0; if (x >= A[3]) return 24;
+  for (let i=0;i<3;i++) if (x <= A[i+1]) return ANCHOR_POS[i] + (x-A[i])/(A[i+1]-A[i])*(ANCHOR_POS[i+1]-ANCHOR_POS[i]);
+  return 24;
+}
+function rankValue(idx, a){ idx = Math.max(0, Math.min(24, idx));
+  for (let i=0;i<3;i++) if (idx <= ANCHOR_POS[i+1]) return a[i] + (idx-ANCHOR_POS[i])/(ANCHOR_POS[i+1]-ANCHOR_POS[i])*(a[i+1]-a[i]);
+  return a[3]; }
+// Recency weights for a list of sessions (oldest → newest): newest 50%, the rest share 50% halving with age.
+function recencyWeights(n){
+  if (n <= 1) return n ? [1] : [];
+  const raw = Array.from({length:n-1}, (_,j)=>Math.pow(.5, n-2-j)), t = raw.reduce((a,b)=>a+b,0);
+  return [...raw.map(r=>.5*r/t), .5];
+}
+const exclCount = (A, k) => (A.meta.exclude||[]).filter(x=>!k || x.startsWith(k+"_")).length;
+function metricSeries(m){
+  return ALL.map((A,i)=>{
+    if (m.stat==="mishit"){ if (A.meta.curated) return null;
+      const ks = A.keys.filter(k=>!A.clubs[k].partial), n = ks.reduce((a,k)=>a+A.clubs[k].n,0) + exclCount(A), bad = ks.reduce((a,k)=>a+A.clubs[k].mishits,0) + exclCount(A);
+      return n >= 10 ? {i, v:100*bad/n} : null; }
+    const c = A.clubs[m.club]; if (!c || c.partial) return null;
+    if (m.stat==="sideSd"){ if (A.meta.curated || c.good.length < 5) return null; return {i, v:c.sideSd}; }
+    return c.good.length >= 3 ? {i, v:c[m.stat]} : null;
+  }).filter(x=>x && x.v!=null);
+}
+function rankMetric(m){
+  const S = metricSeries(m); if (!S.length) return {m, S};
+  const w = recencyWeights(S.length), v = S.reduce((a,x,j)=>a+w[j]*x.v,0), latest = S[S.length-1];
+  const idx = rankIndex(v, m.anchors), prevIdx = S.length>1 ? rankIndex(S.slice(0,-1).reduce((a,x,j,arr)=>a+recencyWeights(arr.length)[j]*x.v,0), m.anchors) : null;
+  const nextIdx = Math.min(24, Math.floor(idx+1e-9)+1), next = idx >= 24 ? null : rankValue(nextIdx, m.anchors);
+  return {m, S, v, idx, latest, prevIdx, next, nextIdx, goalIdx: m.goal!=null ? rankIndex(m.goal, m.anchors) : null};
+}
+const rankBadge = (i, big) => { const r = rankOf(i); return `<span class="rbadge ${big?"big":""}" style="--rc:${RANK_COLOR[r.n]}"><i></i>${esc(rankName(i))}</span>`; };
+function rankBar(R){
+  const seg = ["Iron","Bronze","Silver","Gold","Platinum","Diamond","Ascendant","Immortal"].map(n=>`<span style="flex:3;background:${RANK_COLOR[n]}"></span>`).join("")+`<span style="flex:1;background:${RANK_COLOR.Radiant}"></span>`;
+  const at = i => `${(Math.min(24.99,i)/25*100).toFixed(2)}%`;
+  const li = R.latest ? rankIndex(R.latest.v, R.m.anchors) : null;
+  return `<div class="rbar"><div class="trk">${seg}</div>
+    ${R.goalIdx!=null?`<b class="goal" style="left:${at(R.goalIdx)}" title="Plan goal: ${esc(rankName(R.goalIdx))}">⚑</b>`:""}
+    ${li!=null && R.S.length>1?`<i class="lat" style="left:${at(li)}" title="Latest session: ${esc(rankName(li))}"></i>`:""}
+    <i class="cur" style="left:${at(R.idx)}" title="${esc(rankName(R.idx))}"></i></div>`;
+}
+function ranksHTML(){
+  const cfg = DATA.drills?.ranks; if (!cfg) return "";
+  const Rs = cfg.metrics.map(rankMetric), have = Rs.filter(R=>R.S.length);
+  if (!have.length) return "";
+  const overall = mean(have.map(R=>R.idx));
+  const fmt = (m, v) => `${m.prefix||""}${f(v, m.dp??0)}${m.unit||""}`;
+  const card = R => { const m = R.m;
+    if (!R.S.length) return `<div class="rcard off"><div class="rh"><b>${esc(m.label)}</b><span class="muted small">no data yet</span></div></div>`;
+    const lower = m.anchors[3] < m.anchors[0], need = R.next!=null ? Math.abs(R.next - R.v) : 0;
+    const move = R.prevIdx==null ? "" : Math.floor(R.idx)>Math.floor(R.prevIdx) ? `<span class="good">▲ up from ${esc(rankName(R.prevIdx))}</span>` : Math.floor(R.idx)<Math.floor(R.prevIdx) ? `<span class="bad">▼ down from ${esc(rankName(R.prevIdx))}</span>` : "";
+    const tierPct = Math.round((R.idx - Math.floor(R.idx))*100);
+    return `<div class="rcard"><div class="rh"><b>${esc(m.label)}</b>${rankBadge(R.idx)}</div>
+      <div class="rv">${fmt(m,R.v)}<span class="muted small"> rolling${R.S.length>1?` · latest ${fmt(m,R.latest.v)}`:""} · ${R.S.length} session${R.S.length>1?"s":""}</span></div>
+      ${rankBar(R)}
+      <div class="rn">${R.next!=null?`Next: <b>${esc(rankName(R.nextIdx))}</b> at ${fmt(m,R.next)} (${lower?"−":"+"}${f(Math.max(need,.1), need<10?1:0)}${m.unit||""}) · ${tierPct}% of the way`:"Top rank"}${move?` · ${move}`:""}</div>
+      ${m.goal!=null?`<div class="muted small">⚑ Plan goal: ${esc(rankName(R.goalIdx))} (${fmt(m,m.goal)})${(lower?R.v<=m.goal:R.v>=m.goal)?' <span class="good">reached ✓</span>':""}</div>`:""}
+      <div class="muted small" style="margin-top:4px">${esc(m.desc||"")}</div></div>`; };
+  return `<section class="card"><div class="head"><h2>Ranks</h2><span class="muted small">Overall ${rankBadge(overall)}</span></div>
+    <p class="sub" style="margin:0 0 12px">Beginner = Iron · average golfer = Gold · scratch = Immortal · tour average = Radiant. 25 levels; each rank's three tiers are a few yards apart, so every session can move you up. Rolling value weights your latest session at 50%.</p>
+    <div class="rgrid">${Rs.map(card).join("")}</div>
+    <p class="muted small" style="margin:10px 0 0">${esc(cfg.note)} ⚑ = fixed plan goal; the bar's bright marker is your rolling rank, the hollow one your latest session.</p></section>`;
+}
+
+/* ================= YARDAGE CARD (Bag tab) =================
+   Recency-weighted pool of good-contact shots per club (each session weighted like the ranks, split across its shots).
+   Wedges with trajectory windows are split into low and full by carry. Rings: 68% and 95% of shots for a normal spread. */
+function wedgeSplit(k){
+  const W = (DATA.drills?.wedgeShots||[]).filter(w=>w.club===k && w.carry), lo = W.find(w=>/low/i.test(w.type)), hi = W.find(w=>!/low/i.test(w.type));
+  return lo && hi ? {lo, hi} : null;
+}
+function yardStats(k, keep=()=>true){
+  const S = ALL.map((A,i)=>({i, A, sh:(A.clubs[k]?.good||[]).filter(r=>!r.suspect && r.carry!=null && keep(r))})).filter(x=>x.sh.length);
+  if (!S.length) return null;
+  const w = recencyWeights(S.length), pts = S.flatMap((x,j)=>x.sh.map(r=>({r, w:w[j]/x.sh.length, latest: j===S.length-1})));
+  const W = pts.reduce((a,p)=>a+p.w,0), wm = g => pts.reduce((a,p)=>a+p.w*(g(p.r)??0),0)/W;
+  const wsd = (g, mu) => Math.sqrt(pts.reduce((a,p)=>a+p.w*((g(p.r)??mu)-mu)**2,0)/W);
+  const carry = wm(r=>r.carry), total = wm(r=>r.total??r.carry), side = wm(r=>r.side??0);
+  return {k, n:pts.length, carry, total, roll: total-carry, side, carrySd: pts.length>=3 ? wsd(r=>r.carry, carry) : null, sideSd: pts.length>=3 ? wsd(r=>r.side??0, side) : null,
+    pts: pts.map(p=>({c:p.r.carry, s:p.r.side??0, latest:p.latest})), sessions:S.length};
+}
+function dispSVG(Y){
+  const rings = Y.sideSd!=null && Y.carrySd!=null, sx = Y.sideSd || 4, sy = Y.carrySd || 4, R = Math.max(2.6*sx + Math.abs(Y.side), 2.6*sy, 8), H = 60, sc = H/R;
+  const X = s => H + s*sc, Yp = c => H - (c - Y.carry)*sc;
+  const ring = (k, cls) => `<ellipse class="${cls}" cx="${X(Y.side)}" cy="${H}" rx="${Math.max(1,k*sx*sc)}" ry="${Math.max(1,k*sy*sc)}"/>`;
+  return `<svg class="disp" viewBox="0 0 120 120" role="img" aria-label="Dispersion">
+    <line class="tl" x1="${H}" y1="0" x2="${H}" y2="120"/>
+    ${rings?ring(2.448,"r95")+ring(1.515,"r68"):""}
+    ${Y.pts.map(p=>`<circle class="${p.latest?"pl":"po"}" cx="${X(p.s).toFixed(1)}" cy="${Yp(p.c).toFixed(1)}" r="2.2"/>`).join("")}
+    <circle class="mu" cx="${X(Y.side)}" cy="${H}" r="3"/>
+    <text x="${H+3}" y="10">target</text><text x="2" y="117">±${Math.round(R)} yd</text></svg>`;
+}
+function yardTile(k, Y, label, est){
+  if (!Y) return "";
+  const lr = Y.side >= 0 ? "left" : "right", aim = Math.abs(Y.side);
+  const rng = (m, s, z) => s ? `${Math.round(m - z*s)}–${Math.round(m + z*s)}` : "—";
+  return `<div class="ytile"><div class="yh"><span class="cn">${COLORS[k]?sw(k):""}<b>${esc(label)}</b></span><span class="muted small">${est?"estimated":`${Y.n} shot${Y.n>1?"s":""}`}</span></div>
+    <div class="ybody">${dispSVG(Y)}<div class="ynums">
+      <div class="ybig">${Math.round(Y.carry)}<small> carry</small></div>
+      <div>${Math.round(Y.total)} total · roll ${Math.round(Y.roll)}</div>
+      ${Y.carrySd!=null?`<div class="muted small">68%: ${rng(Y.carry,Y.carrySd,1)} yd · ±${Math.round(Y.sideSd)} side</div>
+      <div class="muted small">95%: ${rng(Y.carry,Y.carrySd,1.96)} yd · ±${Math.round(1.96*Y.sideSd)} side</div>`:`<div class="muted small">Ranges need 3+ shots</div>`}
+      <div class="yaim">${aim < 3 ? "Aim at the target" : `Aim <b>${Math.round(aim)} yd ${lr}</b>`}</div></div></div></div>`;
+}
+function yardageHTML(){
+  const clubs = (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter");
+  const tiles = [], wedgeRows = [];
+  clubs.forEach(c=>{ const k = c.key, sp = wedgeSplit(k);
+    if (sp){
+      // A shot counts toward a window only if it carried within 5 yd of it; in-between partial swings are left out.
+      const near = w => r => r.carry >= w.carry[0]-5 && r.carry <= w.carry[1]+5;
+      [["low",sp.lo,near(sp.lo)],["full",sp.hi,near(sp.hi)]].forEach(([t,win,keep])=>{
+        const Y = yardStats(k, keep);
+        wedgeRows.push({k, type:win.type, win:win.carry, Y});
+        if (Y) tiles.push(yardTile(k, Y, `${k}° ${t}`));
+      }); return; }
+    const Y = yardStats(k);
+    if (Y){ tiles.push(yardTile(k, Y, nameOf(k))); if (WEDGE(k)||k==="PW") wedgeRows.push({k, type:"Full", Y}); return; }
+    const m = clubModel(k); if (m) tiles.push(yardTile(k, {k, n:0, carry:m.carry, total:m.total, roll:m.total-m.carry, side:m.side||0, carrySd:m.carrySd, sideSd:m.sideSd, pts:[]}, nameOf(k), true));
+  });
+  const wl = wedgeRows.map(x=>`<tr><td><span class="cn">${COLORS[x.k]?sw(x.k):""}${esc(wname(x.k))}</span></td><td class="tl">${esc(x.type)}</td>
+    <td>${x.Y?Math.round(x.Y.carry):x.win?`${x.win[0]}–${x.win[1]}`:"—"}</td><td>${x.Y?Math.round(x.Y.total):"—"}</td><td>${x.Y?Math.round(x.Y.roll):"—"}</td>
+    <td>${x.Y&&x.Y.carrySd?`${Math.round(x.Y.carry-x.Y.carrySd)}–${Math.round(x.Y.carry+x.Y.carrySd)}`:"—"}</td><td class="tl muted small">${x.Y?`${x.Y.n} shot${x.Y.n>1?"s":""}`:"from your warm-up; measured on Friday"}</td></tr>`).join("");
+  return `<section class="card"><div class="head"><h2>Yardage card</h2><span class="muted small">recent sessions weighted most · sim yardages</span></div>
+    <div class="ygrid">${tiles.join("")}</div>
+    <p class="muted small" style="margin:10px 0 0">Inner ring: 68% of shots land inside it; outer ring: 95% (assuming a bell-curve spread). Dots are shots (bright = latest session); the dashed line is the target. "Aim" offsets your average finish so the middle of your spread lands on the target. Roll is on the sim's fairway: firm courses add more, soft or wet ones less.</p></section>
+    ${wl?`<section class="card"><div class="head"><h2>Wedges by trajectory</h2><span class="muted small">carry · total · roll</span></div>
+      <div class="tablewrap"><table><thead><tr><th>Club</th><th class="tl">Shot</th><th>Carry</th><th>Total</th><th>Roll</th><th>68% carry</th><th class="tl"></th></tr></thead><tbody>${wl}</tbody></table></div>
+      <p class="muted small" style="margin:10px 0 0">Low shots come off lower with less spin, so expect them to release more than full ones; their roll fills in once you hit them in a recorded session.</p></section>`:""}`;
+}
+
 /* ================= PROGRESS ================= */
 function renderTrend(){
   const list = ALL, dates = list.map((A,i)=>sName(i)), multi = list.length>1;
@@ -834,6 +993,7 @@ function renderTrend(){
   const ch = (label,key,now,d,better,unit,dp,g) => `<div class="stat"><div><div class="l">${tip(key,label)}</div><div class="v">${unit==="°"?sg(now,dp):f(now,dp)}${unit}</div><div class="c">${multi?`${sg(d,dp)}${unit} since ${dates[0]} · <span class="${better?"good":"bad"}">${better?"better":"worse"}</span>`:"baseline · next session adds a trend"}</div></div>${g?`<div class="grade g${g}">${g}</div>`:""}</div>`;
   $("tab-trend").innerHTML = `
     <div class="head" style="margin:0"><div><h2>Progress</h2><p class="sub">${list.length} session${multi?"s":""} · ${sDate(list[0])}${multi?" → "+sDate(list[list.length-1]):""}${common.length?` · iron numbers use ${common.map(nameOf).join(", ")} (hit in both)`:""}</p></div></div>
+    ${ranksHTML()}
     ${mixed?`<p class="note" style="margin:0;border-radius:10px;padding:8px 12px">Heads up: ${list.filter(A=>A.meta.curated).map(A=>sName(ALL.indexOf(A))).join(", ")} ${list.filter(A=>A.meta.curated).length===1?"was":"were"} best shots only; the others include every shot. Mishits are left out of averages, but best-shots-only sessions will still look a little better.</p>`:""}
     <section class="stats">
       ${ch(`${common.length===1?nameOf(common[0]):"Iron"} strike (median)`,"smash",z.smash,z.smash-a.smash,z.smash>a.smash,"",2,"")}
@@ -867,7 +1027,7 @@ function renderBag(){
     : "The 6-iron and 7-wood are estimated from your 7-iron until you hit them. If the 6-iron lands within 6 yd of the 7-iron, keep the 7-wood and drop the 6-iron.";
   const setRows = set => set.clubs.map(c=>{ const k=c.key||c.equiv, m=k?clubModel(k):null;
     return `<tr><td><span class="cn">${k&&COLORS[k]?sw(k):""}${esc(c.label)}</span>${c.status?`<span class="tag warn">${esc(c.status)}</span>`:""}${m?.est?'<span class="tag">est</span>':""}${m?.caveat?'<span class="tag warn">⚑</span>':""}</td><td class="tl muted">${esc(c.model||(c.equiv&&CLUB[c.equiv]?"≈ "+nameOf(c.equiv):""))}${shaftLine(c)}</td><td>${c.loft!=null?c.loft+"°":"—"}</td><td>${m?f(m.carry,0):"—"}</td><td>${m?f(m.total,0):"—"}</td><td>${m?"±"+f(m.sideSd,0):"—"}</td></tr>`; }).join("");
-  $("tab-bag").innerHTML = `
+  $("tab-bag").innerHTML = yardageHTML() + `
     <section class="card"><div class="head"><h2>6-iron vs. 7-wood</h2></div><p class="sub" style="margin:0 0 14px">${verdict}</p>
       <div class="proj">${[["7 Iron",L7],["6 Iron",L6],["7 Wood",LW]].map(([t,m])=>m?card(t,[["Carry",f(m.carry,0)+" yd"],["Total",f(m.total,0)+" yd"],["Wide (68%)","±"+f(m.sideSd,0)+" yd"]],m.est?"estimated":"measured in "+(m.date||"")):"").join("")}</div></section>
     ${DATA.bag.sets.map(set=>`<section class="card"><div class="head"><h2>${esc(set.name)}</h2></div>

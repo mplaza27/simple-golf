@@ -911,5 +911,107 @@
         ]
       }
     }
+  },
+  "ranks": {
+    "note": "Anchors: beginner (~36 handicap) = Iron 1, average golfer (~15) = Gold 2, scratch = Immortal 1, tour average = Radiant. Carry anchors follow Shot Scope handicap averages and TrackMan PGA Tour averages; mishit and dispersion anchors are estimates.",
+    "metrics": [
+      {
+        "id": "mishit",
+        "label": "Mishit rate",
+        "stat": "mishit",
+        "unit": "%",
+        "dp": 0,
+        "anchors": [
+          20,
+          6,
+          2,
+          0.5
+        ],
+        "goal": 5,
+        "desc": "Tops and chunks across all full swings, including ones excluded from averages. Lower is better."
+      },
+      {
+        "id": "carry-Dr",
+        "label": "Driver carry",
+        "club": "Dr",
+        "stat": "carry",
+        "unit": " yd",
+        "dp": 0,
+        "anchors": [
+          165,
+          215,
+          250,
+          275
+        ],
+        "goal": 205,
+        "desc": "Good-contact carry."
+      },
+      {
+        "id": "carry-7i",
+        "label": "7-iron carry",
+        "club": "7i",
+        "stat": "carry",
+        "unit": " yd",
+        "dp": 0,
+        "anchors": [
+          110,
+          140,
+          160,
+          172
+        ],
+        "goal": 131,
+        "desc": "Good-contact carry. Plan goal: +11 yd from solid contact."
+      },
+      {
+        "id": "carry-PW",
+        "label": "PW carry",
+        "club": "PW",
+        "stat": "carry",
+        "unit": " yd",
+        "dp": 0,
+        "anchors": [
+          85,
+          112,
+          128,
+          136
+        ],
+        "goal": 108,
+        "desc": "Good-contact carry, full swings."
+      },
+      {
+        "id": "disp-Dr",
+        "label": "Driver dispersion",
+        "club": "Dr",
+        "stat": "sideSd",
+        "unit": " yd",
+        "prefix": "±",
+        "dp": 0,
+        "anchors": [
+          55,
+          30,
+          18,
+          12
+        ],
+        "goal": 26,
+        "desc": "Left/right spread around your own average (68% of drives). Your right-side bias is handled by aiming, so it isn't counted here."
+      },
+      {
+        "id": "disp-7i",
+        "label": "7-iron dispersion",
+        "club": "7i",
+        "stat": "sideSd",
+        "unit": " yd",
+        "prefix": "±",
+        "dp": 0,
+        "anchors": [
+          22,
+          14,
+          9,
+          6
+        ],
+        "goal": 13,
+        "desc": "Left/right spread around your own average (68% of shots)."
+      }
+    ]
   }
 }
