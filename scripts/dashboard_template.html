@@ -196,7 +196,8 @@
   .yrow{display:grid;grid-template-columns:118px 100px repeat(6,minmax(0,1fr)) 28px;gap:10px;align-items:center;padding:8px 6px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink2);text-align:right}
   .yrow > :first-child{text-align:left} .yrow.yhead{border-top:0;color:var(--muted);font-size:12px;padding-bottom:4px} .yrow.yhead > :nth-child(2){text-align:center}
   .yrow.est{opacity:.7} .yrow:not(.yhead):hover{background:var(--panel2);border-radius:8px}
-  .yc-club b{color:var(--cream)} .yc-club small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;padding-left:15px}
+  .yc-club b{color:var(--cream)} .ytr{font-size:10.5px;margin-left:5px;font-weight:700} .ytr.up{color:var(--good)} .ytr.dn{color:var(--bad)}
+  .ymh{display:inline-block;margin:3px 0 0 15px;font-size:10.5px;color:var(--sand);background:rgba(227,201,122,.12);border-radius:999px;padding:0 7px} .yc-club small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;padding-left:15px}
   .yc-shape{display:flex;justify-content:center;position:relative} .yc-shape svg.disp{width:92px;height:92px;transition:transform .15s;transform-origin:center} .yc-shape svg.disp:hover{transform:scale(2.2);position:relative;z-index:5;box-shadow:0 8px 30px rgba(0,0,0,.6)}
   .yc-carry b{font-size:20px;color:var(--cream)}
   .roll{display:block;color:var(--good);font-size:11.5px} p .roll{display:inline}
@@ -937,8 +938,13 @@ function yardStats(k, keep=()=>true){
   const W = pts.reduce((a,p)=>a+p.w,0), wm = g => pts.reduce((a,p)=>a+p.w*(g(p.r)??0),0)/W;
   const wsd = (g, mu) => Math.sqrt(pts.reduce((a,p)=>a+p.w*((g(p.r)??mu)-mu)**2,0)/W);
   const carry = wm(r=>r.carry), total = wm(r=>r.total??r.carry), side = wm(r=>r.side??0);
+  const wopt = key => { const q = pts.filter(p=>p.r[key]!=null), w = q.reduce((a,p)=>a+p.w,0); return w ? q.reduce((a,p)=>a+p.w*p.r[key],0)/w : null; };
+  // Trend: latest session's average carry vs the sessions before it (same shot filter).
+  const last = S[S.length-1].sh, prev = S.slice(0,-1).flatMap(x=>x.sh);
+  const trend = prev.length ? mean(last.map(r=>r.carry)) - mean(prev.map(r=>r.carry)) : null;
   return {k, n:pts.length, carry, total, roll: total-carry, side, carrySd: pts.length>=3 ? wsd(r=>r.carry, carry) : null, sideSd: pts.length>=3 ? wsd(r=>r.side??0, side) : null,
-    pts: pts.map(p=>({c:p.r.carry, s:p.r.side??0, latest:p.latest})), sessions:S.length};
+    pts: pts.map(p=>({c:p.r.carry, s:p.r.side??0, latest:p.latest})), sessions:S.length, trend,
+    descent: wopt("descent"), spin: wopt("backSpin"), apex: wopt("apex")};
 }
 function dispSVG(Y){
   // Shot pattern on a true-to-scale square: rings hold 68% and 95% of shots for a normal spread; dashed line = target.
@@ -951,6 +957,12 @@ function dispSVG(Y){
     <circle class="mu" cx="${X(Y.side)}" cy="${H}" r="5.5"/></svg>`;
 }
 /* Yardages pop-up (button at the top of the Bag tab). */
+// Mishit rate per club from sessions that kept every shot (best-shots-only sessions would hide them).
+function clubMishit(k){
+  let n = 0, bad = 0;
+  ALL.forEach(A=>{ const c = A.clubs[k]; if (A.meta.curated || !c) return; const ex = exclCount(A, k); n += c.n + ex; bad += c.mishits + ex; });
+  return n >= 5 ? {n, bad, pct: 100*bad/n} : null;
+}
 function yardRows(){
   const clubs = (DATA.bag.sets[0]?.clubs||[]).filter(c=>c.key && c.key!=="Putter"), rows = [];
   clubs.forEach(c=>{ const k = c.key, sp = wedgeSplit(k), grp = loftOf(k) < 24 ? "Woods & hybrid" : loftOf(k) >= 41 ? "Wedges" : "Irons";
@@ -971,11 +983,14 @@ function yardagesHTML(){
   const side = Y => { if (!Y) return "—"; const a = Math.abs(Y.side); return a < 2 ? "on line" : `${r0(a)} ${Y.side > 0 ? "R" : "L"}`; };
   let grp = null;
   const body = rows.map(x=>{ const Y = x.Y, head = x.grp!==grp ? `<div class="ygrp">${esc(grp = x.grp)}</div>` : "";
+    const mh = x.sub ? null : clubMishit(x.k), tr = Y?.trend;
     const info = !Y ? "" : [x.est ? `Estimated${x.status?` (${x.status})`:""}: not hit yet` : `${Y.n} shot${Y.n>1?"s":""} · ${Y.sessions} session${Y.sessions>1?"s":""}`,
-      Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68% of shots)` : null, Y.carrySd==null && !x.est ? "Ranges need 3+ shots" : null,
+      Y.sideSd!=null ? `Side spread: ±${r0(Y.sideSd)} yd (68% of shots)` : null,
+      Y.apex!=null ? `Peak height: ${r0(Y.apex)} yd` : null, Y.descent!=null ? `Landing angle: ${r0(Y.descent)}°` : null, Y.spin!=null ? `Spin: ${(Math.round(Y.spin/50)*50).toLocaleString()} rpm` : null,
+      mh ? `Mishits: ${mh.bad} of ${mh.n} (${r0(mh.pct)}%)` : null, Y.carrySd==null && !x.est ? "Ranges need 3+ shots" : null,
       x.win ? `Your window: ${x.win[0]}–${x.win[1]} yd` : null].filter(Boolean).join("\n");
     return head + `<div class="yrow ${x.est?"est":""}">
-      <div class="yc-club"><span class="cn">${COLORS[x.k]?sw(x.k):""}<b>${esc(x.label)}</b></span>${x.sub?`<small>${esc(x.sub)}</small>`:x.est?`<small>estimated</small>`:""}</div>
+      <div class="yc-club"><span class="cn">${COLORS[x.k]?sw(x.k):""}<b>${esc(x.label)}</b>${tr!=null && Math.abs(tr) >= 1 ? `<span class="ytr ${tr>0?"up":"dn"}" data-tip="Latest session carried ${r0(Math.abs(tr))} yd ${tr>0?"further":"shorter"} than before">${tr>0?"▲":"▼"}${r0(Math.abs(tr))}</span>` : ""}</span>${mh && mh.pct >= 10 ? `<span class="ymh" data-tip="${mh.bad} of ${mh.n} shots topped or chunked">${r0(mh.pct)}% mishits</span>` : ""}${x.sub?`<small>${esc(x.sub)}</small>`:x.est?`<small>estimated</small>`:""}</div>
       <div class="yc-shape">${Y ? dispSVG(Y) : ""}</div>
       <div class="yc-carry" data-l="Carry"><b>${Y ? r0(Y.carry) : x.win ? `${x.win[0]}–${x.win[1]}` : "—"}</b></div>
       <div data-l="±">${Y?.carrySd!=null ? `±${r0(Y.carrySd)}` : "—"}</div>
@@ -988,7 +1003,7 @@ function yardagesHTML(){
     <div class="head"><div><h2>Yardages</h2><p class="sub">Good-contact shots · sim yardages</p></div><button class="btn icon" id="yClose" aria-label="Close">✕</button></div>
     <div class="yrow yhead"><div>Club</div><div>Pattern</div><div>Carry</div><div>±</div><div>68%</div><div>95%</div><div>Total</div><div>Finishes</div><div></div></div>
     ${body}
-    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 95% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. Hover or tap <span class="iicon">i</span> for shot count, side spread and wedge windows. Recent sessions are weighted most.</p></div>`;
+    <p class="muted small" style="margin:12px 0 0">± = carry spread (one standard deviation). 68% / 95% = the carry range that share of your shots lands in. Pattern: dots are shots (bright = latest session), inner ring holds 68% of shots, outer ring 95%, dashed line is the target. Finishes = average distance left (L) or right (R) of target. <span class="roll">Green</span> = expected roll after landing for wedges. ▲/▼ = latest session's carry vs earlier ones. Hover or tap <span class="iicon">i</span> for peak height, landing angle, spin, side spread and mishits. Recent sessions are weighted most.</p></div>`;
 }
 const yEl = (() => { const d = document.createElement("div"); d.id = "ymodal"; d.className = "viewer"; d.hidden = true; document.body.appendChild(d); return d; })();
 function openYardages(){ yEl.innerHTML = yardagesHTML(); yEl.hidden = false; document.body.style.overflow = "hidden"; $("yClose").onclick = closeYardages; }
